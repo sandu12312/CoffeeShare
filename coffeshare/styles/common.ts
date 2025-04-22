@@ -1,6 +1,14 @@
 import { StyleSheet, ViewStyle } from "react-native";
+import { Dimensions, Platform } from "react-native";
+
+const { width, height } = Dimensions.get("window");
 
 export const containers = StyleSheet.create({
+  screen: {
+    flex: 1,
+    height: height + (Platform.OS === "android" ? 25 : 0),
+    width: width,
+  },
   main: {
     flex: 1,
     backgroundColor: "#fff",
@@ -35,10 +43,6 @@ export const containers = StyleSheet.create({
     marginVertical: 10,
   },
   safeArea: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  screen: {
     flex: 1,
     backgroundColor: "#fff",
   },
