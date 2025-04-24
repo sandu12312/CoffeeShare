@@ -21,7 +21,8 @@ export default function Login() {
 
   const handleLogin = () => {
     // TODO: Implement login logic
-    console.log("Login pressed");
+    // console.log("Login pressed");
+    router.push("/(mainUsers)/dashboard");
   };
 
   const handleForgotPassword = () => {

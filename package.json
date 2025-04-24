@@ -6,6 +6,7 @@
     "expo-router": "^4.0.20",
     "expo-splash-screen": "^0.29.24",
     "expo-status-bar": "^2.0.1",
+    "react-native-maps": "^1.22.6",
     "react-native-safe-area-context": "^5.4.0",
     "react-native-screens": "^4.10.0"
   }
