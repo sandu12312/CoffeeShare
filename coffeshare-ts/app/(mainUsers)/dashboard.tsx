@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -7,14 +7,45 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Image,
+  Platform,
+  StatusBar,
+  Animated,
 } from "react-native";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import BottomTabBar from "../../components/BottomTabBar";
 import { useLanguage } from "../../context/LanguageContext";
+import SubscriptionCard from "../../components/SubscriptionCard";
+import RecommendedCafesCard from "../../components/RecommendedCafesCard";
+import RecentActivityCard from "../../components/RecentActivityCard";
+import QuickStatsCard from "../../components/QuickStatsCard";
+
+const HEADER_HEIGHT = 80;
 
 export default function Dashboard() {
   const { t } = useLanguage();
+  const scrollOffsetY = useRef(new Animated.Value(0)).current;
+  const lastScrollY = useRef(0);
+
+  // Calculate header translateY based on scroll
+  const headerTranslateY = scrollOffsetY.interpolate({
+    inputRange: [0, HEADER_HEIGHT],
+    outputRange: [0, -HEADER_HEIGHT],
+    extrapolate: "clamp",
+  });
+
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollOffsetY } } }],
+    {
+      useNativeDriver: true, // Use native driver for performance
+      listener: (event: any) => {
+        const currentScrollY = event.nativeEvent.contentOffset.y;
+        // Optional: Logic based on scroll direction can be added here if needed
+        lastScrollY.current = currentScrollY;
+      },
+    }
+  );
 
   // Placeholder data - replace with actual data later
   const subscription = {
@@ -39,119 +70,106 @@ export default function Dashboard() {
     favoriteCafe: "Cafe Central",
   };
 
+  // Handler functions
+  const handleRenewSubscription = () => {
+    router.push("/(mainUsers)/subscriptions");
+  };
+
+  const handleViewAllCafes = () => {
+    router.push("/(mainUsers)/map");
+  };
+
+  const handleCafePress = (cafe: any) => {
+    console.log("Cafe pressed:", cafe);
+    // Navigate to cafe details
+  };
+
+  const handleViewFullHistory = () => {
+    console.log("View full history");
+    // Navigate to history screen
+  };
+
+  const handleActivityPress = (activity: any) => {
+    console.log("Activity pressed:", activity);
+    // Navigate to activity details
+  };
+
   return (
     <ImageBackground
       source={require("../../assets/images/coffee-beans-textured-background.jpg")}
       style={styles.background}
       resizeMode="cover"
     >
+      <StatusBar barStyle="light-content" />
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ headerShown: false }} />
 
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerLogo}>CoffeeShare</Text>
-          <View style={styles.headerIcons}>
+        {/* Animated Floating Header Elements */}
+        <Animated.View
+          style={[
+            styles.floatingHeaderContainer,
+            { transform: [{ translateY: headerTranslateY }] },
+          ]}
+        >
+          <Text style={styles.floatingHeaderTitle}>CoffeeShare</Text>
+          <View style={styles.floatingHeaderIcons}>
+            {/* Icon Buttons */}
             <TouchableOpacity style={styles.iconButton}>
               <Ionicons
                 name="notifications-outline"
                 size={26}
-                color="#321E0E"
+                color="#FFFFFF"
+                style={styles.iconShadow}
               />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton}>
               <Ionicons
-                name="person-circle-outline"
-                size={30}
-                color="#321E0E"
+                name="person-outline"
+                size={26}
+                color="#FFFFFF"
+                style={styles.iconShadow}
               />
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Main Scrollable Content */}
+        <Animated.ScrollView
+          contentContainerStyle={styles.scrollContent}
+          onScroll={handleScroll}
+          scrollEventThrottle={16} // Optimize scroll event frequency
+          showsVerticalScrollIndicator={false}
+        >
           {/* Subscription Card */}
-          <View style={[styles.card, styles.subscriptionCard]}>
-            <Text style={styles.cardTitle}>{subscription.type}</Text>
-            <Text style={styles.cardSubtitle}>
-              Expires: {subscription.expires}
-            </Text>
-            <View style={styles.coffeeCounter}>
-              <Text style={styles.coffeeCount}>
-                {subscription.coffeesLeft}/{subscription.coffeesTotal}
-              </Text>
-              <Text style={styles.coffeeText}> {t("coffeesLeftToday")}</Text>
-            </View>
-            {/* Add progress bar later */}
-            <TouchableOpacity style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>
-                {t("renewSubscription")}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <SubscriptionCard
+            type={subscription.type}
+            expires={subscription.expires}
+            coffeesLeft={subscription.coffeesLeft}
+            coffeesTotal={subscription.coffeesTotal}
+            onRenew={handleRenewSubscription}
+          />
 
           {/* Recommended Cafes Card */}
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="star-outline" size={20} color="#8B4513" />
-              <Text style={styles.cardTitle}>{t("recommendedCafes")}</Text>
-            </View>
-            {recommendedCafes.map((cafe) => (
-              <View key={cafe.id} style={styles.listItem}>
-                <View style={styles.listItemContent}>
-                  <Text style={styles.listItemTitle}>{cafe.name}</Text>
-                  <Text style={styles.listItemSubtitle}>
-                    {cafe.distance} - {cafe.rating} ★
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="#8B4513" />
-              </View>
-            ))}
-            <TouchableOpacity style={styles.textButton}>
-              <Text style={styles.textButtonText}>{t("viewAllCafes")}</Text>
-            </TouchableOpacity>
-          </View>
+          <RecommendedCafesCard
+            cafes={recommendedCafes}
+            onViewAll={handleViewAllCafes}
+            onCafePress={handleCafePress}
+          />
 
           {/* Recent Activity Card */}
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="receipt-outline" size={20} color="#8B4513" />
-              <Text style={styles.cardTitle}>{t("recentActivity")}</Text>
-            </View>
-            {recentActivity.map((activity) => (
-              <View key={activity.id} style={styles.listItem}>
-                <View style={styles.listItemContent}>
-                  <Text style={styles.listItemTitle}>{activity.cafe}</Text>
-                  <Text style={styles.listItemSubtitle}>{activity.date}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="#8B4513" />
-              </View>
-            ))}
-            <TouchableOpacity style={styles.textButton}>
-              <Text style={styles.textButtonText}>{t("viewFullHistory")}</Text>
-            </TouchableOpacity>
-          </View>
+          <RecentActivityCard
+            activities={recentActivity}
+            onViewAll={handleViewFullHistory}
+            onActivityPress={handleActivityPress}
+          />
 
           {/* Quick Stats Card */}
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="stats-chart-outline" size={20} color="#8B4513" />
-              <Text style={styles.cardTitle}>{t("thisWeeksStats")}</Text>
-            </View>
-            <Text style={styles.statsText}>
-              {t("totalCoffees")}:{" "}
-              <Text style={styles.statsValue}>
-                {quickStats.coffeesThisWeek}
-              </Text>{" "}
-              ({quickStats.comparison})
-            </Text>
-            <Text style={styles.statsText}>
-              {t("favoriteCafe")}:{" "}
-              <Text style={styles.statsValue}>{quickStats.favoriteCafe}</Text>
-            </Text>
-            {/* Add simple chart later */}
-          </View>
-        </ScrollView>
+          <QuickStatsCard
+            coffeesThisWeek={quickStats.coffeesThisWeek}
+            comparison={quickStats.comparison}
+            favoriteCafe={quickStats.favoriteCafe}
+          />
+        </Animated.ScrollView>
 
         {/* Bottom Navigation Bar */}
         <BottomTabBar />
@@ -166,134 +184,47 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingBottom: 75, // Adjusted padding for new tab bar height
+    paddingBottom: 75,
   },
-  header: {
+  floatingHeaderContainer: {
+    position: "absolute",
+    top: 0, // Start at the very top
+    left: 0,
+    right: 0,
+    height: HEADER_HEIGHT,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 15,
-    paddingBottom: 10,
-    backgroundColor: "rgba(255, 248, 220, 0.9)", // Light cream, slightly transparent
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(139, 69, 19, 0.1)",
+    paddingTop: Platform.OS === "ios" ? 44 : StatusBar.currentHeight || 10, // Padding for status bar area inside the header
+    zIndex: 10,
+    // Background can be added here if needed over the ImageBackground, e.g., slightly darker transparent gradient
   },
-  headerLogo: {
-    fontSize: 22, // Slightly larger logo text
+  floatingHeaderTitle: {
+    fontSize: 24,
     fontWeight: "bold",
-    color: "#321E0E",
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
+    textShadowColor: "rgba(50, 30, 14, 0.7)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
-  headerIcons: {
+  floatingHeaderIcons: {
     flexDirection: "row",
+    alignItems: "center",
   },
   iconButton: {
-    marginLeft: 18, // Increased spacing
+    marginLeft: 18,
+    padding: 5,
+  },
+  iconShadow: {
+    textShadowColor: "rgba(50, 30, 14, 0.7)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 20, // Reduced bottom padding as container handles tab bar space
-  },
-  card: {
-    backgroundColor: "rgba(255, 255, 255, 0.92)", // Slightly more opaque white
-    borderRadius: 15,
-    padding: 18, // Increased padding
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 }, // Slightly larger shadow
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-    borderWidth: 1, // Add subtle border
-    borderColor: "rgba(139, 69, 19, 0.1)",
-  },
-  subscriptionCard: {
-    backgroundColor: "rgba(230, 210, 180, 0.95)", // Keep emphasis color
-    borderColor: "rgba(139, 69, 19, 0.2)",
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15, // Increased spacing
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(139, 69, 19, 0.1)",
-    paddingBottom: 10,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "600", // Slightly bolder
-    color: "#321E0E",
-    marginLeft: 8, // Add space after icon
-  },
-  cardSubtitle: {
-    fontSize: 14,
-    color: "#8B4513",
-    marginBottom: 10,
-  },
-  coffeeCounter: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    marginBottom: 15,
-  },
-  coffeeCount: {
-    fontSize: 26, // Larger count
-    fontWeight: "bold",
-    color: "#321E0E",
-  },
-  coffeeText: {
-    fontSize: 14,
-    color: "#8B4513",
-    marginLeft: 5,
-  },
-  primaryButton: {
-    backgroundColor: "#8B4513",
-    paddingVertical: 14, // Increased padding
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  listItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12, // Increased padding
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(139, 69, 19, 0.08)", // Lighter border
-  },
-  listItemContent: {
-    flex: 1, // Allow content to take available space
-    marginRight: 10, // Add space before chevron
-  },
-  listItemTitle: {
-    fontSize: 16, // Larger title
-    color: "#321E0E",
-    marginBottom: 2,
-  },
-  listItemSubtitle: {
-    fontSize: 14,
-    color: "#8B4513",
-  },
-  textButton: {
-    marginTop: 15, // Increased spacing
-    paddingVertical: 5, // Add padding for easier tapping
-    alignItems: "center",
-  },
-  textButtonText: {
-    color: "#8B4513",
-    fontSize: 15, // Slightly larger
-    fontWeight: "600",
-  },
-  statsText: {
-    fontSize: 15,
-    color: "#321E0E",
-    marginBottom: 8,
-  },
-  statsValue: {
-    fontWeight: "bold", // Make stats values stand out
+    paddingTop: HEADER_HEIGHT + 10, // Ensure content starts below floating header
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
 });

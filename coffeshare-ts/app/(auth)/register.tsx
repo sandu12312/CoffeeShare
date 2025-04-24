@@ -24,10 +24,12 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleRegister = () => {
-    // TODO: Implement registration logic
-    console.log("Register with:", name, email, password, confirmPassword);
-    // For now, just navigate to the main app
-    router.push("/(tabs)");
+    // TODO: Implement actual registration logic with Firebase
+    console.log("Registering with:", email, password);
+
+    // For UI testing purposes, navigate directly to the coffee partner dashboard
+    router.replace("/(mainCoffeePartners)/dashboard");
+    // router.replace("/(mainUsers)/dashboard"); // Original navigation
   };
 
   const handleLogin = () => {

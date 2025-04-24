@@ -68,7 +68,9 @@ type TranslationKey =
   | "choosePerfectPlan"
   | "coffees"
   | "perMonth"
-  | "selectPlan";
+  | "selectPlan"
+  | "popular"
+  | "select";
 
 interface LanguageContextType {
   language: Language;
@@ -147,6 +149,8 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     choosePerfectPlan: "Alege planul perfect pentru nevoile tale de cafea",
     coffees: "cafele",
     perMonth: "pe lună",
+    popular: "Popular",
+    select: "Selectează",
 
     // Welcome slides
     smartSubscriptions: "Abonamente inteligente",
@@ -231,6 +235,8 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     choosePerfectPlan: "Choose the perfect plan for your coffee needs",
     coffees: "coffees",
     perMonth: "per month",
+    popular: "Popular",
+    select: "Select",
 
     // Welcome slides
     smartSubscriptions: "Smart Subscriptions",
