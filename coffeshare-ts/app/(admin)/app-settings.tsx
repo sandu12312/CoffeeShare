@@ -1,0 +1,231 @@
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Switch,
+  Alert,
+} from "react-native";
+import { useLanguage } from "../../context/LanguageContext";
+import ScreenWrapper from "../../components/ScreenWrapper";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import CoffeePartnerHeader from "../../components/CoffeePartnerHeader";
+
+// --- Dummy Data ---
+const initialAppSettings = {
+  appName: "CoffeeShare",
+  supportEmail: "support@coffeeshare.app",
+  maintenanceMode: false,
+  newRegistrations: true,
+  stripeApiKey: "sk_test_•••••••••••••••••••••••XYZ", // Placeholder
+  googleMapsApiKey: "AIzaS•••••••••••••••••••••••ABC", // Placeholder
+};
+// ------------------
+
+export default function AppSettingsScreen() {
+  const { t } = useLanguage();
+  const router = useRouter();
+  const [settings, setSettings] = useState(initialAppSettings);
+
+  const handleSave = () => {
+    // TODO: Implement saving logic (e.g., update global config in Firestore/backend)
+    console.log("Saving app settings:", settings);
+    Alert.alert(
+      "Setări Aplicație Salvate",
+      "Modificările au fost salvate (simulat)!"
+    );
+    // Optionally navigate back or show success message
+  };
+
+  // Helper to update settings
+  const updateSetting = (
+    key: keyof typeof initialAppSettings,
+    value: string | boolean
+  ) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // Render Save Button for Header
+  const renderSaveButton = () => (
+    <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
+      {/* TODO: Add translation key 'save' */}
+      <Text style={styles.saveButtonText}>{t("select") || "Salvează"}</Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <ScreenWrapper>
+      {/* TODO: Add translation key 'appSettingsTitle' */}
+      <CoffeePartnerHeader
+        title={"Setări Aplicație"}
+        rightAction={renderSaveButton()}
+      />
+
+      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+        {/* General Section */}
+        <Text style={styles.sectionTitle}>General</Text>
+        <View style={styles.inputContainer}>
+          {/* TODO: Translation key 'appNameLabel' */}
+          <Text style={styles.label}>Nume Aplicație</Text>
+          <TextInput
+            style={styles.input}
+            value={settings.appName}
+            onChangeText={(text) => updateSetting("appName", text)}
+            placeholder="Numele vizibil al aplicației"
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          {/* TODO: Translation key 'supportEmailLabel' */}
+          <Text style={styles.label}>Email Suport</Text>
+          <TextInput
+            style={styles.input}
+            value={settings.supportEmail}
+            onChangeText={(text) => updateSetting("supportEmail", text)}
+            placeholder="Adresa de email pentru suport clienți"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+        </View>
+        <View style={styles.switchRow}>
+          {/* TODO: Translation key 'allowNewRegistrations' */}
+          <Text style={styles.switchLabel}>Permite Înregistrări Noi</Text>
+          <Switch
+            trackColor={{ false: "#767577", true: "#81C784" }}
+            thumbColor={settings.newRegistrations ? "#4CAF50" : "#f4f3f4"}
+            onValueChange={(value) => updateSetting("newRegistrations", value)}
+            value={settings.newRegistrations}
+          />
+        </View>
+
+        {/* Maintenance Section */}
+        <Text style={styles.sectionTitle}>Mentenanță</Text>
+        <View style={styles.switchRow}>
+          {/* TODO: Translation key 'maintenanceModeLabel' */}
+          <Text style={styles.switchLabel}>Mod Mentenanță Activat</Text>
+          <Switch
+            trackColor={{ false: "#767577", true: "#FFB74D" }} // Orange shade for warning
+            thumbColor={settings.maintenanceMode ? "#FFA726" : "#f4f3f4"}
+            onValueChange={(value) => updateSetting("maintenanceMode", value)}
+            value={settings.maintenanceMode}
+          />
+        </View>
+        <Text style={styles.settingDescription}>
+          Când este activat, utilizatorii normali nu vor putea accesa aplicația.
+        </Text>
+
+        {/* Integrations/API Section */}
+        <Text style={styles.sectionTitle}>Chei API & Integrații</Text>
+        <View style={styles.inputContainer}>
+          {/* TODO: Translation key 'stripeApiKeyLabel' */}
+          <Text style={styles.label}>Cheie API Stripe (Secret)</Text>
+          <TextInput
+            style={[styles.input, styles.disabledInput]} // Make it look non-editable
+            value={settings.stripeApiKey}
+            placeholder="sk_test_•••••••••••••••••••••••XYZ"
+            editable={false} // Non-editable in UI for safety
+          />
+          <Text style={styles.settingDescription}>
+            Modifică doar din configurația serverului/variabile de mediu.
+          </Text>
+        </View>
+        <View style={styles.inputContainer}>
+          {/* TODO: Translation key 'googleMapsApiKeyLabel' */}
+          <Text style={styles.label}>Cheie API Google Maps</Text>
+          <TextInput
+            style={[styles.input, styles.disabledInput]}
+            value={settings.googleMapsApiKey}
+            placeholder="AIzaS•••••••••••••••••••••••ABC"
+            editable={false}
+          />
+          <Text style={styles.settingDescription}>
+            Modifică doar din configurația serverului/variabile de mediu.
+          </Text>
+        </View>
+
+        {/* Add more settings sections as needed (Notifications, etc.) */}
+      </ScrollView>
+    </ScreenWrapper>
+  );
+}
+
+// --- Styles ---
+const styles = StyleSheet.create({
+  scrollViewContent: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#321E0E",
+    marginTop: 20,
+    marginBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+    paddingBottom: 5,
+  },
+  inputContainer: {
+    marginBottom: 15,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#555",
+    marginBottom: 6,
+  },
+  input: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#D0D0D0",
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: "#333",
+  },
+  disabledInput: {
+    backgroundColor: "#F5F5F5",
+    color: "#888",
+  },
+  switchRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    marginBottom: 5,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  switchLabel: {
+    fontSize: 15,
+    color: "#333",
+    flex: 1, // Allow text to wrap
+    marginRight: 10,
+  },
+  settingDescription: {
+    fontSize: 12,
+    color: "#777",
+    marginTop: 5,
+    marginLeft: 2,
+    fontStyle: "italic",
+  },
+  saveButton: {
+    // Copied from CafeSettingsScreen for consistency
+    paddingHorizontal: 5,
+    paddingVertical: 5,
+  },
+  saveButtonText: {
+    // Copied from CafeSettingsScreen for consistency
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#4E342E", // Match header text color
+  },
+});
+// --------------

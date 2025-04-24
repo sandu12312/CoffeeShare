@@ -26,7 +26,10 @@ export default function Login() {
   };
 
   const handleForgotPassword = () => {
-    router.push("/(auth)/forgot_password");
+    // TODO: Implement actual forgot password logic later if needed
+    // For now, navigate to the main Administrator dashboard
+    router.push("/(admin)/dashboard");
+    // console.log("Forgot Password pressed");
   };
 
   const handleRegister = () => {
