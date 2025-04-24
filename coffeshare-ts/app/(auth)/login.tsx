@@ -1,20 +1,18 @@
+import React, { useState } from "react";
 import {
   StyleSheet,
   Text,
   View,
   TextInput,
   TouchableOpacity,
-  Image,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   ImageBackground,
 } from "react-native";
-import React, { useState } from "react";
-import { Stack, router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import Button from "../../components/Button";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -23,9 +21,7 @@ export default function Login() {
 
   const handleLogin = () => {
     // TODO: Implement login logic
-    console.log("Login with:", email, password);
-    // For now, just navigate to the main app
-    router.push("/(tabs)");
+    console.log("Login pressed");
   };
 
   const handleForgotPassword = () => {
@@ -33,30 +29,44 @@ export default function Login() {
   };
 
   const handleRegister = () => {
-    router.push("/(auth)/register");
+    router.push("/register");
+  };
+
+  const handleGoogleLogin = () => {
+    // TODO: Implement Google login
+    console.log("Google login pressed");
+  };
+
+  const handleFacebookLogin = () => {
+    // TODO: Implement Facebook login
+    console.log("Facebook login pressed");
   };
 
   return (
     <ImageBackground
       source={require("../../assets/images/coffee-beans-textured-background.jpg")}
-      style={styles.container}
+      style={styles.background}
       resizeMode="cover"
     >
-      <StatusBar style="light" />
-      <Stack.Screen options={{ headerShown: false }} />
-
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardAvoidingView}
+        style={styles.container}
       >
-        <ScrollView contentContainerStyle={styles.scrollView}>
+        <View style={styles.backButtonContainer}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#8B4513" />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.logoContainer}>
-            <Image
-              source={require("../../assets/images/coffebeans.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Text style={styles.appName}>CoffeeShare</Text>
+            <Text style={styles.logo}>☕</Text>
           </View>
 
           <View style={styles.formContainer}>
@@ -64,12 +74,7 @@ export default function Login() {
             <Text style={styles.subtitleText}>Sign in to continue</Text>
 
             <View style={styles.inputContainer}>
-              <Ionicons
-                name="mail-outline"
-                size={20}
-                color="#8B4513"
-                style={styles.inputIcon}
-              />
+              <Ionicons name="mail-outline" size={20} color="#8B4513" />
               <TextInput
                 style={styles.input}
                 placeholder="Email"
@@ -82,12 +87,7 @@ export default function Login() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Ionicons
-                name="lock-closed-outline"
-                size={20}
-                color="#8B4513"
-                style={styles.inputIcon}
-              />
+              <Ionicons name="lock-closed-outline" size={20} color="#8B4513" />
               <TextInput
                 style={styles.input}
                 placeholder="Password"
@@ -96,7 +96,10 @@ export default function Login() {
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
               />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeIcon}
+              >
                 <Ionicons
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
                   size={20}
@@ -116,6 +119,28 @@ export default function Login() {
               <Text style={styles.loginButtonText}>Login</Text>
             </TouchableOpacity>
 
+            <View style={styles.dividerContainer}>
+              <View style={styles.divider} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.divider} />
+            </View>
+
+            <View style={styles.socialLoginContainer}>
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={handleGoogleLogin}
+              >
+                <Ionicons name="logo-google" size={24} color="#DB4437" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={handleFacebookLogin}
+              >
+                <Ionicons name="logo-facebook" size={24} color="#4267B2" />
+              </TouchableOpacity>
+            </View>
+
             <View style={styles.registerContainer}>
               <Text style={styles.registerText}>Don't have an account? </Text>
               <TouchableOpacity onPress={handleRegister}>
@@ -130,88 +155,99 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+  },
   container: {
     flex: 1,
   },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  scrollView: {
+  scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
+    padding: 20,
+  },
+  backButtonContainer: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 10,
+  },
+  backButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    borderRadius: 12,
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
   },
   logoContainer: {
     alignItems: "center",
     marginBottom: 30,
   },
   logo: {
-    width: 100,
-    height: 100,
-  },
-  appName: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-    marginTop: 10,
+    fontSize: 60,
   },
   formContainer: {
-    backgroundColor: "rgba(255, 248, 220, 0.75)", // Light cream color with transparency
+    backgroundColor: "rgba(255, 248, 220, 0.85)",
     borderRadius: 20,
     padding: 20,
-    marginHorizontal: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+    width: "100%",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.5)",
   },
   welcomeText: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
-    color: "#321E0E", // Dark brown for better contrast on light background
-    marginBottom: 5,
+    color: "#321E0E",
     textAlign: "center",
+    marginBottom: 10,
   },
   subtitleText: {
     fontSize: 16,
-    color: "#8B4513", // Saddle brown for better contrast on light background
-    marginBottom: 20,
+    color: "#8B4513",
     textAlign: "center",
+    marginBottom: 30,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.7)", // Light white with transparency
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
     borderRadius: 10,
     marginBottom: 15,
     paddingHorizontal: 15,
-    height: 50,
     borderWidth: 1,
-    borderColor: "rgba(139, 69, 19, 0.3)", // Saddle brown with transparency
-  },
-  inputIcon: {
-    marginRight: 10,
+    borderColor: "rgba(139, 69, 19, 0.3)",
   },
   input: {
     flex: 1,
-    color: "#321E0E", // Dark brown for better contrast on light background
+    color: "#321E0E",
+    paddingVertical: 15,
+    paddingHorizontal: 10,
     fontSize: 16,
+  },
+  eyeIcon: {
+    padding: 10,
   },
   forgotPasswordContainer: {
     alignItems: "flex-end",
     marginBottom: 20,
+    paddingVertical: 5,
   },
   forgotPasswordText: {
-    color: "#8B4513", // Saddle brown for better contrast on light background
+    color: "#8B4513",
     fontSize: 14,
+    fontWeight: "500",
+    textDecorationLine: "underline",
   },
   loginButton: {
-    backgroundColor: "#8B4513", // Saddle brown
+    backgroundColor: "#8B4513",
+    paddingVertical: 15,
     borderRadius: 10,
-    height: 50,
-    justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
   },
@@ -220,17 +256,51 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
+  dividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "rgba(139, 69, 19, 0.3)",
+  },
+  dividerText: {
+    color: "#8B4513",
+    marginHorizontal: 10,
+    fontSize: 14,
+  },
+  socialLoginContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+  socialButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
   registerContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 10,
+    alignItems: "center",
   },
   registerText: {
-    color: "#8B4513", // Saddle brown for better contrast on light background
+    color: "#8B4513",
     fontSize: 14,
   },
   registerLink: {
-    color: "#321E0E", // Dark brown for better contrast on light background
+    color: "#321E0E",
     fontSize: 14,
     fontWeight: "bold",
   },

@@ -1,73 +1,56 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 type ButtonProps = {
   label: string;
-  theme:
-    | "welcome->login"
-    | "login->singUp"
-    | "login->forgotPassword"
-    | "register->EmailValidation"
-    | "VerifyCode";
+  theme: "welcome->login" | "login->welcome";
   onPress: () => void;
+  icon?: keyof typeof Ionicons.glyphMap;
 };
 
-const Button = ({ label, theme, onPress }: ButtonProps) => {
-  if (theme === "welcome->login") {
+export default function Button({ label, theme, onPress, icon }: ButtonProps) {
+  if (theme === "login->welcome") {
     return (
-      <TouchableOpacity style={styles.welcomeToLoginButton} onPress={onPress}>
-        <Text style={styles.welcomeToLoginText}>{label}</Text>
+      <TouchableOpacity style={styles.backButton} onPress={onPress}>
+        {icon && <Ionicons name={icon} size={28} color="#FFFFFF" />}
       </TouchableOpacity>
     );
   }
 
-  // Default button for other themes
   return (
-    <TouchableOpacity style={styles.defaultButton} onPress={onPress}>
-      <Text style={styles.defaultText}>{label}</Text>
+    <TouchableOpacity style={styles.button} onPress={onPress}>
+      <Text style={styles.buttonText}>{label}</Text>
     </TouchableOpacity>
   );
-};
-
-export default Button;
+}
 
 const styles = StyleSheet.create({
-  welcomeToLoginButton: {
-    backgroundColor: "#8B4513", // Coffee brown
+  button: {
+    backgroundColor: "#321E0E",
     paddingVertical: 15,
     paddingHorizontal: 30,
-    borderRadius: 25,
-    marginVertical: 10,
-    width: "80%",
-    alignSelf: "center",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
+    shadowRadius: 4,
+    elevation: 5,
   },
-  welcomeToLoginText: {
+  buttonText: {
     color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "bold",
-    textAlign: "center",
-    textShadowColor: "rgba(0, 0, 0, 0.3)",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
   },
-  defaultButton: {
-    backgroundColor: "#D2B48C", // Tan
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 10,
     padding: 10,
-    borderRadius: 10,
-    margin: 10,
-  },
-  defaultText: {
-    color: "#000000",
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
+    borderRadius: 50,
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
   },
 });
