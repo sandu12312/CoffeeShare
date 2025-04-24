@@ -1,64 +1,62 @@
 import React from "react";
-import { StyleSheet, View, Text, SafeAreaView } from "react-native";
-import { Stack } from "expo-router";
+import { View, Text, StyleSheet } from "react-native";
+import { useLanguage } from "../../context/LanguageContext";
+import ScreenWrapper from "../../components/ScreenWrapper";
 import BottomTabBar from "../../components/BottomTabBar";
 
 export default function QRScreen() {
+  const { t } = useLanguage();
+
   return (
-    <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ headerShown: false }} />
+    <ScreenWrapper>
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.title}>{t("scanQRCode")}</Text>
+          <Text style={styles.subtitle}>{t("scanQRDescription")}</Text>
 
-      <View style={styles.content}>
-        <Text style={styles.title}>QR Scanner</Text>
-        <Text style={styles.subtitle}>
-          Scan a cafe's QR code to redeem your coffee
-        </Text>
-
-        {/* Placeholder for QR scanner */}
-        <View style={styles.qrPlaceholder}>
-          <Text style={styles.qrPlaceholderText}>QR Scanner Area</Text>
+          <View style={styles.scannerPlaceholder}>
+            <Text style={styles.scannerText}>{t("scannerArea")}</Text>
+          </View>
         </View>
       </View>
-
       <BottomTabBar />
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F5F5F5",
   },
   content: {
     flex: 1,
+    padding: 20,
     alignItems: "center",
     justifyContent: "center",
-    padding: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#321E0E",
     marginBottom: 10,
+    color: "#4A4A4A",
   },
   subtitle: {
     fontSize: 16,
-    color: "#8B4513",
-    marginBottom: 30,
+    color: "#666666",
     textAlign: "center",
+    marginBottom: 30,
   },
-  qrPlaceholder: {
-    width: 250,
-    height: 250,
+  scannerPlaceholder: {
+    width: "80%",
+    aspectRatio: 1,
     backgroundColor: "#E0E0E0",
-    justifyContent: "center",
+    borderRadius: 10,
     alignItems: "center",
-    borderRadius: 15,
+    justifyContent: "center",
   },
-  qrPlaceholderText: {
-    color: "#A0A0A0",
-    fontSize: 16,
-    fontWeight: "bold",
+  scannerText: {
+    fontSize: 18,
+    color: "#666666",
   },
 });

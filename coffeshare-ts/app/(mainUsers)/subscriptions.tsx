@@ -20,6 +20,7 @@ export default function SubscriptionsScreen() {
       price: "$9.99",
       coffees: 10,
       period: "month",
+      popular: false,
     },
     {
       id: "2",
@@ -27,6 +28,7 @@ export default function SubscriptionsScreen() {
       price: "$19.99",
       coffees: 25,
       period: "month",
+      popular: true,
     },
     {
       id: "3",
@@ -34,6 +36,7 @@ export default function SubscriptionsScreen() {
       price: "$49.99",
       coffees: 70,
       period: "month",
+      popular: false,
     },
   ];
 
@@ -47,10 +50,20 @@ export default function SubscriptionsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.sectionTitle}>Available Plans</Text>
+        <Text style={styles.pageSubtitle}>
+          Choose the perfect plan for your coffee needs.
+        </Text>
 
         {subscriptions.map((plan) => (
-          <View key={plan.id} style={styles.planCard}>
+          <View
+            key={plan.id}
+            style={[styles.planCard, plan.popular && styles.popularPlanCard]}
+          >
+            {plan.popular && (
+              <View style={styles.popularBadge}>
+                <Text style={styles.popularBadgeText}>Most Popular</Text>
+              </View>
+            )}
             <View style={styles.planHeader}>
               <Text style={styles.planName}>{plan.name}</Text>
               <Text style={styles.planPrice}>{plan.price}</Text>
@@ -68,7 +81,7 @@ export default function SubscriptionsScreen() {
             </View>
 
             <TouchableOpacity style={styles.subscribeButton}>
-              <Text style={styles.subscribeButtonText}>Subscribe</Text>
+              <Text style={styles.subscribeButtonText}>Select Plan</Text>
             </TouchableOpacity>
           </View>
         ))}
@@ -82,47 +95,73 @@ export default function SubscriptionsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F5F5F5", // Consistent background
+    paddingBottom: 75, // Account for tab bar
   },
   header: {
-    padding: 20,
-    paddingTop: 10,
-    backgroundColor: "rgba(255, 248, 220, 0.85)",
+    paddingHorizontal: 20,
+    paddingTop: 15,
+    paddingBottom: 10,
+    backgroundColor: "#FFFFFF", // White header background
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0D6C7",
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: "600",
     color: "#321E0E",
+    textAlign: "center", // Center title
   },
   scrollContent: {
     padding: 20,
-    paddingBottom: 80,
+    paddingBottom: 20,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#321E0E",
-    marginBottom: 15,
+  pageSubtitle: {
+    fontSize: 16,
+    color: "#8B4513",
+    textAlign: "center",
+    marginBottom: 25, // Increased spacing
   },
   planCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: "#FFFFFF", // White cards
     borderRadius: 15,
-    padding: 15,
-    marginBottom: 15,
+    padding: 20, // Increased padding
+    marginBottom: 20, // Consistent spacing
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "rgba(139, 69, 19, 0.1)",
+    position: "relative", // For badge positioning
+  },
+  popularPlanCard: {
+    borderColor: "#8B4513", // Highlight popular plan
+    borderWidth: 2,
+  },
+  popularBadge: {
+    position: "absolute",
+    top: -12,
+    alignSelf: "center",
+    backgroundColor: "#8B4513",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  popularBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "bold",
   },
   planHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 15, // Increased spacing
   },
   planName: {
-    fontSize: 18,
+    fontSize: 20, // Larger plan name
     fontWeight: "bold",
     color: "#321E0E",
   },
@@ -132,22 +171,22 @@ const styles = StyleSheet.create({
     color: "#8B4513",
   },
   planDetails: {
-    marginBottom: 15,
+    marginBottom: 20, // Increased spacing
   },
   detailItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 5,
+    marginBottom: 8, // Slightly increased spacing
   },
   detailText: {
-    fontSize: 14,
+    fontSize: 15, // Slightly larger text
     color: "#8B4513",
     marginLeft: 10,
   },
   subscribeButton: {
     backgroundColor: "#8B4513",
-    paddingVertical: 12,
-    borderRadius: 10,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: "center",
   },
   subscribeButtonText: {

@@ -20,6 +20,7 @@ export default function MapScreen() {
 
       {/* Placeholder for Map View */}
       <View style={styles.mapPlaceholder}>
+        <Ionicons name="map-outline" size={80} color="#C0C0C0" />
         <Text style={styles.mapPlaceholderText}>Map Area</Text>
       </View>
 
@@ -43,7 +44,7 @@ export default function MapScreen() {
         <TextInput
           style={styles.searchInput}
           placeholder="Search Cafes..."
-          placeholderTextColor="#8B4513"
+          placeholderTextColor="#A08C7D" // Slightly lighter placeholder color
         />
         <TouchableOpacity style={styles.filterButton}>
           <Ionicons name="options-outline" size={24} color="#8B4513" />
@@ -60,38 +61,42 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff", // Add a background color for the SafeAreaView
+    backgroundColor: "#F5F5F5", // Light background for the screen
+    paddingBottom: 75, // Adjusted padding for new tab bar height
   },
   map: {
     ...StyleSheet.absoluteFillObject,
   },
   mapPlaceholder: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#E0E0E0", // Light grey background for placeholder
+    backgroundColor: "#E8E8E8", // Slightly different grey
     justifyContent: "center",
     alignItems: "center",
   },
   mapPlaceholderText: {
     color: "#A0A0A0", // Grey text
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "500", // Medium weight
+    marginTop: 15,
   },
   headerOverlay: {
     position: "absolute",
-    top: 50, // Adjust based on status bar height
-    left: 20,
-    right: 20,
+    top: 60, // Adjusted top position
+    left: 15,
+    right: 15,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 248, 220, 0.9)", // Light cream, slightly transparent
-    borderRadius: 15,
+    backgroundColor: "rgba(255, 255, 255, 0.95)", // More solid white
+    borderRadius: 12, // Slightly smaller radius
     paddingHorizontal: 15,
-    paddingVertical: 10,
+    paddingVertical: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 4,
+    borderWidth: 1, // Add subtle border
+    borderColor: "rgba(139, 69, 19, 0.1)",
   },
   searchInput: {
     flex: 1,

@@ -1,16 +1,19 @@
 import { StyleSheet, View, FlatList, useWindowDimensions } from "react-native";
 import React, { useState, useRef } from "react";
 import ScreenWrapper from "../../components/ScreenWrapper";
-import slides from "../../constants/slides";
+import { useSlides } from "../../constants/slides";
 import OnboardingItem from "../../components/OnboardingItem";
 import Paginator from "../../components/Paginator";
 import Button from "../../components/Button";
 import { router } from "expo-router";
+import { useLanguage } from "../../context/LanguageContext";
 
 const Welcome = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { width } = useWindowDimensions();
   const flatListRef = useRef<FlatList>(null);
+  const slides = useSlides();
+  const { t } = useLanguage();
 
   const viewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems[0]) {
@@ -47,7 +50,7 @@ const Welcome = () => {
         <Paginator data={slides} currentIndex={currentIndex} />
         <View style={styles.buttonContainer}>
           <Button
-            label="Get Started"
+            label={t("getStarted")}
             theme="welcome->login"
             onPress={handleLogin}
           />

@@ -8,38 +8,63 @@ export default function BottomTabBar() {
 
   // Helper function to determine if a tab is active
   const isActive = (path: string) => {
-    return pathname.includes(path);
+    // More specific check to avoid partial matches (e.g., /map vs /map-details)
+    const currentBaseRoute = pathname.split("/").pop();
+    return currentBaseRoute === path;
   };
 
   return (
     <View style={styles.bottomNav}>
+      {/* Dashboard Tab */}
       <TouchableOpacity
-        style={[
-          styles.navButton,
-          isActive("dashboard") && styles.activeNavButton,
-        ]}
+        style={styles.navButton}
         onPress={() => router.push("/(mainUsers)/dashboard")}
       >
-        <Ionicons
-          name={isActive("dashboard") ? "home" : "home-outline"}
-          size={26}
-          color="#8B4513"
-        />
-        <Text style={styles.navText}>Home</Text>
+        <View
+          style={[
+            styles.iconContainer,
+            isActive("dashboard") && styles.activeIconContainer,
+          ]}
+        >
+          <Ionicons
+            name={isActive("dashboard") ? "home" : "home-outline"}
+            size={26}
+            color={isActive("dashboard") ? "#FFFFFF" : "#8B4513"}
+          />
+        </View>
+        <Text
+          style={[
+            styles.navText,
+            isActive("dashboard") && styles.activeNavText,
+          ]}
+        >
+          Home
+        </Text>
       </TouchableOpacity>
 
+      {/* Map Tab */}
       <TouchableOpacity
-        style={[styles.navButton, isActive("map") && styles.activeNavButton]}
+        style={styles.navButton}
         onPress={() => router.push("/(mainUsers)/map")}
       >
-        <Ionicons
-          name={isActive("map") ? "map" : "map-outline"}
-          size={26}
-          color="#8B4513"
-        />
-        <Text style={styles.navText}>Map</Text>
+        <View
+          style={[
+            styles.iconContainer,
+            isActive("map") && styles.activeIconContainer,
+          ]}
+        >
+          <Ionicons
+            name={isActive("map") ? "map" : "map-outline"}
+            size={26}
+            color={isActive("map") ? "#FFFFFF" : "#8B4513"}
+          />
+        </View>
+        <Text style={[styles.navText, isActive("map") && styles.activeNavText]}>
+          Map
+        </Text>
       </TouchableOpacity>
 
+      {/* QR Code Button */}
       <TouchableOpacity
         style={styles.qrButton}
         onPress={() => router.push("/(mainUsers)/qr")}
@@ -47,34 +72,55 @@ export default function BottomTabBar() {
         <Ionicons name="qr-code" size={30} color="#FFFFFF" />
       </TouchableOpacity>
 
+      {/* Subscriptions Tab */}
       <TouchableOpacity
-        style={[
-          styles.navButton,
-          isActive("subscriptions") && styles.activeNavButton,
-        ]}
+        style={styles.navButton}
         onPress={() => router.push("/(mainUsers)/subscriptions")}
       >
-        <Ionicons
-          name={isActive("subscriptions") ? "card" : "card-outline"}
-          size={26}
-          color="#8B4513"
-        />
-        <Text style={styles.navText}>Subs</Text>
+        <View
+          style={[
+            styles.iconContainer,
+            isActive("subscriptions") && styles.activeIconContainer,
+          ]}
+        >
+          <Ionicons
+            name={isActive("subscriptions") ? "card" : "card-outline"}
+            size={26}
+            color={isActive("subscriptions") ? "#FFFFFF" : "#8B4513"}
+          />
+        </View>
+        <Text
+          style={[
+            styles.navText,
+            isActive("subscriptions") && styles.activeNavText,
+          ]}
+        >
+          Subs
+        </Text>
       </TouchableOpacity>
 
+      {/* Profile Tab */}
       <TouchableOpacity
-        style={[
-          styles.navButton,
-          isActive("profile") && styles.activeNavButton,
-        ]}
+        style={styles.navButton}
         onPress={() => router.push("/(mainUsers)/profile")}
       >
-        <Ionicons
-          name={isActive("profile") ? "person" : "person-outline"}
-          size={26}
-          color="#8B4513"
-        />
-        <Text style={styles.navText}>Profile</Text>
+        <View
+          style={[
+            styles.iconContainer,
+            isActive("profile") && styles.activeIconContainer,
+          ]}
+        >
+          <Ionicons
+            name={isActive("profile") ? "person" : "person-outline"}
+            size={26}
+            color={isActive("profile") ? "#FFFFFF" : "#8B4513"}
+          />
+        </View>
+        <Text
+          style={[styles.navText, isActive("profile") && styles.activeNavText]}
+        >
+          Profile
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -86,26 +132,45 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 70,
+    height: 75, // Slightly increased height
     flexDirection: "row",
     justifyContent: "space-around",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 248, 220, 0.95)", // Light cream, slightly transparent
+    alignItems: "flex-start", // Align items to the top for better icon spacing
+    backgroundColor: "#FFFFFF", // Solid white background
     borderTopWidth: 1,
-    borderTopColor: "rgba(139, 69, 19, 0.1)",
-    paddingBottom: 5, // Adjust for safe area if needed
+    borderTopColor: "#E0D6C7", // Lighter border color
+    paddingTop: 8, // Add padding top
+    paddingBottom: 5, // Keep bottom padding for safe area
+    shadowColor: "#000", // Add subtle shadow
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 5,
   },
   navButton: {
     alignItems: "center",
     flex: 1,
+    paddingTop: 2, // Add slight padding within the button
   },
-  activeNavButton: {
-    opacity: 0.7, // Visual indicator that we're on this screen
+  iconContainer: {
+    width: 40,
+    height: 32,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 16,
+    marginBottom: 3,
+  },
+  activeIconContainer: {
+    backgroundColor: "#8B4513", // Brown background for active icon
   },
   navText: {
-    fontSize: 10,
-    color: "#8B4513",
-    marginTop: 2,
+    fontSize: 11, // Slightly larger text
+    color: "#8B4513", // Default text color
+    fontWeight: "500",
+  },
+  activeNavText: {
+    color: "#321E0E", // Darker text for active
+    fontWeight: "600", // Bold text for active
   },
   qrButton: {
     width: 60,
@@ -114,11 +179,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#8B4513",
     justifyContent: "center",
     alignItems: "center",
-    bottom: 15, // Raise the button slightly
+    bottom: 25, // Raise the button more
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 8,
+    borderWidth: 2,
+    borderColor: "#FFFFFF", // Add white border for definition
   },
 });

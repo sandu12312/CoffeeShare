@@ -3,6 +3,7 @@ import { useCallback } from "react";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { View } from "react-native";
+import { LanguageProvider } from "../context/LanguageContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -22,12 +23,14 @@ export default function RootLayout() {
   }
 
   return (
-    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-        }}
-      />
-    </View>
+    <LanguageProvider>
+      <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+          }}
+        />
+      </View>
+    </LanguageProvider>
   );
 }

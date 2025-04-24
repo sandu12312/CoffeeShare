@@ -11,8 +11,11 @@ import {
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import BottomTabBar from "../../components/BottomTabBar";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function Dashboard() {
+  const { t } = useLanguage();
+
   // Placeholder data - replace with actual data later
   const subscription = {
     type: "Student Pack",
@@ -77,54 +80,74 @@ export default function Dashboard() {
               <Text style={styles.coffeeCount}>
                 {subscription.coffeesLeft}/{subscription.coffeesTotal}
               </Text>
-              <Text style={styles.coffeeText}> coffees left today</Text>
+              <Text style={styles.coffeeText}> {t("coffeesLeftToday")}</Text>
             </View>
             {/* Add progress bar later */}
             <TouchableOpacity style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>Renew Subscription</Text>
+              <Text style={styles.primaryButtonText}>
+                {t("renewSubscription")}
+              </Text>
             </TouchableOpacity>
           </View>
 
           {/* Recommended Cafes Card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Recommended Cafes</Text>
-            {/* Replace with horizontal carousel later */}
+            <View style={styles.cardHeader}>
+              <Ionicons name="star-outline" size={20} color="#8B4513" />
+              <Text style={styles.cardTitle}>{t("recommendedCafes")}</Text>
+            </View>
             {recommendedCafes.map((cafe) => (
-              <View key={cafe.id} style={styles.cafeItem}>
-                <Text style={styles.cafeName}>{cafe.name}</Text>
-                <Text style={styles.cafeDetails}>
-                  {cafe.distance} - {cafe.rating} ★
-                </Text>
+              <View key={cafe.id} style={styles.listItem}>
+                <View style={styles.listItemContent}>
+                  <Text style={styles.listItemTitle}>{cafe.name}</Text>
+                  <Text style={styles.listItemSubtitle}>
+                    {cafe.distance} - {cafe.rating} ★
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#8B4513" />
               </View>
             ))}
             <TouchableOpacity style={styles.textButton}>
-              <Text style={styles.textButtonText}>View All Cafes</Text>
+              <Text style={styles.textButtonText}>{t("viewAllCafes")}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Recent Activity Card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Recent Activity</Text>
+            <View style={styles.cardHeader}>
+              <Ionicons name="receipt-outline" size={20} color="#8B4513" />
+              <Text style={styles.cardTitle}>{t("recentActivity")}</Text>
+            </View>
             {recentActivity.map((activity) => (
-              <View key={activity.id} style={styles.activityItem}>
-                <Text style={styles.activityCafe}>{activity.cafe}</Text>
-                <Text style={styles.activityDate}>{activity.date}</Text>
+              <View key={activity.id} style={styles.listItem}>
+                <View style={styles.listItemContent}>
+                  <Text style={styles.listItemTitle}>{activity.cafe}</Text>
+                  <Text style={styles.listItemSubtitle}>{activity.date}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#8B4513" />
               </View>
             ))}
             <TouchableOpacity style={styles.textButton}>
-              <Text style={styles.textButtonText}>View Full History</Text>
+              <Text style={styles.textButtonText}>{t("viewFullHistory")}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Quick Stats Card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>This Week's Stats</Text>
+            <View style={styles.cardHeader}>
+              <Ionicons name="stats-chart-outline" size={20} color="#8B4513" />
+              <Text style={styles.cardTitle}>{t("thisWeeksStats")}</Text>
+            </View>
             <Text style={styles.statsText}>
-              Total Coffees: {quickStats.coffeesThisWeek} (
-              {quickStats.comparison})
+              {t("totalCoffees")}:{" "}
+              <Text style={styles.statsValue}>
+                {quickStats.coffeesThisWeek}
+              </Text>{" "}
+              ({quickStats.comparison})
             </Text>
             <Text style={styles.statsText}>
-              Favorite Cafe: {quickStats.favoriteCafe}
+              {t("favoriteCafe")}:{" "}
+              <Text style={styles.statsValue}>{quickStats.favoriteCafe}</Text>
             </Text>
             {/* Add simple chart later */}
           </View>
@@ -143,18 +166,21 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    paddingBottom: 75, // Adjusted padding for new tab bar height
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 10, // Adjust as needed for status bar height
+    paddingTop: 15,
     paddingBottom: 10,
-    backgroundColor: "rgba(255, 248, 220, 0.85)", // Light cream, slightly transparent
+    backgroundColor: "rgba(255, 248, 220, 0.9)", // Light cream, slightly transparent
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(139, 69, 19, 0.1)",
   },
   headerLogo: {
-    fontSize: 20,
+    fontSize: 22, // Slightly larger logo text
     fontWeight: "bold",
     color: "#321E0E",
   },
@@ -162,31 +188,42 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   iconButton: {
-    marginLeft: 15,
+    marginLeft: 18, // Increased spacing
   },
   scrollContent: {
     padding: 20,
-    paddingBottom: 80, // Ensure content doesn't hide behind bottom nav
+    paddingBottom: 20, // Reduced bottom padding as container handles tab bar space
   },
   card: {
-    backgroundColor: "rgba(255, 255, 255, 0.9)", // Semi-transparent white
+    backgroundColor: "rgba(255, 255, 255, 0.92)", // Slightly more opaque white
     borderRadius: 15,
-    padding: 15,
+    padding: 18, // Increased padding
     marginBottom: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 }, // Slightly larger shadow
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowRadius: 5,
+    elevation: 3,
+    borderWidth: 1, // Add subtle border
+    borderColor: "rgba(139, 69, 19, 0.1)",
   },
   subscriptionCard: {
-    backgroundColor: "rgba(230, 210, 180, 0.95)", // Slightly darker cream for emphasis
+    backgroundColor: "rgba(230, 210, 180, 0.95)", // Keep emphasis color
+    borderColor: "rgba(139, 69, 19, 0.2)",
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15, // Increased spacing
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(139, 69, 19, 0.1)",
+    paddingBottom: 10,
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "600", // Slightly bolder
     color: "#321E0E",
-    marginBottom: 10,
+    marginLeft: 8, // Add space after icon
   },
   cardSubtitle: {
     fontSize: 14,
@@ -199,18 +236,19 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   coffeeCount: {
-    fontSize: 24,
+    fontSize: 26, // Larger count
     fontWeight: "bold",
     color: "#321E0E",
   },
   coffeeText: {
     fontSize: 14,
     color: "#8B4513",
+    marginLeft: 5,
   },
   primaryButton: {
     backgroundColor: "#8B4513",
-    paddingVertical: 12,
-    borderRadius: 10,
+    paddingVertical: 14, // Increased padding
+    borderRadius: 12,
     alignItems: "center",
     marginTop: 10,
   },
@@ -219,48 +257,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  cafeItem: {
+  listItem: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 8,
+    alignItems: "center",
+    paddingVertical: 12, // Increased padding
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(139, 69, 19, 0.1)",
+    borderBottomColor: "rgba(139, 69, 19, 0.08)", // Lighter border
   },
-  cafeName: {
-    fontSize: 15,
+  listItemContent: {
+    flex: 1, // Allow content to take available space
+    marginRight: 10, // Add space before chevron
+  },
+  listItemTitle: {
+    fontSize: 16, // Larger title
     color: "#321E0E",
+    marginBottom: 2,
   },
-  cafeDetails: {
+  listItemSubtitle: {
     fontSize: 14,
     color: "#8B4513",
   },
   textButton: {
-    marginTop: 10,
+    marginTop: 15, // Increased spacing
+    paddingVertical: 5, // Add padding for easier tapping
     alignItems: "center",
   },
   textButtonText: {
     color: "#8B4513",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  activityItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(139, 69, 19, 0.1)",
-  },
-  activityCafe: {
-    fontSize: 15,
-    color: "#321E0E",
-  },
-  activityDate: {
-    fontSize: 14,
-    color: "#8B4513",
+    fontSize: 15, // Slightly larger
+    fontWeight: "600",
   },
   statsText: {
     fontSize: 15,
     color: "#321E0E",
-    marginBottom: 5,
+    marginBottom: 8,
+  },
+  statsValue: {
+    fontWeight: "bold", // Make stats values stand out
   },
 });
