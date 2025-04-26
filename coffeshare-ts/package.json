@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
+    "@react-native-firebase/app": "^22.0.0",
+    "@react-native-firebase/auth": "^22.0.0",
     "expo": "~52.0.46",
     "expo-constants": "^17.0.8",
     "expo-font": "^13.0.4",
