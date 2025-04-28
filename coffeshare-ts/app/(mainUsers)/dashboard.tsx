@@ -183,14 +183,77 @@ export default function Dashboard() {
               <Text style={styles.profileItem}>
                 Role: {userProfile.role || "User"}
               </Text>
+
+              {/* Subscription Details */}
+              <View style={styles.sectionDivider} />
+              <Text style={styles.sectionTitle}>Subscription</Text>
               <Text style={styles.profileItem}>
-                Account created:{" "}
-                {userProfile.createdAt
-                  ? new Date(
-                      userProfile.createdAt.seconds * 1000
-                    ).toLocaleDateString()
-                  : "Recently"}
+                Type: {userProfile.subscription?.type || "None"}
               </Text>
+              {userProfile.subscription?.isActive && (
+                <>
+                  <Text style={styles.profileItem}>
+                    Status: <Text style={styles.activeText}>Active</Text>
+                  </Text>
+                  <Text style={styles.profileItem}>
+                    Daily Limit: {userProfile.subscription.dailyLimit} coffees
+                  </Text>
+                  <Text style={styles.profileItem}>
+                    Remaining Today: {userProfile.subscription.remainingToday}{" "}
+                    coffees
+                  </Text>
+                  {userProfile.subscription.expiryDate && (
+                    <Text style={styles.profileItem}>
+                      Expires:{" "}
+                      {new Date(
+                        userProfile.subscription.expiryDate.seconds * 1000
+                      ).toLocaleDateString()}
+                    </Text>
+                  )}
+                </>
+              )}
+
+              {/* User Stats */}
+              {userProfile.stats && (
+                <>
+                  <View style={styles.sectionDivider} />
+                  <Text style={styles.sectionTitle}>Your Stats</Text>
+                  <Text style={styles.profileItem}>
+                    Total Coffees: {userProfile.stats.totalCoffees || 0}
+                  </Text>
+                  <Text style={styles.profileItem}>
+                    This Week: {userProfile.stats.weeklyCount || 0}
+                  </Text>
+                  <Text style={styles.profileItem}>
+                    Current Streak: {userProfile.stats.streak || 0} days
+                  </Text>
+                  {userProfile.stats.favoriteCafe && (
+                    <Text style={styles.profileItem}>
+                      Favorite Cafe: {userProfile.stats.favoriteCafe.name}(
+                      {userProfile.stats.favoriteCafe.visitCount} visits)
+                    </Text>
+                  )}
+                </>
+              )}
+
+              {/* Quick Actions */}
+              <View style={styles.actionsContainer}>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => router.push("/(mainUsers)/subscriptions")}
+                >
+                  <Text style={styles.actionButtonText}>
+                    Manage Subscription
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.secondaryButton]}
+                  onPress={() => router.push("/(mainUsers)/profile")}
+                >
+                  <Text style={styles.secondaryButtonText}>Edit Profile</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
 
@@ -326,5 +389,47 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#321E0E",
     marginBottom: 5,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: "#8B4513",
+    marginVertical: 10,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#8B4513",
+    marginBottom: 10,
+  },
+  activeText: {
+    fontWeight: "bold",
+    color: "#008000",
+  },
+  actionsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  actionButton: {
+    backgroundColor: "#8B4513",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+  },
+  actionButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+  },
+  secondaryButton: {
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: "#8B4513",
+  },
+  secondaryButtonText: {
+    color: "#8B4513",
+    fontWeight: "bold",
   },
 });

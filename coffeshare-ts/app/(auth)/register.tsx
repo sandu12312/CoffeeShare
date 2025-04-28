@@ -48,11 +48,21 @@ export default function Register() {
 
     try {
       setLoading(true);
+
+      // Register the user with Firebase Auth and create their profile
       await register(email, password, name);
 
-      // After successful registration, navigate to the appropriate dashboard
-      // You might want to store additional user data in Firestore here
-      router.replace("/(mainUsers)/dashboard");
+      // Show success message
+      Alert.alert(
+        "Registration Successful",
+        "Your account has been created. Welcome to CoffeeShare!",
+        [
+          {
+            text: "Continue",
+            onPress: () => router.replace("/(mainUsers)/dashboard"),
+          },
+        ]
+      );
     } catch (error: any) {
       console.error("Registration error:", error);
       let errorMessage = "Failed to register. Please try again.";

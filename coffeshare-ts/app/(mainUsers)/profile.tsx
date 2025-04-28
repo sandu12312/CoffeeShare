@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -7,11 +7,16 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
 } from "react-native";
 import { Stack, router, Link } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import BottomTabBar from "../../components/BottomTabBar";
 import { useLanguage } from "../../context/LanguageContext";
+import { useFirebase } from "../../context/FirebaseContext";
+import { ActivityType } from "../../types";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -23,55 +28,135 @@ interface MenuItem {
 
 export default function ProfileScreen() {
   const { t } = useLanguage();
+  const { user, userProfile, logout, getActivityLogs } = useFirebase();
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [activityLogs, setActivityLogs] = useState<any[]>([]);
 
-  // Placeholder user data
-  const user = {
-    name: "Alex Johnson",
-    email: "alex.johnson@example.com",
-    memberSince: "January 2023",
-    totalCoffees: 42,
-    favoriteCafe: "Cafe Central",
+  const fetchActivityLogs = async () => {
+    try {
+      const logs = await getActivityLogs(5);
+      setActivityLogs(logs);
+    } catch (error) {
+      console.error("Error fetching activity logs:", error);
+    }
   };
 
-  const handleLogout = () => {
-    // Add actual logout logic here (e.g., clear tokens, reset state)
-    console.log("Logging out...");
-    // Navigate to the login screen after logout
-    router.replace("/(auth)/login");
+  useEffect(() => {
+    fetchActivityLogs();
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchActivityLogs();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return "";
+
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const handleLogout = async () => {
+    try {
+      setLoading(true);
+      await logout();
+      router.replace("/(auth)/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      Alert.alert("Error", "Failed to log out. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const menuItems: MenuItem[] = [
     {
       title: t("accountSettings"),
       icon: "person-outline",
-      onPress: () => router.push("/AccountSettings"),
+      onPress: () => router.push("/(mainUsers)/AccountSettings"),
     },
     {
-      title: t("language"),
-      icon: "language-outline",
-      onPress: () => router.push("/AccountSettings/Language"),
+      title: t("subscriptions"),
+      icon: "card-outline",
+      onPress: () => router.push("/(mainUsers)/subscriptions"),
     },
     {
       title: t("notifications"),
       icon: "notifications-outline",
-      onPress: () => router.push("/AccountSettings/Notifications"),
+      onPress: () => router.push("/(mainUsers)/AccountSettings/Notifications"),
     },
     {
       title: t("privacy"),
       icon: "shield-outline",
-      onPress: () => router.push("/AccountSettings/Privacy"),
+      onPress: () => router.push("/(mainUsers)/AccountSettings/Privacy"),
     },
     {
       title: t("help"),
       icon: "help-circle-outline",
-      onPress: () => router.push("/AccountSettings/Help"),
+      onPress: () => router.push("/(mainUsers)/AccountSettings/Help"),
     },
     {
       title: t("about"),
       icon: "information-circle-outline",
-      onPress: () => router.push("/AccountSettings/About"),
+      onPress: () => router.push("/(mainUsers)/AccountSettings/About"),
     },
   ];
+
+  const getActivityIcon = (type: ActivityType) => {
+    switch (type) {
+      case ActivityType.COFFEE_REDEMPTION:
+        return "cafe-outline";
+      case ActivityType.LOGIN:
+        return "log-in-outline";
+      case ActivityType.LOGOUT:
+        return "log-out-outline";
+      case ActivityType.PROFILE_UPDATE:
+        return "person-outline";
+      case ActivityType.SUBSCRIPTION_PURCHASE:
+      case ActivityType.SUBSCRIPTION_RENEWAL:
+        return "card-outline";
+      default:
+        return "document-text-outline";
+    }
+  };
+
+  const formatActivityText = (activity: any) => {
+    switch (activity.type) {
+      case ActivityType.COFFEE_REDEMPTION:
+        return `Enjoyed coffee at ${activity.cafeName || "a coffee shop"}`;
+      case ActivityType.LOGIN:
+        return "Logged in to app";
+      case ActivityType.LOGOUT:
+        return "Logged out of app";
+      case ActivityType.PROFILE_UPDATE:
+        return "Updated profile information";
+      case ActivityType.SUBSCRIPTION_PURCHASE:
+        return `Purchased ${activity.subscriptionType || "a"} subscription`;
+      case ActivityType.SUBSCRIPTION_RENEWAL:
+        return `Renewed ${activity.subscriptionType || "a"} subscription`;
+      default:
+        return activity.type?.replace(/_/g, " ").toLowerCase() || "Activity";
+    }
+  };
+
+  if (!userProfile) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#8B4513" />
+        <Text style={styles.loadingText}>Loading profile...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -81,18 +166,33 @@ export default function ProfileScreen() {
         <Text style={styles.customHeaderTitle}>{t("profile")}</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
-            <Image
-              source={require("../../assets/images/logo.png")}
-              style={styles.avatar}
-            />
+            {userProfile.photoURL ? (
+              <Image
+                source={{ uri: userProfile.photoURL }}
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={styles.placeholderAvatar}>
+                <Text style={styles.placeholderText}>
+                  {userProfile.displayName
+                    ? userProfile.displayName.charAt(0).toUpperCase()
+                    : "U"}
+                </Text>
+              </View>
+            )}
           </View>
-          <Text style={styles.userName}>{user.name}</Text>
-          <Text style={styles.userEmail}>{user.email}</Text>
+          <Text style={styles.userName}>{userProfile.displayName}</Text>
+          <Text style={styles.userEmail}>{userProfile.email}</Text>
           <Text style={styles.memberSince}>
-            {t("memberSince")} {user.memberSince}
+            {t("memberSince")} {formatDate(userProfile.createdAt)}
           </Text>
         </View>
 
@@ -104,7 +204,9 @@ export default function ProfileScreen() {
               color="#8B4513"
               style={styles.statIcon}
             />
-            <Text style={styles.statValue}>{user.totalCoffees}</Text>
+            <Text style={styles.statValue}>
+              {userProfile.stats?.totalCoffees || 0}
+            </Text>
             <Text style={styles.statLabel}>{t("totalCoffees")}</Text>
           </View>
           <View style={styles.statDivider} />
@@ -120,10 +222,87 @@ export default function ProfileScreen() {
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              {user.favoriteCafe}
+              {userProfile.stats?.favoriteCafe?.name || "None yet"}
             </Text>
             <Text style={styles.statLabel}>{t("favoriteCafe")}</Text>
           </View>
+        </View>
+
+        {/* Subscription Card */}
+        <View style={styles.subscriptionCard}>
+          <Text style={styles.sectionTitle}>Your Subscription</Text>
+          <View style={styles.subscriptionDetails}>
+            <View style={styles.subscriptionRow}>
+              <Text style={styles.subscriptionLabel}>Plan:</Text>
+              <Text style={styles.subscriptionValue}>
+                {userProfile.subscription?.type || "None"}
+              </Text>
+            </View>
+
+            {userProfile.subscription?.type !== "None" && (
+              <>
+                <View style={styles.subscriptionRow}>
+                  <Text style={styles.subscriptionLabel}>Status:</Text>
+                  <Text
+                    style={[
+                      styles.subscriptionValue,
+                      userProfile.subscription?.isActive
+                        ? styles.activeText
+                        : styles.inactiveText,
+                    ]}
+                  >
+                    {userProfile.subscription?.isActive ? "Active" : "Inactive"}
+                  </Text>
+                </View>
+
+                <View style={styles.subscriptionRow}>
+                  <Text style={styles.subscriptionLabel}>Daily Limit:</Text>
+                  <Text style={styles.subscriptionValue}>
+                    {userProfile.subscription?.dailyLimit || 0} coffees
+                  </Text>
+                </View>
+
+                {userProfile.subscription?.expiryDate && (
+                  <View style={styles.subscriptionRow}>
+                    <Text style={styles.subscriptionLabel}>Expires:</Text>
+                    <Text style={styles.subscriptionValue}>
+                      {formatDate(userProfile.subscription.expiryDate)}
+                    </Text>
+                  </View>
+                )}
+              </>
+            )}
+          </View>
+        </View>
+
+        {/* Recent Activity Section */}
+        <View style={styles.activityCard}>
+          <Text style={styles.sectionTitle}>Recent Activity</Text>
+          {activityLogs.length > 0 ? (
+            <View style={styles.activityList}>
+              {activityLogs.map((activity, index) => (
+                <View key={index} style={styles.activityItem}>
+                  <View style={styles.activityIconContainer}>
+                    <Ionicons
+                      name={getActivityIcon(activity.type)}
+                      size={16}
+                      color="#FFFFFF"
+                    />
+                  </View>
+                  <View style={styles.activityDetails}>
+                    <Text style={styles.activityText}>
+                      {formatActivityText(activity)}
+                    </Text>
+                    <Text style={styles.activityTime}>
+                      {formatDate(activity.timestamp)}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.noActivityText}>No recent activity</Text>
+          )}
         </View>
 
         <View style={styles.settingsCard}>
@@ -143,11 +322,21 @@ export default function ProfileScreen() {
             ))}
           </View>
 
-          <TouchableOpacity style={styles.settingItem} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={22} color="#C0392B" />
-            <Text style={[styles.settingText, styles.logoutText]}>
-              {t("logout")}
-            </Text>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={handleLogout}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#C0392B" />
+            ) : (
+              <>
+                <Ionicons name="log-out-outline" size={22} color="#C0392B" />
+                <Text style={[styles.settingText, styles.logoutText]}>
+                  {t("logout")}
+                </Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -162,6 +351,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F5F5F5",
     paddingBottom: 75,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
+  },
+  loadingText: {
+    marginTop: 10,
+    color: "#8B4513",
+    fontSize: 16,
   },
   customHeader: {
     paddingHorizontal: 20,
@@ -201,7 +401,19 @@ const styles = StyleSheet.create({
   avatar: {
     width: "100%",
     height: "100%",
-    resizeMode: "contain",
+    resizeMode: "cover",
+  },
+  placeholderAvatar: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#8B4513",
+  },
+  placeholderText: {
+    fontSize: 48,
+    color: "#FFFFFF",
+    fontWeight: "bold",
   },
   userName: {
     fontSize: 24,
@@ -257,6 +469,101 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#8B4513",
     textAlign: "center",
+  },
+  subscriptionCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "rgba(139, 69, 19, 0.1)",
+  },
+  subscriptionDetails: {
+    marginTop: 10,
+  },
+  subscriptionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(139, 69, 19, 0.1)",
+  },
+  subscriptionLabel: {
+    fontSize: 16,
+    color: "#321E0E",
+  },
+  subscriptionValue: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#321E0E",
+  },
+  activeText: {
+    color: "#27AE60",
+  },
+  inactiveText: {
+    color: "#E74C3C",
+  },
+  activityCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "rgba(139, 69, 19, 0.1)",
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#321E0E",
+    marginBottom: 5,
+  },
+  activityList: {
+    marginTop: 10,
+  },
+  activityItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(139, 69, 19, 0.1)",
+  },
+  activityIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#8B4513",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  activityDetails: {
+    flex: 1,
+  },
+  activityText: {
+    fontSize: 14,
+    color: "#321E0E",
+  },
+  activityTime: {
+    fontSize: 12,
+    color: "#8B4513",
+    opacity: 0.7,
+    marginTop: 2,
+  },
+  noActivityText: {
+    padding: 10,
+    textAlign: "center",
+    color: "#8B4513",
+    fontStyle: "italic",
   },
   settingsCard: {
     backgroundColor: "#FFFFFF",

@@ -9,34 +9,19 @@ import {
   User,
   updateProfile,
 } from "firebase/auth";
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  getDoc,
-  updateDoc,
-  serverTimestamp,
-} from "firebase/firestore";
 import { initializeApp } from "firebase/app";
 import { firebaseConfig } from "../config/firebase";
+import userProfileService from "../services/userProfileService";
+import {
+  UserProfile,
+  ActivityType,
+  ActivityLog,
+  UserNotification,
+} from "../types";
 
 // Initialize Firebase app and auth
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
-
-// User profile type
-export interface UserProfile {
-  uid: string;
-  email: string;
-  displayName?: string;
-  photoURL?: string;
-  phoneNumber?: string;
-  createdAt: any;
-  updatedAt: any;
-  favorites?: string[];
-  role?: "user" | "partner" | "admin";
-}
 
 // Create context
 interface FirebaseContextType {
@@ -47,7 +32,22 @@ interface FirebaseContextType {
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
+  updateUserProfile: (data: Partial<UserProfile>) => Promise<UserProfile>;
+  updateSubscription: (data: any) => Promise<UserProfile>;
+  getActivityLogs: (
+    limit?: number,
+    type?: ActivityType
+  ) => Promise<ActivityLog[]>;
+  getNotifications: (limit?: number) => Promise<UserNotification[]>;
+  markNotificationAsRead: (notificationId: string) => Promise<void>;
+  canRedeemCoffee: () => Promise<{ canRedeem: boolean; reason?: string }>;
+  generateQRCode: (cafeId: string, productId?: string) => Promise<any>;
+  redeemCoffee: (
+    cafeId: string,
+    cafeName: string,
+    productId?: string,
+    productName?: string
+  ) => Promise<void>;
 }
 
 const FirebaseContext = createContext<FirebaseContextType | undefined>(
@@ -62,26 +62,36 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch user profile data from Firestore
-  const fetchUserProfile = async (uid: string) => {
-    try {
-      const userDoc = await getDoc(doc(db, "users", uid));
-      if (userDoc.exists()) {
-        setUserProfile(userDoc.data() as UserProfile);
-      }
-    } catch (error) {
-      console.error("Error fetching user profile:", error);
-    }
-  };
-
+  // Fetch user profile when auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+
       if (user) {
-        fetchUserProfile(user.uid);
+        try {
+          // Get user profile from Firestore
+          const profile = await userProfileService.getCurrentUserProfile();
+          setUserProfile(profile);
+
+          // Check if we need to reset the daily coffee count
+          await userProfileService.resetDailyCoffeeCount();
+
+          // Log login activity if appropriate
+          if (!profile) {
+            // This might be a first login after registration, so don't log
+          } else {
+            await userProfileService.logActivity({
+              type: ActivityType.LOGIN,
+              status: "completed",
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+        }
       } else {
         setUserProfile(null);
       }
+
       setLoading(false);
     });
 
@@ -112,20 +122,11 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
         displayName: name,
       });
 
-      // Create a user document in Firestore
-      const userProfile: UserProfile = {
-        uid: user.uid,
-        email: email,
+      // Create a user profile in Firestore
+      await userProfileService.createUserProfile({
         displayName: name,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        role: "user", // Default role
-      };
-
-      await setDoc(doc(db, "users", user.uid), userProfile);
-
-      // Update local state
-      setUserProfile(userProfile);
+        role: "user",
+      });
     } catch (error) {
       console.error("Registration error:", error);
       throw error;
@@ -134,6 +135,15 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const logout = async () => {
     try {
+      // Log the logout activity
+      if (user) {
+        await userProfileService.logActivity({
+          type: ActivityType.LOGOUT,
+          status: "completed",
+        });
+      }
+
+      // Sign out
       await signOut(auth);
     } catch (error) {
       console.error("Logout error:", error);
@@ -144,40 +154,61 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
   const resetPassword = async (email: string) => {
     try {
       await sendPasswordResetEmail(auth, email);
+
+      // Log the password reset activity
+      if (user) {
+        await userProfileService.logActivity({
+          type: ActivityType.PASSWORD_RESET,
+          status: "completed",
+        });
+      }
     } catch (error) {
       console.error("Password reset error:", error);
       throw error;
     }
   };
 
+  // Wrapper functions for userProfileService
   const updateUserProfile = async (data: Partial<UserProfile>) => {
-    if (!user) throw new Error("No user is logged in");
+    return await userProfileService.updateUserProfile(data);
+  };
 
-    try {
-      // Update the Firestore document
-      await updateDoc(doc(db, "users", user.uid), {
-        ...data,
-        updatedAt: serverTimestamp(),
-      });
+  const updateSubscription = async (data: any) => {
+    return await userProfileService.updateSubscription(data);
+  };
 
-      // If name is being updated, also update the Auth display name
-      if (data.displayName) {
-        await updateProfile(user, {
-          displayName: data.displayName,
-        });
-      }
+  const getActivityLogs = async (limit?: number, type?: ActivityType) => {
+    return await userProfileService.getUserActivityLogs(limit, type);
+  };
 
-      // Update local state
-      if (userProfile) {
-        setUserProfile({
-          ...userProfile,
-          ...data,
-        });
-      }
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      throw error;
-    }
+  const getNotifications = async (limit?: number) => {
+    return await userProfileService.getUserNotifications(limit);
+  };
+
+  const markNotificationAsRead = async (notificationId: string) => {
+    return await userProfileService.markNotificationAsRead(notificationId);
+  };
+
+  const canRedeemCoffee = async () => {
+    return await userProfileService.canRedeemCoffee();
+  };
+
+  const generateQRCode = async (cafeId: string, productId?: string) => {
+    return await userProfileService.generateQRCode(cafeId, productId);
+  };
+
+  const redeemCoffee = async (
+    cafeId: string,
+    cafeName: string,
+    productId?: string,
+    productName?: string
+  ) => {
+    return await userProfileService.redeemCoffee(
+      cafeId,
+      cafeName,
+      productId,
+      productName
+    );
   };
 
   const value = {
@@ -189,6 +220,13 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
     logout,
     resetPassword,
     updateUserProfile,
+    updateSubscription,
+    getActivityLogs,
+    getNotifications,
+    markNotificationAsRead,
+    canRedeemCoffee,
+    generateQRCode,
+    redeemCoffee,
   };
 
   return (
