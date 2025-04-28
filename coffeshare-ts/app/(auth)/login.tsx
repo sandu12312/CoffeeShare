@@ -44,7 +44,7 @@ export default function Login() {
           router.push("/dashboard");
           break;
         case "user":
-          router.push("/dashboard");
+          router.push("/(mainUsers)/dashboard");
           break;
         default:
           router.push("/dashboard");

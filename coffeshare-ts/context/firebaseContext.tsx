@@ -27,7 +27,11 @@ interface FirebaseContextType {
   userProfile: UserProfile | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ role: string }>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    name: string
+  ) => Promise<{ success: boolean }>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<UserProfile>;
@@ -130,11 +134,16 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
         displayName: name,
       });
 
-      // Create a user profile in Firestore
-      await userProfileService.createUserProfile({
+      // Create a user profile in Firestore with minimal data first
+      // This allows us to redirect the user faster
+      await userProfileService.createBasicUserProfile({
         displayName: name,
         role: "user",
       });
+
+      // Return success immediately after basic profile creation
+      // Additional profile data will be loaded in the background
+      return { success: true };
     } catch (error) {
       console.error("Registration error:", error);
       throw error;

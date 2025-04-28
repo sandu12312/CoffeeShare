@@ -262,7 +262,7 @@ CoffeeShare
   - Istoric activitate
   - Conexiuni: → Setări, → Istoric Cafele, → Abonamente
 
-- **Abonamente**
+- **Abonamente**a
 
   - Lista abonamentelor disponibile
   - Detalii abonament curent

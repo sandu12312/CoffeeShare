@@ -741,6 +741,56 @@ class UserProfileService {
       throw error;
     }
   }
+
+  /**
+   * Create a basic user profile with minimal data for faster registration
+   * This is used during the initial registration process
+   */
+  async createBasicUserProfile(
+    data: Partial<UserProfile>
+  ): Promise<UserProfile> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("No authenticated user found");
+
+    const now = serverTimestamp();
+    const userRef = doc(db, "users", user.uid);
+
+    // Create minimal profile structure
+    const newProfile: UserProfile = {
+      uid: user.uid,
+      email: user.email || "",
+      displayName: user.displayName || data.displayName || "",
+      createdAt: now,
+      updatedAt: now,
+      role: data.role || "user",
+    };
+
+    try {
+      // Create the user document with minimal data
+      await setDoc(userRef, newProfile);
+
+      // Schedule the full profile creation in the background
+      setTimeout(async () => {
+        try {
+          // Create the full profile with all default values
+          await this.createUserProfile(data);
+
+          // Log the registration activity
+          await this.logActivity({
+            type: ActivityType.REGISTRATION,
+            status: "completed",
+          });
+        } catch (error) {
+          console.error("Error creating full user profile:", error);
+        }
+      }, 1000); // Delay by 1 second to prioritize UI responsiveness
+
+      return newProfile;
+    } catch (error) {
+      console.error("Error creating basic user profile:", error);
+      throw error;
+    }
+  }
 }
 
 /**

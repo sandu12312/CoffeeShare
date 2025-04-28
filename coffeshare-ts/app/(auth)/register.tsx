@@ -50,19 +50,26 @@ export default function Register() {
       setLoading(true);
 
       // Register the user with Firebase Auth and create their profile
-      await register(email, password, name);
+      const result = await register(email, password, name);
 
-      // Show success message
-      Alert.alert(
-        "Registration Successful",
-        "Your account has been created. Welcome to CoffeeShare!",
-        [
-          {
-            text: "Continue",
-            onPress: () => router.replace("/(mainUsers)/dashboard"),
-          },
-        ]
-      );
+      if (result.success) {
+        // Show success message
+        Alert.alert(
+          "Registration Successful",
+          "Your account has been created. Welcome to CoffeeShare!",
+          [
+            {
+              text: "Continue",
+              onPress: () => router.replace("/(mainUsers)/dashboard"),
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          "Registration Error",
+          "Failed to create your account. Please try again."
+        );
+      }
     } catch (error: any) {
       console.error("Registration error:", error);
       let errorMessage = "Failed to register. Please try again.";
@@ -202,13 +209,14 @@ export default function Register() {
               onPress={handleRegister}
               disabled={loading}
             >
-              <Text style={styles.registerButtonText}>
-                {loading ? (
+              {loading ? (
+                <View style={styles.loadingContainer}>
                   <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  "Register"
-                )}
-              </Text>
+                  <Text style={styles.loadingText}>Creating Account...</Text>
+                </View>
+              ) : (
+                <Text style={styles.registerButtonText}>Register</Text>
+              )}
             </TouchableOpacity>
 
             <View style={styles.loginContainer}>
@@ -320,5 +328,15 @@ const styles = StyleSheet.create({
     color: "#321E0E",
     fontSize: 14,
     fontWeight: "bold",
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    color: "#FFFFFF",
+    marginLeft: 10,
+    fontSize: 16,
   },
 });
