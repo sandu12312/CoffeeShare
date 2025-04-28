@@ -167,6 +167,25 @@ export default function ManageCafesScreen() {
     setActionInProgressId(request.id);
     try {
       await adminService.transferPartnershipRequestToCafe(request.id);
+      // Create partner account with email and random password
+      const password =
+        Math.random().toString(36).slice(-12) +
+        Math.random().toString(36).toUpperCase().slice(-4) +
+        Math.random().toString(36).slice(-8) +
+        "!@#$%^&*".charAt(Math.floor(Math.random() * 8));
+
+      // Create user account in Firebase Auth and Firestore users collection
+      await adminService.activateCafePartner(
+        request.id,
+        request.email,
+        password
+      );
+
+      // Show password to admin so they can communicate it to the partner
+      Alert.alert(
+        "Partner Account Created",
+        `Please securely share these credentials with the partner:\n\nEmail: ${request.email}\nPassword: ${password}\n\nMake sure they change their password on first login.`
+      );
       Alert.alert(
         "Success",
         `${request.businessName} approved and added as an active cafe.`

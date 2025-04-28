@@ -79,7 +79,7 @@ export default function Login() {
           router.push("/dashboard");
           break;
         case "partner":
-          router.push("/dashboard");
+          router.push("/(mainCoffeePartners)/dashboard");
           break;
         case "user":
           router.push("/(mainUsers)/dashboard");

@@ -27,8 +27,8 @@ service cloud.firestore {
     
     // User profiles
     match /users/{userId} {
-      // Anyone can create a profile
-      allow create: if isAuth() && request.auth.uid == userId;
+      // Anyone can create a profile, including admins creating profiles for others
+      allow create: if isAuth() && (request.auth.uid == userId || isAdmin());
       
       // Users can read and update their own profile
       allow read, update: if isOwner(userId) || isAdmin();
@@ -39,7 +39,7 @@ service cloud.firestore {
     
     // Activity logs - only accessible by the user or admins
     match /activityLogs/{logId} {
-      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow create: if isAuth() && (request.resource.data.userId == request.auth.uid || isAdmin());
       allow read: if isAuth() && (
         request.auth.uid == resource.data.userId || isAdmin()
       );
@@ -49,7 +49,7 @@ service cloud.firestore {
     // Notifications - only accessible by the user
     match /notifications/{notificationId} {
       allow read, update: if isAuth() && resource.data.userId == request.auth.uid;
-      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow create: if isAuth() && (request.resource.data.userId == request.auth.uid || isAdmin());
       allow delete: if isAdmin();
     }
     
