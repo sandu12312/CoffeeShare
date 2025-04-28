@@ -9,11 +9,14 @@ import {
   Platform,
   ScrollView,
   ImageBackground,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import React, { useState } from "react";
 import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
+import { useFirebase } from "../../context/FirebaseContext";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -22,14 +25,50 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = () => {
-    // TODO: Implement actual registration logic with Firebase
-    console.log("Registering with:", email, password);
+  const { register } = useFirebase();
 
-    // For UI testing purposes, navigate directly to the coffee partner dashboard
-    router.replace("/(mainCoffeePartners)/dashboard");
-    // router.replace("/(mainUsers)/dashboard"); // Original navigation
+  const handleRegister = async () => {
+    // Validate inputs
+    if (!name || !email || !password || !confirmPassword) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match");
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters long");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await register(email, password, name);
+
+      // After successful registration, navigate to the appropriate dashboard
+      // You might want to store additional user data in Firestore here
+      router.replace("/(mainUsers)/dashboard");
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      let errorMessage = "Failed to register. Please try again.";
+
+      if (error.code === "auth/email-already-in-use") {
+        errorMessage = "An account with this email already exists.";
+      } else if (error.code === "auth/invalid-email") {
+        errorMessage = "Please enter a valid email address.";
+      } else if (error.code === "auth/weak-password") {
+        errorMessage = "Password is too weak. Please use a stronger password.";
+      }
+
+      Alert.alert("Registration Error", errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogin = () => {
@@ -151,8 +190,15 @@ export default function Register() {
             <TouchableOpacity
               style={styles.registerButton}
               onPress={handleRegister}
+              disabled={loading}
             >
-              <Text style={styles.registerButtonText}>Register</Text>
+              <Text style={styles.registerButtonText}>
+                {loading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  "Register"
+                )}
+              </Text>
             </TouchableOpacity>
 
             <View style={styles.loginContainer}>

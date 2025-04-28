@@ -9,21 +9,47 @@ import {
   Platform,
   ScrollView,
   ImageBackground,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import React, { useState } from "react";
 import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
+import { useFirebase } from "../../context/FirebaseContext";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleResetPassword = () => {
-    // TODO: Implement password reset logic
-    console.log("Reset password for:", email);
-    // For now, just show success message
-    setIsSubmitted(true);
+  const { resetPassword } = useFirebase();
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      Alert.alert("Error", "Please enter your email address");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await resetPassword(email);
+      setIsSubmitted(true);
+    } catch (error: any) {
+      console.error("Password reset error:", error);
+      let errorMessage =
+        "Failed to send password reset email. Please try again.";
+
+      if (error.code === "auth/user-not-found") {
+        errorMessage = "No account found with this email address.";
+      } else if (error.code === "auth/invalid-email") {
+        errorMessage = "Please enter a valid email address.";
+      }
+
+      Alert.alert("Password Reset Error", errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBackToLogin = () => {
@@ -84,8 +110,15 @@ export default function ForgotPassword() {
                 <TouchableOpacity
                   style={styles.resetButton}
                   onPress={handleResetPassword}
+                  disabled={loading}
                 >
-                  <Text style={styles.resetButtonText}>Reset Password</Text>
+                  <Text style={styles.resetButtonText}>
+                    {loading ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      "Reset Password"
+                    )}
+                  </Text>
                 </TouchableOpacity>
               </>
             ) : (

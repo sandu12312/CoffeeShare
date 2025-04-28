@@ -1,21 +1,22 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+import { getFirestore } from "firebase/firestore";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyBsWM2zsYQMk6CC8HtH4vLRJc6AHJL_qns",
-  authDomain: "coffeeshare-6e74d.firebaseapp.com",
-  projectId: "coffeeshare-6e74d",
-  storageBucket: "coffeeshare-6e74d.firebasestorage.app",
-  messagingSenderId: "142812803794",
-  appId: "1:142812803794:web:4e4db6e03c7cf13448730b",
-  measurementId: "G-TVDYXD475T",
+export const firebaseConfig = {
+  apiKey: "AIzaSyB4rX3X7RBfjDWLJ62GympGJRauwjFbV6I",
+  authDomain: "coffeeshare-b4098.firebaseapp.com",
+  projectId: "coffeeshare-b4098",
+  storageBucket: "coffeeshare-b4098.firebasestorage.app",
+  messagingSenderId: "947075506777",
+  appId: "1:947075506777:web:b6ef9fa0ae586fd574c748",
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+const db = getFirestore(app);
+
+export { app, db };

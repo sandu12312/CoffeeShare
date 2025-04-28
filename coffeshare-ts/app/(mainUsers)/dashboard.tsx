@@ -16,6 +16,7 @@ import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import BottomTabBar from "../../components/BottomTabBar";
 import { useLanguage } from "../../context/LanguageContext";
+import { useFirebase } from "../../context/FirebaseContext";
 import SubscriptionCard from "../../components/SubscriptionCard";
 import RecommendedCafesCard from "../../components/RecommendedCafesCard";
 import RecentActivityCard from "../../components/RecentActivityCard";
@@ -25,6 +26,7 @@ const HEADER_HEIGHT = 80;
 
 export default function Dashboard() {
   const { t } = useLanguage();
+  const { user, userProfile, logout } = useFirebase();
   const scrollOffsetY = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
 
@@ -46,6 +48,15 @@ export default function Dashboard() {
       },
     }
   );
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.replace("/(auth)/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   // Placeholder data - replace with actual data later
   const subscription = {
@@ -94,6 +105,10 @@ export default function Dashboard() {
     // Navigate to activity details
   };
 
+  const handleProfilePress = () => {
+    router.push("/(mainUsers)/profile");
+  };
+
   return (
     <ImageBackground
       source={require("../../assets/images/coffee-beans-textured-background.jpg")}
@@ -122,7 +137,10 @@ export default function Dashboard() {
                 style={styles.iconShadow}
               />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={handleProfilePress}
+            >
               <Ionicons
                 name="person-outline"
                 size={26}
@@ -140,6 +158,42 @@ export default function Dashboard() {
           scrollEventThrottle={16} // Optimize scroll event frequency
           showsVerticalScrollIndicator={false}
         >
+          {/* User Welcome Section */}
+          <View style={styles.welcomeContainer}>
+            <Text style={styles.welcomeText}>
+              Welcome,{" "}
+              {userProfile?.displayName || user?.displayName || "Coffee Lover"}!
+            </Text>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+            >
+              <Text style={styles.logoutText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* User Profile Card */}
+          {userProfile && (
+            <View style={styles.profileCard}>
+              <Text style={styles.profileCardTitle}>Your Profile</Text>
+              <Text style={styles.profileItem}>Email: {userProfile.email}</Text>
+              <Text style={styles.profileItem}>
+                Name: {userProfile.displayName || "Not set"}
+              </Text>
+              <Text style={styles.profileItem}>
+                Role: {userProfile.role || "User"}
+              </Text>
+              <Text style={styles.profileItem}>
+                Account created:{" "}
+                {userProfile.createdAt
+                  ? new Date(
+                      userProfile.createdAt.seconds * 1000
+                    ).toLocaleDateString()
+                  : "Recently"}
+              </Text>
+            </View>
+          )}
+
           {/* Subscription Card */}
           <SubscriptionCard
             type={subscription.type}
@@ -226,5 +280,51 @@ const styles = StyleSheet.create({
     paddingTop: HEADER_HEIGHT + 10, // Ensure content starts below floating header
     paddingHorizontal: 20,
     paddingBottom: 20,
+  },
+  welcomeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  welcomeText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    textShadowColor: "rgba(50, 30, 14, 0.7)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  logoutButton: {
+    backgroundColor: "rgba(139, 69, 19, 0.7)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+  },
+  logoutText: {
+    color: "#FFFFFF",
+    fontWeight: "500",
+  },
+  profileCard: {
+    backgroundColor: "rgba(255, 248, 220, 0.85)",
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  profileCardTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#8B4513",
+    marginBottom: 10,
+  },
+  profileItem: {
+    fontSize: 14,
+    color: "#321E0E",
+    marginBottom: 5,
   },
 });

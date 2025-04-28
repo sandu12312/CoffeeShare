@@ -9,31 +9,59 @@ import {
   Platform,
   ScrollView,
   ImageBackground,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Button from "../../components/Button";
+import { useFirebase } from "../../context/FirebaseContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    // TODO: Implement login logic
-    // console.log("Login pressed");
-    router.push("/(mainUsers)/dashboard");
+  const { login } = useFirebase();
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Please enter both email and password");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await login(email, password);
+      router.push("/(mainUsers)/dashboard");
+    } catch (error: any) {
+      console.error("Login error:", error);
+      let errorMessage = "Failed to login. Please try again.";
+
+      if (error.code === "auth/invalid-credential") {
+        errorMessage = "Invalid email or password.";
+      } else if (error.code === "auth/user-not-found") {
+        errorMessage = "No account found with this email.";
+      } else if (error.code === "auth/wrong-password") {
+        errorMessage = "Incorrect password.";
+      } else if (error.code === "auth/too-many-requests") {
+        errorMessage =
+          "Too many failed login attempts. Please try again later.";
+      }
+
+      Alert.alert("Login Error", errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleForgotPassword = () => {
-    // TODO: Implement actual forgot password logic later if needed
-    // For now, navigate to the main Administrator dashboard
-    router.push("/(admin)/dashboard");
-    // console.log("Forgot Password pressed");
+    router.push("/(auth)/forgot_password");
   };
 
   const handleRegister = () => {
-    router.push("/register");
+    router.push("/(auth)/register");
   };
 
   const handleGoogleLogin = () => {
