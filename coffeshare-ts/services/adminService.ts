@@ -460,8 +460,21 @@ class AdminService {
 
       const snapshot = await getDocs(cafesQuery);
       const cafes: CafeData[] = [];
+
       snapshot.forEach((doc) => {
-        cafes.push({ id: doc.id, ...(doc.data() as Omit<CafeData, "id">) });
+        try {
+          const data = doc.data();
+          // Add a default value for createdAt if it's missing
+          const cafeData = {
+            ...data,
+            id: doc.id,
+            createdAt: data.createdAt || Timestamp.now(),
+          } as CafeData;
+          cafes.push(cafeData);
+        } catch (docError) {
+          console.error(`Error processing cafe document ${doc.id}:`, docError);
+          // Skip this document and continue with others
+        }
       });
 
       const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1] || null;
@@ -469,7 +482,8 @@ class AdminService {
       return { cafes, lastVisible: lastVisibleDoc };
     } catch (error) {
       console.error(`Error fetching all cafes:`, error);
-      throw error;
+      // Return empty array instead of throwing error
+      return { cafes: [], lastVisible: null };
     }
   }
 
@@ -660,7 +674,7 @@ class AdminService {
         email: requestData.email,
         phone: requestData.phone,
         address: requestData.address,
-        status: "active",
+        status: "active", // Set status to active
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       };
@@ -678,7 +692,7 @@ class AdminService {
       await batch.commit();
 
       console.log(
-        `Partnership request ${requestId} transferred to cafes collection`
+        `Partnership request ${requestId} transferred to cafes collection as active cafe`
       );
     } catch (error) {
       console.error("Error transferring partnership request:", error);
@@ -688,8 +702,17 @@ class AdminService {
 
   async deletePartnershipRequest(requestId: string): Promise<void> {
     try {
-      await deleteDoc(doc(db, "partnership_requests", requestId));
-      console.log("Partnership request deleted successfully");
+      // Get the partnership request first to check if it exists
+      const requestRef = doc(db, "partnership_requests", requestId);
+      const requestDoc = await getDoc(requestRef);
+
+      if (!requestDoc.exists()) {
+        throw new Error("Partnership request not found");
+      }
+
+      // Delete the partnership request
+      await deleteDoc(requestRef);
+      console.log(`Partnership request ${requestId} deleted successfully`);
     } catch (error) {
       console.error("Error deleting partnership request:", error);
       throw error;

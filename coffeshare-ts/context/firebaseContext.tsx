@@ -8,6 +8,7 @@ import {
   sendPasswordResetEmail,
   User,
   updateProfile,
+  sendEmailVerification,
 } from "firebase/auth";
 import { app } from "../config/firebase";
 import userProfileService from "../services/userProfileService";
@@ -33,9 +34,10 @@ interface FirebaseContextType {
     email: string,
     password: string,
     name: string
-  ) => Promise<{ success: boolean }>;
+  ) => Promise<{ success: boolean; verificationSent: boolean }>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  sendVerificationEmail: () => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<UserProfile>;
   updateSubscription: (data: any) => Promise<UserProfile>;
   getActivityLogs: (
@@ -139,21 +141,22 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
       );
       const user = userCredential.user;
 
+      // Send verification email
+      await sendEmailVerification(user);
+
       // Update the user profile with display name
       await updateProfile(user, {
         displayName: name,
       });
 
       // Create a user profile in Firestore with minimal data first
-      // This allows us to redirect the user faster
       await userProfileService.createBasicUserProfile({
         displayName: name,
         role: "user",
       });
 
-      // Return success immediately after basic profile creation
-      // Additional profile data will be loaded in the background
-      return { success: true };
+      // Return success and verification status
+      return { success: true, verificationSent: true };
     } catch (error) {
       console.error("Registration error:", error);
       throw error;
@@ -191,6 +194,20 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     } catch (error) {
       console.error("Password reset error:", error);
+      throw error;
+    }
+  };
+
+  // Add new function to send verification email
+  const sendVerificationEmail = async () => {
+    const user = auth.currentUser;
+    if (!user) throw new Error("No authenticated user found");
+
+    try {
+      await sendEmailVerification(user);
+      return;
+    } catch (error) {
+      console.error("Error sending verification email:", error);
       throw error;
     }
   };
@@ -289,6 +306,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
     register,
     logout,
     resetPassword,
+    sendVerificationEmail,
     updateUserProfile,
     updateSubscription,
     getActivityLogs,

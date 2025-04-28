@@ -16,6 +16,10 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Button from "../../components/Button";
 import { useFirebase } from "../../context/FirebaseContext";
+import { getAuth, signOut } from "firebase/auth";
+import { app } from "../../config/firebase";
+
+const auth = getAuth(app);
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -23,7 +27,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { login } = useFirebase();
+  const { login, sendVerificationEmail } = useFirebase();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -34,6 +38,40 @@ export default function Login() {
     try {
       setLoading(true);
       const { role } = await login(email, password);
+
+      // Check if email is verified
+      const user = auth.currentUser;
+      if (user && !user.emailVerified) {
+        Alert.alert(
+          "Email Not Verified",
+          "Please verify your email before logging in. Would you like us to send another verification email?",
+          [
+            {
+              text: "Send Email",
+              onPress: async () => {
+                try {
+                  await sendVerificationEmail();
+                  Alert.alert(
+                    "Verification Email Sent",
+                    "Please check your email to verify your account."
+                  );
+                } catch (error) {
+                  Alert.alert(
+                    "Error",
+                    "Failed to send verification email. Please try again later."
+                  );
+                }
+              },
+            },
+            {
+              text: "Cancel",
+              style: "cancel",
+              onPress: () => signOut(auth),
+            },
+          ]
+        );
+        return;
+      }
 
       // Redirect based on user role
       switch (role) {

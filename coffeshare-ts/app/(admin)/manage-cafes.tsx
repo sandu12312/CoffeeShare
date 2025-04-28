@@ -42,7 +42,13 @@ interface CafeListItem extends ListItemBase, CafeData {
 
 type ListItem = RequestListItem | CafeListItem;
 
-type CafeStatusFilter = CafeData["status"] | "all" | "partnership_request";
+type CafeStatusFilter =
+  | "all"
+  | "pending"
+  | "active"
+  | "inactive"
+  | "rejected"
+  | "partnership_request";
 
 export default function ManageCafesScreen() {
   const { t } = useLanguage();
@@ -58,46 +64,72 @@ export default function ManageCafesScreen() {
   // Load requests and cafes
   const loadData = useCallback(async () => {
     setLoading(true);
-    setActionInProgressId(null); // Reset action state on load
     try {
-      // Fetch both in parallel
-      const [requests, cafesResult] = await Promise.all([
-        adminService.getPartnershipRequests(),
-        adminService.getAllCafes(), // Fetch all cafes initially
+      // Fetch both partnership requests and cafes in parallel
+      const [requestsResult, cafesResult] = await Promise.all([
+        adminService.getPartnershipRequests().catch((error) => {
+          console.error("Error fetching partnership requests:", error);
+          return []; // Return empty array on error
+        }),
+        filterStatus === "all" || filterStatus === "partnership_request"
+          ? adminService.getAllCafes().catch((error) => {
+              console.error("Error fetching all cafes:", error);
+              return { cafes: [], lastVisible: null }; // Return empty result on error
+            })
+          : adminService.getCafesByStatus(filterStatus).catch((error) => {
+              console.error(`Error fetching ${filterStatus} cafes:`, error);
+              return { cafes: [], lastVisible: null }; // Return empty result on error
+            }),
       ]);
 
-      const combined: ListItem[] = [];
+      // Combine and sort by creation date
+      const requests = requestsResult.map((request) => ({
+        ...request,
+        _type: "request" as const,
+        status: "partnership_request" as const,
+      }));
 
-      // Add type and map requests
-      requests.forEach((req) => {
-        combined.push({
-          ...req,
-          _type: "request",
-          status: "partnership_request", // Specific status for filtering/display
-          createdAt: req.createdAt || Timestamp.now(), // Ensure createdAt exists
-        });
+      const cafes = cafesResult.cafes.map((cafe) => ({
+        ...cafe,
+        _type: "cafe" as const,
+      }));
+
+      // Filter based on status if needed
+      let filteredCafes = cafes;
+      if (filterStatus === "partnership_request") {
+        // If filtering for partnership requests, only show requests
+        filteredCafes = [];
+      } else if (filterStatus !== "all") {
+        // If filtering for a specific cafe status, filter the cafes
+        filteredCafes = cafes.filter((cafe) => cafe.status === filterStatus);
+      }
+
+      const combinedItems = [...requests, ...filteredCafes].sort((a, b) => {
+        const dateA = a.createdAt || Timestamp.now();
+        const dateB = b.createdAt || Timestamp.now();
+        return dateB.toMillis() - dateA.toMillis();
       });
 
-      // Add type and map cafes
-      cafesResult.cafes.forEach((cafe) => {
-        combined.push({
-          ...cafe,
-          _type: "cafe",
-          createdAt: cafe.createdAt || Timestamp.now(), // Ensure createdAt exists
-        });
-      });
+      // Filter based on search query if provided
+      const searchFilteredItems = searchQuery
+        ? combinedItems.filter(
+            (item) =>
+              item.businessName
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase()) ||
+              (item.address &&
+                item.address.toLowerCase().includes(searchQuery.toLowerCase()))
+          )
+        : combinedItems;
 
-      // Sort combined list by creation date, newest first
-      combined.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-
-      setAllEntries(combined);
+      setAllEntries(searchFilteredItems);
     } catch (error) {
       console.error("Error loading data:", error);
-      Alert.alert("Error", "Failed to load data. Please try again.");
+      Alert.alert("Error", "Failed to load data. Please try again later.");
     } finally {
       setLoading(false);
     }
-  }, []); // No dependency on filterStatus here, load all initially
+  }, [filterStatus, searchQuery]);
 
   useEffect(() => {
     loadData();
@@ -176,6 +208,7 @@ export default function ManageCafesScreen() {
                 "Error",
                 "Failed to reject request. Please try again."
               );
+            } finally {
               setActionInProgressId(null);
             }
           },

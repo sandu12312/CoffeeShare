@@ -26,6 +26,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
 
   const { register } = useFirebase();
 
@@ -53,17 +54,30 @@ export default function Register() {
       const result = await register(email, password, name);
 
       if (result.success) {
-        // Show success message
-        Alert.alert(
-          "Registration Successful",
-          "Your account has been created. Welcome to CoffeeShare!",
-          [
-            {
-              text: "Continue",
-              onPress: () => router.replace("/(mainUsers)/dashboard"),
-            },
-          ]
-        );
+        if (result.verificationSent) {
+          setVerificationSent(true);
+          Alert.alert(
+            "Verification Email Sent",
+            "Please check your email to verify your account before logging in.",
+            [
+              {
+                text: "OK",
+                onPress: () => router.replace("/(auth)/login"),
+              },
+            ]
+          );
+        } else {
+          Alert.alert(
+            "Registration Successful",
+            "Your account has been created. Welcome to CoffeeShare!",
+            [
+              {
+                text: "Continue",
+                onPress: () => router.replace("/(mainUsers)/dashboard"),
+              },
+            ]
+          );
+        }
       } else {
         Alert.alert(
           "Registration Error",
