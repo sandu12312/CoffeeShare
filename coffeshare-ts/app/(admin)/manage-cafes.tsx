@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,211 +8,428 @@ import {
   TextInput,
   Alert,
   Keyboard,
+  ActivityIndicator,
 } from "react-native";
 import { useLanguage } from "../../context/LanguageContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import CoffeePartnerHeader from "../../components/CoffeePartnerHeader";
+import adminService, { CafeData } from "../../services/adminService";
+import { Timestamp } from "firebase/firestore"; // Import Timestamp
 
-// --- Dummy Data ---
-type CafeStatus = "Active" | "Pending" | "Rejected" | "Blocked";
-
-interface Cafe {
+// Combined type for list items
+interface ListItemBase {
+  _type: "request" | "cafe";
   id: string;
-  name: string;
-  city: string;
-  address: string;
-  status: CafeStatus;
-  logoUrl?: string; // Optional
+  businessName: string;
+  email: string;
+  createdAt: Timestamp; // Ensure createdAt is available for sorting
+  address?: string;
+  phone?: string;
+  contactName?: string;
 }
 
-const DUMMY_CAFES: Cafe[] = [
-  {
-    id: "c1",
-    name: "Cafeneaua Buna",
-    city: "București",
-    address: "Str. Lalelelor 1",
-    status: "Active",
-  },
-  {
-    id: "c2",
-    name: "Coffee Spot",
-    city: "Cluj-Napoca",
-    address: "Piața Unirii 5",
-    status: "Blocked",
-  },
-  {
-    id: "c3",
-    name: "Aroma Urbană",
-    city: "Timișoara",
-    address: "Bd. Victoriei 10",
-    status: "Pending",
-  },
-  {
-    id: "c4",
-    name: "Old Town Cafe",
-    city: "Brașov",
-    address: "Str. Sforii 2",
-    status: "Active",
-  },
-  {
-    id: "c5",
-    name: "Espresso Hub",
-    city: "Iași",
-    address: "Str. Palat 7",
-    status: "Rejected",
-  },
-  {
-    id: "c6",
-    name: "The Grind House",
-    city: "București",
-    address: "Calea Dorobanți 55",
-    status: "Active",
-  },
-];
-// ------------------
+interface RequestListItem extends ListItemBase {
+  _type: "request";
+  status: "partnership_request";
+}
+
+interface CafeListItem extends ListItemBase, CafeData {
+  _type: "cafe";
+  // Inherits status: 'pending' | 'active' | 'inactive' | 'rejected' from CafeData
+}
+
+type ListItem = RequestListItem | CafeListItem;
+
+type CafeStatusFilter = CafeData["status"] | "all" | "partnership_request";
 
 export default function ManageCafesScreen() {
   const { t } = useLanguage();
   const router = useRouter();
-  const [cafes, setCafes] = useState<Cafe[]>(DUMMY_CAFES);
+  const [allEntries, setAllEntries] = useState<ListItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState<CafeStatus | "All">("All");
+  const [filterStatus, setFilterStatus] = useState<CafeStatusFilter>("all");
+  const [loading, setLoading] = useState(true);
+  const [actionInProgressId, setActionInProgressId] = useState<string | null>(
+    null
+  );
 
-  const filteredCafes = useMemo(() => {
-    return cafes.filter((cafe) => {
-      const nameMatch = cafe.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-      const cityMatch = cafe.city
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-      const statusMatch =
-        filterStatus === "All" || cafe.status === filterStatus;
-      return (nameMatch || cityMatch) && statusMatch;
-    });
-  }, [cafes, searchQuery, filterStatus]);
+  // Load requests and cafes
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setActionInProgressId(null); // Reset action state on load
+    try {
+      // Fetch both in parallel
+      const [requests, cafesResult] = await Promise.all([
+        adminService.getPartnershipRequests(),
+        adminService.getAllCafes(), // Fetch all cafes initially
+      ]);
+
+      const combined: ListItem[] = [];
+
+      // Add type and map requests
+      requests.forEach((req) => {
+        combined.push({
+          ...req,
+          _type: "request",
+          status: "partnership_request", // Specific status for filtering/display
+          createdAt: req.createdAt || Timestamp.now(), // Ensure createdAt exists
+        });
+      });
+
+      // Add type and map cafes
+      cafesResult.cafes.forEach((cafe) => {
+        combined.push({
+          ...cafe,
+          _type: "cafe",
+          createdAt: cafe.createdAt || Timestamp.now(), // Ensure createdAt exists
+        });
+      });
+
+      // Sort combined list by creation date, newest first
+      combined.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+
+      setAllEntries(combined);
+    } catch (error) {
+      console.error("Error loading data:", error);
+      Alert.alert("Error", "Failed to load data. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, []); // No dependency on filterStatus here, load all initially
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Filter logic based on filterStatus and searchQuery
+  const filteredEntries = useMemo(() => {
+    let filtered = allEntries;
+
+    // Apply status filter
+    if (filterStatus !== "all") {
+      filtered = filtered.filter((entry) => entry.status === filterStatus);
+    }
+
+    // Apply search query filter
+    if (searchQuery) {
+      const lowerQuery = searchQuery.toLowerCase();
+      filtered = filtered.filter((entry) => {
+        const nameMatch = entry.businessName.toLowerCase().includes(lowerQuery);
+        const addressMatch = entry.address
+          ? entry.address.toLowerCase().includes(lowerQuery)
+          : false;
+        const emailMatch = entry.email.toLowerCase().includes(lowerQuery); // Include email in search
+        return nameMatch || addressMatch || emailMatch;
+      });
+    }
+
+    return filtered;
+  }, [allEntries, filterStatus, searchQuery]);
 
   // --- Action Handlers ---
-  const handleViewEditCafe = (cafe: Cafe) => {
-    // TODO: Navigate to Cafe Details/Edit Screen
+
+  // Handler for approving a PARTNERSHIP REQUEST (transfers it to an ACTIVE cafe)
+  const handleApproveRequest = async (request: ListItem) => {
+    setActionInProgressId(request.id);
+    try {
+      await adminService.transferPartnershipRequestToCafe(request.id);
+      Alert.alert(
+        "Success",
+        `${request.businessName} approved and added as an active cafe.`
+      );
+      loadData(); // Refresh data
+    } catch (error) {
+      console.error("Error approving request:", error);
+      Alert.alert("Error", "Failed to approve request. Please try again.");
+      setActionInProgressId(null);
+    }
+  };
+
+  // Handler for rejecting a PARTNERSHIP REQUEST (deletes it)
+  const handleRejectRequest = async (request: ListItem) => {
+    setActionInProgressId(request.id);
     Alert.alert(
-      "Detalii/Editează Cafenea",
-      `Funcționalitate pentru ${cafe.name} în curând!`
+      "Confirm Reject",
+      `Are you sure you want to reject the request from ${request.businessName}? This will delete the request.`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+          onPress: () => setActionInProgressId(null),
+        },
+        {
+          text: "Reject & Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await adminService.deletePartnershipRequest(request.id);
+              Alert.alert(
+                "Success",
+                `Request from ${request.businessName} rejected and deleted.`
+              );
+              loadData(); // Refresh data
+            } catch (error) {
+              console.error("Error rejecting request:", error);
+              Alert.alert(
+                "Error",
+                "Failed to reject request. Please try again."
+              );
+              setActionInProgressId(null);
+            }
+          },
+        },
+      ]
     );
   };
 
-  const handleApproveCafe = (cafe: Cafe) => {
-    // TODO: Implement approve logic (update state/backend)
-    setCafes((prevCafes) =>
-      prevCafes.map((c) => (c.id === cafe.id ? { ...c, status: "Active" } : c))
-    );
-    Alert.alert("Aprobă Cafenea", `Ai aprobat ${cafe.name}. (Simulat)`);
+  // Handler for activating a PENDING CAFE
+  const handleActivateCafe = async (cafe: ListItem) => {
+    if (!cafe.email || !cafe.contactName) {
+      Alert.alert(
+        "Error",
+        "Cannot activate cafe: Missing email or contact name."
+      );
+      return;
+    }
+    setActionInProgressId(cafe.id);
+    try {
+      console.log(
+        `Activating cafe: ${cafe.id} with email: ${cafe.email} and contact: ${cafe.contactName}`
+      );
+      await adminService.activateCafePartner(
+        cafe.id,
+        cafe.email,
+        cafe.contactName
+      );
+      Alert.alert(
+        "Success",
+        `${cafe.businessName} has been activated successfully.`
+      );
+      loadData(); // Refresh data
+    } catch (error: any) {
+      console.error("Error activating cafe:", error);
+      Alert.alert(
+        "Activation Failed",
+        error.message || "Could not activate the cafe partner."
+      );
+      setActionInProgressId(null);
+    }
   };
 
-  const handleRejectCafe = (cafe: Cafe) => {
-    // TODO: Implement reject logic (update state/backend)
-    setCafes((prevCafes) =>
-      prevCafes.map((c) =>
-        c.id === cafe.id ? { ...c, status: "Rejected" } : c
-      )
-    );
-    Alert.alert("Respinge Cafenea", `Ai respins ${cafe.name}. (Simulat)`);
+  // Handler for rejecting a PENDING CAFE
+  const handleRejectPendingCafe = async (cafe: ListItem) => {
+    setActionInProgressId(cafe.id);
+    try {
+      await adminService.updateCafeStatus(cafe.id, "rejected");
+      Alert.alert("Success", `${cafe.businessName} has been rejected.`);
+      loadData(); // Refresh data
+    } catch (error) {
+      console.error("Error rejecting cafe:", error);
+      Alert.alert("Error", "Failed to reject cafe. Please try again.");
+      setActionInProgressId(null);
+    }
   };
 
-  const handleToggleBlockCafe = (cafe: Cafe) => {
-    // TODO: Implement block/unblock logic (update state/backend)
-    const newStatus = cafe.status === "Active" ? "Blocked" : "Active"; // Or Pending if unblocking a blocked one?
-    setCafes((prevCafes) =>
-      prevCafes.map((c) => (c.id === cafe.id ? { ...c, status: newStatus } : c))
-    );
+  // Handler for blocking/unblocking an ACTIVE/INACTIVE CAFE
+  const handleToggleBlockCafe = async (cafe: ListItem) => {
+    setActionInProgressId(cafe.id);
+    const newStatus = cafe.status === "active" ? "inactive" : "active";
+    try {
+      await adminService.updateCafeStatus(cafe.id, newStatus);
+      Alert.alert(
+        "Success",
+        `${cafe.businessName} has been ${
+          newStatus === "active" ? "unblocked" : "blocked"
+        }.`
+      );
+      loadData(); // Refresh data
+    } catch (error) {
+      console.error("Error toggling cafe status:", error);
+      Alert.alert("Error", "Failed to update cafe status. Please try again.");
+      setActionInProgressId(null);
+    }
+  };
+
+  // Handler for viewing/editing (placeholder)
+  const handleViewEdit = (item: ListItem) => {
     Alert.alert(
-      cafe.status === "Active" || cafe.status === "Pending"
-        ? "Blochează Cafenea"
-        : "Deblochează Cafenea",
-      `Sigur dorești să ${
-        cafe.status === "Active" || cafe.status === "Pending"
-          ? "blochezi"
-          : "deblochezi"
-      } ${cafe.name}? (Simulat)`
+      `View/Edit ${item._type === "request" ? "Request" : "Cafe"}`,
+      `Details for ${item.businessName}. Functionality coming soon.`
     );
   };
+
   // ---------------------
 
   // --- Render Item ---
-  const renderCafeItem = ({ item }: { item: Cafe }) => {
+  const renderItem = ({ item }: { item: ListItem }) => {
+    const isRequest = item._type === "request";
+    const isPendingCafe = item._type === "cafe" && item.status === "pending";
+    const isActiveOrInactiveCafe =
+      item._type === "cafe" &&
+      (item.status === "active" || item.status === "inactive");
+    const isRejected = item.status === "rejected"; // Covers both rejected requests (deleted) and rejected cafes
+
+    let statusText = "Unknown";
     let statusColor = "#9E9E9E"; // Default Grey
-    if (item.status === "Active") statusColor = "#4CAF50"; // Green
-    else if (item.status === "Pending") statusColor = "#FF9800"; // Orange
-    else if (item.status === "Rejected" || item.status === "Blocked")
+
+    if (isRequest) {
+      statusText = "Partnership Request";
+      statusColor = "#03A9F4"; // Blue for Requests
+    } else if (item.status === "active") {
+      statusText = "Active Cafe";
+      statusColor = "#4CAF50"; // Green
+    } else if (item.status === "pending") {
+      statusText = "Pending Activation";
+      statusColor = "#FF9800"; // Orange
+    } else if (item.status === "rejected") {
+      statusText = "Rejected";
       statusColor = "#E53935"; // Red
+    } else if (item.status === "inactive") {
+      statusText = "Inactive/Blocked";
+      statusColor = "#757575"; // Darker Grey
+    }
+
+    const isActionInProgress = actionInProgressId === item.id;
 
     return (
       <View style={styles.cafeCard}>
         <View style={styles.cafeInfoContainer}>
           {/* Placeholder Logo */}
           <View style={styles.logoPlaceholder}>
-            <Ionicons name="storefront-outline" size={24} color="#FFF" />
+            <Ionicons
+              name={isRequest ? "document-text-outline" : "storefront-outline"}
+              size={24}
+              color="#FFF"
+            />
           </View>
           <View style={styles.cafeDetails}>
-            <Text style={styles.cafeName}>{item.name}</Text>
+            <Text style={styles.cafeName}>{item.businessName}</Text>
             <Text style={styles.cafeLocation}>
-              {item.city} - {item.address}
+              {item.address || "No address provided"}
+            </Text>
+            <Text style={styles.cafeContact}>
+              {item.email} {item.phone ? `| ${item.phone}` : ""}
             </Text>
             <View style={[styles.badge, { backgroundColor: statusColor }]}>
-              <Text style={styles.badgeText}>{item.status}</Text>
+              <Text style={styles.badgeText}>{statusText}</Text>
             </View>
+            {/* Display creation date */}
+            <Text style={styles.creationDate}>
+              Created:{" "}
+              {item.createdAt
+                ? item.createdAt.toDate().toLocaleDateString()
+                : "N/A"}
+            </Text>
           </View>
         </View>
         <View style={styles.cafeActions}>
-          <TouchableOpacity
-            onPress={() => handleViewEditCafe(item)}
-            style={styles.actionButton}
-          >
-            <Ionicons name="eye-outline" size={22} color="#757575" />
-          </TouchableOpacity>
-          {item.status === "Pending" && (
+          {/* View/Edit Button - Placeholder for now */}
+          {!isRequest && ( // Maybe hide for requests initially?
+            <TouchableOpacity
+              onPress={() => handleViewEdit(item)}
+              style={styles.actionButton}
+              disabled={isActionInProgress}
+            >
+              <Ionicons name="eye-outline" size={22} color="#757575" />
+            </TouchableOpacity>
+          )}
+
+          {/* Actions for Partnership Requests */}
+          {isRequest && (
             <>
               <TouchableOpacity
-                onPress={() => handleApproveCafe(item)}
+                onPress={() => handleApproveRequest(item)}
                 style={styles.actionButton}
+                disabled={isActionInProgress}
               >
-                <Ionicons
-                  name="checkmark-circle-outline"
-                  size={22}
-                  color="#4CAF50"
-                />
+                {isActionInProgress ? (
+                  <ActivityIndicator size="small" color="#4CAF50" />
+                ) : (
+                  <Ionicons
+                    name="checkmark-circle-outline"
+                    size={22}
+                    color="#4CAF50"
+                  />
+                )}
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => handleRejectCafe(item)}
+                onPress={() => handleRejectRequest(item)}
                 style={styles.actionButton}
+                disabled={isActionInProgress}
               >
-                <Ionicons
-                  name="close-circle-outline"
-                  size={22}
-                  color="#E53935"
-                />
+                {isActionInProgress ? (
+                  <ActivityIndicator size="small" color="#E53935" />
+                ) : (
+                  <Ionicons
+                    name="close-circle-outline"
+                    size={22}
+                    color="#E53935"
+                  />
+                )}
               </TouchableOpacity>
             </>
           )}
-          {(item.status === "Active" || item.status === "Blocked") && (
+
+          {/* Actions for Pending Cafes */}
+          {isPendingCafe && (
+            <>
+              <TouchableOpacity
+                onPress={() => handleActivateCafe(item)}
+                style={styles.actionButton}
+                disabled={isActionInProgress}
+              >
+                {isActionInProgress ? (
+                  <ActivityIndicator size="small" color="#4CAF50" />
+                ) : (
+                  <Ionicons
+                    name="person-add-outline" // Icon for activating partner account
+                    size={22}
+                    color="#4CAF50"
+                  />
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleRejectPendingCafe(item)}
+                style={styles.actionButton}
+                disabled={isActionInProgress}
+              >
+                {isActionInProgress ? (
+                  <ActivityIndicator size="small" color="#E53935" />
+                ) : (
+                  <Ionicons
+                    name="close-circle-outline"
+                    size={22}
+                    color="#E53935"
+                  />
+                )}
+              </TouchableOpacity>
+            </>
+          )}
+
+          {/* Actions for Active/Inactive Cafes */}
+          {isActiveOrInactiveCafe && (
             <TouchableOpacity
               onPress={() => handleToggleBlockCafe(item)}
               style={styles.actionButton}
+              disabled={isActionInProgress}
             >
-              <Ionicons
-                name={
-                  item.status === "Active"
-                    ? "lock-open-outline"
-                    : "lock-closed-outline"
-                }
-                size={22}
-                color={item.status === "Active" ? "#FFA000" : "#4CAF50"}
-              />
+              {isActionInProgress ? (
+                <ActivityIndicator size="small" color="#FFA000" />
+              ) : (
+                <Ionicons
+                  name={
+                    item.status === "active"
+                      ? "lock-open-outline" // Unblock icon
+                      : "lock-closed-outline" // Block icon
+                  }
+                  size={22}
+                  color={item.status === "active" ? "#FFA000" : "#4CAF50"} // Orange for Block, Green for Unblock
+                />
+              )}
             </TouchableOpacity>
           )}
-          {/* Maybe add delete only if Rejected/Blocked? */}
         </View>
       </View>
     );
@@ -221,8 +438,7 @@ export default function ManageCafesScreen() {
 
   return (
     <ScreenWrapper>
-      {/* TODO: Add translation key 'manageCafesTitle' */}
-      <CoffeePartnerHeader title={"Gestionează Cafenele"} />
+      <CoffeePartnerHeader title={"Manage Cafes & Requests"} />
 
       {/* Search and Filter Bar */}
       <View style={styles.controlsContainer}>
@@ -235,7 +451,7 @@ export default function ManageCafesScreen() {
           />
           <TextInput
             style={styles.searchInput}
-            placeholder="Caută după nume sau oraș..."
+            placeholder="Search by name, address, or email..."
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor="#999"
@@ -251,98 +467,108 @@ export default function ManageCafesScreen() {
             </TouchableOpacity>
           )}
         </View>
+        {/* Status Filters */}
         <View style={styles.filterContainer}>
-          <Text style={styles.filterLabel}>Status:</Text>
-          <TouchableOpacity
-            onPress={() => setFilterStatus("All")}
-            style={[
-              styles.filterButton,
-              filterStatus === "All" && styles.filterButtonActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.filterButtonText,
-                filterStatus === "All" && styles.filterButtonTextActive,
-              ]}
-            >
-              Toate
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setFilterStatus("Active")}
-            style={[
-              styles.filterButton,
-              filterStatus === "Active" && styles.filterButtonActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.filterButtonText,
-                filterStatus === "Active" && styles.filterButtonTextActive,
-              ]}
-            >
-              Active
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setFilterStatus("Pending")}
-            style={[
-              styles.filterButton,
-              filterStatus === "Pending" && styles.filterButtonActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.filterButtonText,
-                filterStatus === "Pending" && styles.filterButtonTextActive,
-              ]}
-            >
-              În Așteptare
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setFilterStatus("Blocked")}
-            style={[
-              styles.filterButton,
-              filterStatus === "Blocked" && styles.filterButtonActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.filterButtonText,
-                filterStatus === "Blocked" && styles.filterButtonTextActive,
-              ]}
-            >
-              Blocate
-            </Text>
-          </TouchableOpacity>
-          {/* Add Rejected filter if needed */}
+          <Text style={styles.filterLabel}>Filter:</Text>
+          {/* Dynamically create filter buttons */}
+          {(
+            [
+              "all",
+              "partnership_request",
+              "pending",
+              "active",
+              "inactive",
+              "rejected",
+            ] as const
+          ).map((status) => {
+            let text = "Unknown";
+            switch (status) {
+              case "all":
+                text = "All";
+                break;
+              case "partnership_request":
+                text = "Requests";
+                break;
+              case "pending":
+                text = "Pending Cafes";
+                break;
+              case "active":
+                text = "Active";
+                break;
+              case "inactive":
+                text = "Inactive";
+                break;
+              case "rejected":
+                text = "Rejected";
+                break;
+            }
+            return (
+              <TouchableOpacity
+                key={status}
+                onPress={() => setFilterStatus(status)}
+                style={[
+                  styles.filterButton,
+                  filterStatus === status && styles.filterButtonActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    filterStatus === status && styles.filterButtonTextActive,
+                  ]}
+                >
+                  {text}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 
-      {/* Cafe List */}
-      <FlatList
-        data={filteredCafes}
-        renderItem={renderCafeItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={() => (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="sad-outline" size={50} color="#CCC" />
-            <Text style={styles.emptyListText}>Nicio cafenea găsită.</Text>
-            <Text style={styles.emptyListSubText}>
-              Încearcă să ajustezi filtrele.
-            </Text>
-          </View>
-        )}
-      />
+      {/* List */}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8B4513" />
+          <Text style={styles.loadingText}>Loading data...</Text>
+        </View>
+      ) : filteredEntries.length > 0 ? (
+        <FlatList
+          data={filteredEntries}
+          renderItem={renderItem}
+          keyExtractor={(item) => item._type + "_" + item.id} // Ensure unique key
+          contentContainerStyle={styles.listContainer}
+          extraData={actionInProgressId} // Re-render items when action state changes
+        />
+      ) : (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="documents-outline" size={60} color="#AAA" />
+          <Text style={styles.emptyListText}>No entries found</Text>
+          <Text style={styles.emptyListSubText}>
+            {searchQuery
+              ? "Try a different search term"
+              : filterStatus === "all"
+              ? "There are no cafes or partnership requests."
+              : `There are no entries with the status "${filterStatus}".`}
+          </Text>
+        </View>
+      )}
     </ScreenWrapper>
   );
 }
 
 // --- Styles ---
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#666",
+  },
   controlsContainer: {
     paddingHorizontal: 15,
     paddingTop: 10,
@@ -449,6 +675,11 @@ const styles = StyleSheet.create({
   cafeLocation: {
     fontSize: 13,
     color: "#777",
+    marginBottom: 3,
+  },
+  cafeContact: {
+    fontSize: 12,
+    color: "#999",
     marginBottom: 6,
   },
   badge: {
@@ -456,19 +687,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 10,
     alignSelf: "flex-start", // Make badge only as wide as text
+    marginBottom: 4, // Add space below badge
   },
   badgeText: {
     color: "#FFFFFF",
     fontSize: 11,
     fontWeight: "bold",
   },
+  creationDate: {
+    // Style for creation date
+    fontSize: 11,
+    color: "#AAAAAA",
+    marginTop: 2,
+  },
   cafeActions: {
     flexDirection: "column", // Stack actions vertically
     alignItems: "flex-end",
     marginLeft: 10,
+    justifyContent: "space-around", // Distribute space between buttons
+    minHeight: 80, // Ensure enough height for buttons
   },
   actionButton: {
-    paddingVertical: 4, // Increase vertical tap area
+    paddingVertical: 6, // Increase vertical tap area slightly
     paddingHorizontal: 5,
   },
   emptyContainer: {
@@ -492,4 +732,3 @@ const styles = StyleSheet.create({
     color: "#AAA",
   },
 });
-// --------------

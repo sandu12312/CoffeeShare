@@ -17,6 +17,8 @@ import {
   ActivityLog,
   UserNotification,
 } from "../types";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../config/firebase";
 
 // Initialize auth using the imported app
 const auth = getAuth(app);
@@ -50,6 +52,14 @@ interface FirebaseContextType {
     productId?: string,
     productName?: string
   ) => Promise<void>;
+  submitPartnershipRequest: (data: {
+    businessName: string;
+    contactName: string;
+    email: string;
+    phone?: string;
+    address?: string;
+    message?: string;
+  }) => Promise<{ success: boolean; requestId: string }>;
 }
 
 const FirebaseContext = createContext<FirebaseContextType | undefined>(
@@ -228,6 +238,49 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
+  const submitPartnershipRequest = async (data: {
+    businessName: string;
+    contactName: string;
+    email: string;
+    phone?: string;
+    address?: string;
+    message?: string;
+  }) => {
+    try {
+      console.log("Starting partnership request submission...");
+
+      // Validate required fields
+      if (!data.businessName || !data.contactName || !data.email) {
+        throw new Error("Missing required fields");
+      }
+
+      // Create the partnership request document
+      const partnershipRequestsCollection = collection(
+        db,
+        "partnership_requests"
+      );
+      console.log("Collection reference created");
+
+      const docRef = await addDoc(partnershipRequestsCollection, {
+        ...data,
+        status: "pending",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      console.log("Document successfully written with ID:", docRef.id);
+      return { success: true, requestId: docRef.id };
+    } catch (error) {
+      console.error("Error submitting partnership request:", error);
+      // Log more details about the error
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
+      throw error;
+    }
+  };
+
   const value = {
     user,
     userProfile,
@@ -244,6 +297,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
     canRedeemCoffee,
     generateQRCode,
     redeemCoffee,
+    submitPartnershipRequest,
   };
 
   return (

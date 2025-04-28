@@ -85,7 +85,9 @@ document.addEventListener("DOMContentLoaded", function () {
       phone: form.elements["phone"].value.trim(),
       address: form.elements["address"].value.trim(),
       message: form.elements["message"].value.trim(),
-      submittedAt: firebase.firestore.FieldValue.serverTimestamp(), // Use server timestamp
+      status: "pending",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     };
 
     if (!formData.businessName || !formData.contactName || !formData.email) {
@@ -108,7 +110,7 @@ document.addEventListener("DOMContentLoaded", function () {
     try {
       // --- Firebase Firestore Integration --- //
       // Use the 'db' instance initialized in index.html
-      await db.collection("partnerRequests").add(formData);
+      await db.collection("partnership_requests").add(formData);
       // --- End Firebase Integration --- //
 
       statusElement.textContent =

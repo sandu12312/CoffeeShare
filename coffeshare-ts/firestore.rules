@@ -103,5 +103,12 @@ service cloud.firestore {
         isAdmin()
       );
     }
+    
+    // Partnership requests - allow public write for form submissions
+    match /partnership_requests/{requestId} {
+      allow read: if isAdmin();
+      allow create: if true; // Allow anyone to create a partnership request
+      allow update, delete: if isAdmin();
+    }
   }
 } 

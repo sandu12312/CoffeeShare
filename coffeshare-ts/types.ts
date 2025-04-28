@@ -1,5 +1,5 @@
 import { Link } from "expo-router";
-import { Firestore, Timestamp } from "firebase/firestore";
+import { Firestore, Timestamp, FieldValue } from "firebase/firestore";
 import { Icon } from "phosphor-react-native";
 import React, { ReactNode } from "react";
 import {
@@ -174,33 +174,28 @@ export type WalletType = {
 };
 
 // User Profile Types
+export interface UserPreferences {
+  favoriteProducts?: string[];
+  favoriteCafes?: string[];
+  preferredPaymentMethod?: string;
+  darkMode?: boolean;
+  notificationsEnabled?: boolean;
+  allowLocationServices?: boolean;
+}
+
 export interface UserProfile {
   uid: string;
   email: string;
   displayName: string;
-  photoURL?: string;
-  phoneNumber?: string;
-  createdAt: any;
-  updatedAt: any;
-
-  // User preferences
-  preferences?: {
-    favoriteProducts: string[];
-    favoriteCafes: string[];
-    preferredPaymentMethod?: string;
-    darkMode?: boolean;
-    notificationsEnabled?: boolean;
-    allowLocationServices?: boolean;
-  };
-
-  // User role - determines access level
-  role: "user" | "partner" | "admin";
-
-  // Subscription related data
-  subscription?: SubscriptionData;
-
-  // User stats
+  photoURL?: string | null;
+  phoneNumber?: string | null;
+  createdAt: Timestamp | FieldValue | Date;
+  updatedAt: Timestamp | FieldValue | Date;
+  role: "user" | "admin" | "partner";
+  status?: "active" | "suspended" | "blocked";
+  preferences?: UserPreferences;
   stats?: UserStats;
+  subscription?: SubscriptionData;
 }
 
 // Subscription data

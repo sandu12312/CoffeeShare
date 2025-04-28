@@ -19,21 +19,13 @@ import {
 import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
-import { app } from "../../config/firebase";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-
-// Initialize Firestore
-const db = getFirestore(app);
+import { useFirebase } from "../../context/FirebaseContext";
 
 export default function LandingPage() {
   const { width, height } = useWindowDimensions();
   const isMobile = width < 768;
   const [showMobileNav, setShowMobileNav] = useState(false);
+  const { submitPartnershipRequest } = useFirebase();
 
   // --- Form State ---
   const [businessName, setBusinessName] = useState("");
@@ -79,8 +71,7 @@ export default function LandingPage() {
   };
 
   const handleFormSubmit = async () => {
-    setFormStatus({ message: "", type: "" });
-
+    // Basic validation
     if (!businessName || !contactName || !email) {
       setFormStatus({
         message: "Please fill in all required fields (*).",
@@ -89,8 +80,9 @@ export default function LandingPage() {
       return;
     }
 
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(email)) {
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
       setFormStatus({
         message: "Please enter a valid email address.",
         type: "error",
@@ -99,23 +91,37 @@ export default function LandingPage() {
     }
 
     setIsSubmitting(true);
+    setFormStatus({ message: "Submitting your request...", type: "" });
 
     try {
-      await addDoc(collection(db, "partnerRequests"), {
-        businessName: businessName,
-        contactName: contactName,
-        email: email,
-        phone: phone,
-        address: address,
-        message: message,
-        submittedAt: serverTimestamp(),
+      console.log("Submitting partnership request with data:", {
+        businessName,
+        contactName,
+        email,
+        phone,
+        address,
+        message,
       });
 
+      const result = await submitPartnershipRequest({
+        businessName,
+        contactName,
+        email,
+        phone,
+        address,
+        message,
+      });
+
+      console.log("Partnership request submitted successfully:", result);
+
+      // Success message
       setFormStatus({
-        message: "Thank you! Your request has been submitted successfully.",
+        message:
+          "Thank you! Your partnership request has been submitted successfully.",
         type: "success",
       });
-      // Reset form fields
+
+      // Reset form
       setBusinessName("");
       setContactName("");
       setEmail("");
@@ -123,10 +129,25 @@ export default function LandingPage() {
       setAddress("");
       setMessage("");
     } catch (error) {
-      console.error("Error submitting form to Firestore:", error);
+      console.error("Error submitting form:", error);
+
+      // Provide more specific error message to the user
+      let errorMessage = "Submission failed. Please try again.";
+
+      if (error instanceof Error) {
+        if (error.message === "Missing required fields") {
+          errorMessage = "Please fill in all required fields.";
+        } else if (error.message.includes("permission-denied")) {
+          errorMessage =
+            "You don't have permission to submit this form. Please contact support.";
+        } else if (error.message.includes("network")) {
+          errorMessage =
+            "Network error. Please check your internet connection and try again.";
+        }
+      }
+
       setFormStatus({
-        message:
-          "An error occurred submitting your request. Please try again later.",
+        message: errorMessage,
         type: "error",
       });
     } finally {
