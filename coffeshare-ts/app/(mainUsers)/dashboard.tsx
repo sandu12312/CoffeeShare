@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -11,6 +11,8 @@ import {
   Platform,
   StatusBar,
   Animated,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,14 +23,27 @@ import SubscriptionCard from "../../components/SubscriptionCard";
 import RecommendedCafesCard from "../../components/RecommendedCafesCard";
 import RecentActivityCard from "../../components/RecentActivityCard";
 import QuickStatsCard from "../../components/QuickStatsCard";
+import { formatDate } from "../../utils/dateUtils";
+import { ActivityType } from "../../types";
 
 const HEADER_HEIGHT = 80;
 
+// Helper function to format activity data
+const formatActivityForDisplay = (activity: any) => {
+  return {
+    id: activity.id,
+    cafe: activity.cafeName || "Coffee Shop",
+    date: formatDate(activity.timestamp, true),
+  };
+};
+
 export default function Dashboard() {
   const { t } = useLanguage();
-  const { user, userProfile, logout } = useFirebase();
+  const { user, userProfile, logout, getActivityLogs } = useFirebase();
   const scrollOffsetY = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
+  const [activityLogs, setActivityLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Calculate header translateY based on scroll
   const headerTranslateY = scrollOffsetY.interpolate({
@@ -37,13 +52,29 @@ export default function Dashboard() {
     extrapolate: "clamp",
   });
 
+  // Fetch user activities on component mount
+  useEffect(() => {
+    fetchUserActivities();
+  }, []);
+
+  const fetchUserActivities = async () => {
+    try {
+      setLoading(true);
+      const logs = await getActivityLogs(10, ActivityType.COFFEE_REDEMPTION);
+      setActivityLogs(logs);
+    } catch (error) {
+      console.error("Error fetching activity logs:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollOffsetY } } }],
     {
-      useNativeDriver: true, // Use native driver for performance
+      useNativeDriver: true,
       listener: (event: any) => {
         const currentScrollY = event.nativeEvent.contentOffset.y;
-        // Optional: Logic based on scroll direction can be added here if needed
         lastScrollY.current = currentScrollY;
       },
     }
@@ -55,30 +86,72 @@ export default function Dashboard() {
       router.replace("/(auth)/login");
     } catch (error) {
       console.error("Logout error:", error);
+      Alert.alert("Error", "Failed to log out. Please try again.");
     }
   };
 
-  // Placeholder data - replace with actual data later
-  const subscription = {
-    type: "Student Pack",
-    expires: "Oct 31, 2024",
-    coffeesLeft: 1,
-    coffeesTotal: 2,
+  // Get personalized subscription data
+  const getSubscriptionData = () => {
+    if (!userProfile || !userProfile.subscription) {
+      return {
+        type: "No Subscription",
+        expires: "N/A",
+        coffeesLeft: 0,
+        coffeesTotal: 0,
+      };
+    }
+
+    return {
+      type: userProfile.subscription.type,
+      expires: formatDate(userProfile.subscription.expiryDate),
+      coffeesLeft: userProfile.subscription.remainingToday || 0,
+      coffeesTotal: userProfile.subscription.dailyLimit || 0,
+    };
   };
-  const recommendedCafes = [
-    { id: "1", name: "Cafe Central", distance: "300m", rating: 4.5 },
-    { id: "2", name: "Morning Brew", distance: "500m", rating: 4.8 },
-    { id: "3", name: "The Grind House", distance: "1.2km", rating: 4.2 },
-  ];
-  const recentActivity = [
-    { id: "1", cafe: "Cafe Central", date: "Today, 10:30 AM" },
-    { id: "2", cafe: "Morning Brew", date: "Yesterday, 4:15 PM" },
-    { id: "3", cafe: "Cafe Central", date: "Sep 28, 8:00 AM" },
-  ];
-  const quickStats = {
-    coffeesThisWeek: 8,
-    comparison: "+15%",
-    favoriteCafe: "Cafe Central",
+
+  // Get recent activity from user logs
+  const getRecentActivity = () => {
+    if (activityLogs.length === 0) {
+      return [
+        {
+          id: "no-activity",
+          cafe: "No recent activity",
+          date: "Get your first coffee!",
+        },
+      ];
+    }
+
+    return activityLogs
+      .filter((log) => log.type === ActivityType.COFFEE_REDEMPTION)
+      .slice(0, 3)
+      .map(formatActivityForDisplay);
+  };
+
+  // Get weekly stats data
+  const getWeeklyStats = () => {
+    if (!userProfile || !userProfile.stats) {
+      return {
+        coffeesThisWeek: 0,
+        comparison: "+0%",
+        favoriteCafe: "None yet",
+      };
+    }
+
+    const weeklyCount = userProfile.stats.weeklyCount || 0;
+    // Calculate comparison (placeholder logic - replace with actual comparison later)
+    const lastWeekCount = weeklyCount - 1; // This is a placeholder
+    const comparison =
+      lastWeekCount > 0
+        ? `+${Math.round(
+            ((weeklyCount - lastWeekCount) / lastWeekCount) * 100
+          )}%`
+        : "+0%";
+
+    return {
+      coffeesThisWeek: weeklyCount,
+      comparison: comparison,
+      favoriteCafe: userProfile.stats.favoriteCafe?.name || "None yet",
+    };
   };
 
   // Handler functions
@@ -96,8 +169,7 @@ export default function Dashboard() {
   };
 
   const handleViewFullHistory = () => {
-    console.log("View full history");
-    // Navigate to history screen
+    router.push("/(mainUsers)/profile");
   };
 
   const handleActivityPress = (activity: any) => {
@@ -108,6 +180,32 @@ export default function Dashboard() {
   const handleProfilePress = () => {
     router.push("/(mainUsers)/profile");
   };
+
+  // Get recommended cafes (static for now, will be dynamically loaded in the future)
+  const recommendedCafes = [
+    { id: "1", name: "Cafe Central", distance: "300m", rating: 4.5 },
+    { id: "2", name: "Morning Brew", distance: "500m", rating: 4.8 },
+    { id: "3", name: "The Grind House", distance: "1.2km", rating: 4.2 },
+  ];
+
+  if (!userProfile) {
+    return (
+      <ImageBackground
+        source={require("../../assets/images/coffee-beans-textured-background.jpg")}
+        style={styles.background}
+        resizeMode="cover"
+      >
+        <SafeAreaView style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+          <Text style={styles.loadingText}>Loading your coffee data...</Text>
+        </SafeAreaView>
+      </ImageBackground>
+    );
+  }
+
+  const subscriptionData = getSubscriptionData();
+  const recentActivity = getRecentActivity();
+  const quickStats = getWeeklyStats();
 
   return (
     <ImageBackground
@@ -155,7 +253,7 @@ export default function Dashboard() {
         <Animated.ScrollView
           contentContainerStyle={styles.scrollContent}
           onScroll={handleScroll}
-          scrollEventThrottle={16} // Optimize scroll event frequency
+          scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
         >
           {/* User Welcome Section */}
@@ -172,97 +270,12 @@ export default function Dashboard() {
             </TouchableOpacity>
           </View>
 
-          {/* User Profile Card */}
-          {userProfile && (
-            <View style={styles.profileCard}>
-              <Text style={styles.profileCardTitle}>Your Profile</Text>
-              <Text style={styles.profileItem}>Email: {userProfile.email}</Text>
-              <Text style={styles.profileItem}>
-                Name: {userProfile.displayName || "Not set"}
-              </Text>
-              <Text style={styles.profileItem}>
-                Role: {userProfile.role || "User"}
-              </Text>
-
-              {/* Subscription Details */}
-              <View style={styles.sectionDivider} />
-              <Text style={styles.sectionTitle}>Subscription</Text>
-              <Text style={styles.profileItem}>
-                Type: {userProfile.subscription?.type || "None"}
-              </Text>
-              {userProfile.subscription?.isActive && (
-                <>
-                  <Text style={styles.profileItem}>
-                    Status: <Text style={styles.activeText}>Active</Text>
-                  </Text>
-                  <Text style={styles.profileItem}>
-                    Daily Limit: {userProfile.subscription.dailyLimit} coffees
-                  </Text>
-                  <Text style={styles.profileItem}>
-                    Remaining Today: {userProfile.subscription.remainingToday}{" "}
-                    coffees
-                  </Text>
-                  {userProfile.subscription.expiryDate && (
-                    <Text style={styles.profileItem}>
-                      Expires:{" "}
-                      {new Date(
-                        userProfile.subscription.expiryDate.seconds * 1000
-                      ).toLocaleDateString()}
-                    </Text>
-                  )}
-                </>
-              )}
-
-              {/* User Stats */}
-              {userProfile.stats && (
-                <>
-                  <View style={styles.sectionDivider} />
-                  <Text style={styles.sectionTitle}>Your Stats</Text>
-                  <Text style={styles.profileItem}>
-                    Total Coffees: {userProfile.stats.totalCoffees || 0}
-                  </Text>
-                  <Text style={styles.profileItem}>
-                    This Week: {userProfile.stats.weeklyCount || 0}
-                  </Text>
-                  <Text style={styles.profileItem}>
-                    Current Streak: {userProfile.stats.streak || 0} days
-                  </Text>
-                  {userProfile.stats.favoriteCafe && (
-                    <Text style={styles.profileItem}>
-                      Favorite Cafe: {userProfile.stats.favoriteCafe.name}(
-                      {userProfile.stats.favoriteCafe.visitCount} visits)
-                    </Text>
-                  )}
-                </>
-              )}
-
-              {/* Quick Actions */}
-              <View style={styles.actionsContainer}>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => router.push("/(mainUsers)/subscriptions")}
-                >
-                  <Text style={styles.actionButtonText}>
-                    Manage Subscription
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.secondaryButton]}
-                  onPress={() => router.push("/(mainUsers)/profile")}
-                >
-                  <Text style={styles.secondaryButtonText}>Edit Profile</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {/* Subscription Card */}
+          {/* Subscription Card - Using Real User Data */}
           <SubscriptionCard
-            type={subscription.type}
-            expires={subscription.expires}
-            coffeesLeft={subscription.coffeesLeft}
-            coffeesTotal={subscription.coffeesTotal}
+            type={subscriptionData.type}
+            expires={subscriptionData.expires}
+            coffeesLeft={subscriptionData.coffeesLeft}
+            coffeesTotal={subscriptionData.coffeesTotal}
             onRenew={handleRenewSubscription}
           />
 
@@ -273,14 +286,14 @@ export default function Dashboard() {
             onCafePress={handleCafePress}
           />
 
-          {/* Recent Activity Card */}
+          {/* Recent Activity Card - Using Real User Data */}
           <RecentActivityCard
             activities={recentActivity}
             onViewAll={handleViewFullHistory}
             onActivityPress={handleActivityPress}
           />
 
-          {/* Quick Stats Card */}
+          {/* Quick Stats Card - Using Real User Data */}
           <QuickStatsCard
             coffeesThisWeek={quickStats.coffeesThisWeek}
             comparison={quickStats.comparison}
@@ -303,9 +316,23 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingBottom: 75,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 15,
+    fontSize: 16,
+    color: "#FFFFFF",
+    fontWeight: "500",
+    textShadowColor: "rgba(0, 0, 0, 0.5)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
   floatingHeaderContainer: {
     position: "absolute",
-    top: 0, // Start at the very top
+    top: 0,
     left: 0,
     right: 0,
     height: HEADER_HEIGHT,
@@ -313,9 +340,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === "ios" ? 44 : StatusBar.currentHeight || 10, // Padding for status bar area inside the header
+    paddingTop: Platform.OS === "ios" ? 44 : StatusBar.currentHeight || 10,
     zIndex: 10,
-    // Background can be added here if needed over the ImageBackground, e.g., slightly darker transparent gradient
   },
   floatingHeaderTitle: {
     fontSize: 24,
@@ -340,7 +366,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 3,
   },
   scrollContent: {
-    paddingTop: HEADER_HEIGHT + 10, // Ensure content starts below floating header
+    paddingTop: HEADER_HEIGHT + 10,
     paddingHorizontal: 20,
     paddingBottom: 20,
   },

@@ -33,8 +33,22 @@ export default function Login() {
 
     try {
       setLoading(true);
-      await login(email, password);
-      router.push("/(mainUsers)/dashboard");
+      const { role } = await login(email, password);
+
+      // Redirect based on user role
+      switch (role) {
+        case "admin":
+          router.push("/dashboard");
+          break;
+        case "partner":
+          router.push("/dashboard");
+          break;
+        case "user":
+          router.push("/dashboard");
+          break;
+        default:
+          router.push("/dashboard");
+      }
     } catch (error: any) {
       console.error("Login error:", error);
       let errorMessage = "Failed to login. Please try again.";

@@ -22,6 +22,7 @@ import { Platform } from "react-native";
 import { v4 as uuidv4 } from "uuid";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
+import { app } from "../config/firebase";
 
 import {
   UserProfile,
@@ -33,9 +34,9 @@ import {
   UserNotification,
 } from "../types";
 
-// Get Firebase instances
-const db = getFirestore();
-const auth = getAuth();
+// Initialize Firestore and Auth using the imported app
+const db = getFirestore(app);
+const auth = getAuth(app);
 
 /**
  * User Profile Service
@@ -92,8 +93,11 @@ class UserProfileService {
       uid: user.uid,
       email: user.email || "",
       displayName: user.displayName || data.displayName || "",
-      photoURL: user.photoURL || data.photoURL,
-      phoneNumber: user.phoneNumber || data.phoneNumber,
+      // Only include photoURL and phoneNumber if they have values
+      ...(user.photoURL ? { photoURL: user.photoURL } : {}),
+      ...(data.photoURL ? { photoURL: data.photoURL } : {}),
+      ...(user.phoneNumber ? { phoneNumber: user.phoneNumber } : {}),
+      ...(data.phoneNumber ? { phoneNumber: data.phoneNumber } : {}),
       createdAt: now,
       updatedAt: now,
       role: data.role || "user",
@@ -619,26 +623,29 @@ class UserProfileService {
     if (!user) throw new Error("No authenticated user found");
 
     try {
-      let q = query(
-        collection(db, "activityLogs"),
-        where("userId", "==", user.uid),
-        orderBy("timestamp", "desc"),
-        firestoreLimit(limit)
-      );
+      // Create a simpler query that doesn't require a composite index
+      let q;
 
       if (activityType) {
+        // If activityType is provided, query by userId and type only
         q = query(
           collection(db, "activityLogs"),
           where("userId", "==", user.uid),
           where("type", "==", activityType),
-          orderBy("timestamp", "desc"),
+          firestoreLimit(limit)
+        );
+      } else {
+        // If no activityType, just query by userId
+        q = query(
+          collection(db, "activityLogs"),
+          where("userId", "==", user.uid),
           firestoreLimit(limit)
         );
       }
 
       const querySnapshot = await getDocs(q);
-
       const activities: ActivityLog[] = [];
+
       querySnapshot.forEach((doc) => {
         activities.push({
           id: doc.id,
@@ -646,9 +653,14 @@ class UserProfileService {
         } as ActivityLog);
       });
 
-      return activities;
+      // Sort the results by timestamp in memory
+      return activities.sort((a, b) => {
+        const timestampA = a.timestamp?.toMillis() || 0;
+        const timestampB = b.timestamp?.toMillis() || 0;
+        return timestampB - timestampA; // Descending order (newest first)
+      });
     } catch (error) {
-      console.error("Error getting activity logs:", error);
+      console.error("Error fetching activity logs:", error);
       throw error;
     }
   }

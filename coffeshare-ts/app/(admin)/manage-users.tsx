@@ -1,551 +1,344 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  ScrollView,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
   Alert,
-  Keyboard,
+  RefreshControl,
 } from "react-native";
-import { useLanguage } from "../../context/LanguageContext"; // Corrected path
-import ScreenWrapper from "../../components/ScreenWrapper"; // Corrected path
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import CoffeePartnerHeader from "../../components/CoffeePartnerHeader"; // Corrected path
-// import SelectDropdown from 'react-native-select-dropdown'; // Optional: for nicer dropdowns
-
-// --- Dummy Data ---
-type UserRole = "User" | "Cafe" | "Admin";
-type UserStatus = "Active" | "Blocked";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  status: UserStatus;
-  avatarUrl?: string; // Optional
-}
-
-const DUMMY_USERS: User[] = [
-  {
-    id: "1",
-    name: "Alex Popescu",
-    email: "alex.p@email.com",
-    role: "User",
-    status: "Active",
-  },
-  {
-    id: "2",
-    name: "Cafeneaua Buna",
-    email: "contact@cafeabuna.ro",
-    role: "Cafe",
-    status: "Active",
-  },
-  {
-    id: "3",
-    name: "Maria Ionescu",
-    email: "maria.i@email.com",
-    role: "User",
-    status: "Blocked",
-  },
-  {
-    id: "4",
-    name: "Admin Principal",
-    email: "admin@coffeeshare.app",
-    role: "Admin",
-    status: "Active",
-  },
-  {
-    id: "5",
-    name: "Andrei Vasile",
-    email: "andrei.v@email.com",
-    role: "User",
-    status: "Active",
-  },
-  {
-    id: "6",
-    name: "Coffee Spot",
-    email: "office@coffeespot.com",
-    role: "Cafe",
-    status: "Blocked",
-  },
-  {
-    id: "7",
-    name: "Georgiana Dinu",
-    email: "georgiana.d@email.com",
-    role: "User",
-    status: "Active",
-  },
-];
-// ------------------
+import ScreenWrapper from "../../components/ScreenWrapper";
+import CoffeePartnerHeader from "../../components/CoffeePartnerHeader";
+import adminService, { AdminUserData } from "../../services/adminService";
+import { formatDate } from "../../utils/dateUtils";
 
 export default function ManageUsersScreen() {
-  const { t } = useLanguage();
-  const router = useRouter();
-  const [users, setUsers] = useState<User[]>(DUMMY_USERS);
+  const [users, setUsers] = useState<AdminUserData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterRole, setFilterRole] = useState<UserRole | "All">("All");
-  const [filterStatus, setFilterStatus] = useState<UserStatus | "All">("All");
+  const [filter, setFilter] = useState<
+    "all" | "active" | "suspended" | "blocked"
+  >("all");
 
-  const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      const nameMatch = user.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-      const emailMatch = user.email
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-      const roleMatch = filterRole === "All" || user.role === filterRole;
-      const statusMatch =
-        filterStatus === "All" || user.status === filterStatus;
-      return (nameMatch || emailMatch) && roleMatch && statusMatch;
-    });
-  }, [users, searchQuery, filterRole, filterStatus]);
+  useEffect(() => {
+    loadUsers();
+  }, []);
 
-  // --- Action Handlers ---
-  const handleEditUser = (user: User) => {
-    // TODO: Navigate to Edit User Screen
-    Alert.alert(
-      "Editează Utilizator",
-      `Funcționalitate pentru ${user.name} în curând!`
-    );
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const { users: fetchedUsers } = await adminService.getAllUsers();
+      setUsers(fetchedUsers);
+    } catch (error) {
+      console.error("Error loading users:", error);
+      Alert.alert("Error", "Failed to load users");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleToggleBlockUser = (user: User) => {
-    // TODO: Implement block/unblock logic (update state/backend)
-    const newStatus = user.status === "Active" ? "Blocked" : "Active";
-    setUsers((prevUsers) =>
-      prevUsers.map((u) => (u.id === user.id ? { ...u, status: newStatus } : u))
-    );
-    Alert.alert(
-      user.status === "Active"
-        ? "Blochează Utilizator"
-        : "Deblochează Utilizator",
-      `Sigur dorești să ${
-        user.status === "Active" ? "blochezi" : "deblochezi"
-      } ${user.name}? (Simulat)`
-    );
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      loadUsers();
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const searchResults = await adminService.searchUsers(searchQuery);
+      setUsers(searchResults);
+    } catch (error) {
+      console.error("Error searching users:", error);
+      Alert.alert("Error", "Failed to search users");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteUser = (user: User) => {
-    // TODO: Implement delete logic (update state/backend) with confirmation
-    Alert.alert(
-      "Șterge Utilizator",
-      `Sigur dorești să ștergi definitiv ${user.name}? Această acțiune nu poate fi anulată. (Simulat)`,
-      [
-        { text: "Anulează", style: "cancel" },
-        {
-          text: "Șterge",
-          style: "destructive",
-          onPress: () => {
-            setUsers((prevUsers) => prevUsers.filter((u) => u.id !== user.id));
-            console.log(`Simulated delete for ${user.name}`);
-          },
-        },
-      ]
-    );
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadUsers();
+    setRefreshing(false);
   };
-  // ---------------------
 
-  // --- Render Item ---
-  const renderUserItem = ({ item }: { item: User }) => {
-    const roleColor =
-      item.role === "Admin"
-        ? "#E53935"
-        : item.role === "Cafe"
-        ? "#8B4513"
-        : "#3F51B5";
-    const statusColor = item.status === "Active" ? "#4CAF50" : "#9E9E9E";
-
-    return (
-      <View style={styles.userCard}>
-        <View style={styles.userInfoContainer}>
-          {/* Placeholder Avatar */}
-          <View style={styles.avatarPlaceholder}>
-            <Ionicons
-              name={
-                item.role === "Cafe" ? "storefront-outline" : "person-outline"
-              }
-              size={20}
-              color="#FFF"
-            />
-          </View>
-          <View style={styles.userDetails}>
-            <Text style={styles.userName}>{item.name}</Text>
-            <Text style={styles.userEmail}>{item.email}</Text>
-            <View style={styles.badgesContainer}>
-              <View style={[styles.badge, { backgroundColor: roleColor }]}>
-                <Text style={styles.badgeText}>{item.role}</Text>
-              </View>
-              <View
-                style={[
-                  styles.badge,
-                  { backgroundColor: statusColor, marginLeft: 5 },
-                ]}
-              >
-                <Text style={styles.badgeText}>{item.status}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-        <View style={styles.userActions}>
-          <TouchableOpacity
-            onPress={() => handleEditUser(item)}
-            style={styles.actionButton}
-          >
-            <Ionicons name="pencil-outline" size={22} color="#757575" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleToggleBlockUser(item)}
-            style={styles.actionButton}
-          >
-            <Ionicons
-              name={
-                item.status === "Active"
-                  ? "lock-open-outline"
-                  : "lock-closed-outline"
-              }
-              size={22}
-              color={item.status === "Active" ? "#FFA000" : "#E53935"}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleDeleteUser(item)}
-            style={styles.actionButton}
-          >
-            <Ionicons name="trash-outline" size={22} color="#E53935" />
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
+  const handleStatusChange = async (
+    userId: string,
+    newStatus: "active" | "suspended" | "blocked"
+  ) => {
+    try {
+      await adminService.changeUserStatus(userId, newStatus);
+      Alert.alert("Success", "User status updated successfully");
+      loadUsers(); // Reload users to reflect changes
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      Alert.alert("Error", "Failed to update user status");
+    }
   };
-  // -------------------
+
+  const filteredUsers = users.filter((user) => {
+    if (filter === "all") return true;
+    return user.status === filter;
+  });
 
   return (
     <ScreenWrapper>
-      {/* TODO: Add translation key 'manageUsersTitle' */}
-      <CoffeePartnerHeader title={"Gestionează Utilizatori"} />
+      <CoffeePartnerHeader title="Manage Users" showBackButton={true} />
 
-      {/* Search and Filter Bar */}
-      <View style={styles.controlsContainer}>
-        <View style={styles.searchContainer}>
-          <Ionicons
-            name="search-outline"
-            size={20}
-            color="#888"
-            style={styles.searchIcon}
-          />
+      {/* Search and Filter Section */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputContainer}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Caută după nume sau email..."
+            placeholder="Search users..."
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor="#999"
-            returnKeyType="search"
-            onSubmitEditing={() => Keyboard.dismiss()}
+            onSubmitEditing={handleSearch}
           />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity
-              onPress={() => setSearchQuery("")}
-              style={styles.clearIconContainer}
-            >
-              <Ionicons name="close-circle" size={20} color="#999" />
-            </TouchableOpacity>
-          )}
-        </View>
-        {/* Simple Filter Buttons for now */}
-        <View style={styles.filterContainer}>
-          <Text style={styles.filterLabel}>Rol:</Text>
-          <TouchableOpacity
-            onPress={() => setFilterRole("All")}
-            style={[
-              styles.filterButton,
-              filterRole === "All" && styles.filterButtonActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.filterButtonText,
-                filterRole === "All" && styles.filterButtonTextActive,
-              ]}
-            >
-              Toate
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setFilterRole("User")}
-            style={[
-              styles.filterButton,
-              filterRole === "User" && styles.filterButtonActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.filterButtonText,
-                filterRole === "User" && styles.filterButtonTextActive,
-              ]}
-            >
-              User
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setFilterRole("Cafe")}
-            style={[
-              styles.filterButton,
-              filterRole === "Cafe" && styles.filterButtonActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.filterButtonText,
-                filterRole === "Cafe" && styles.filterButtonTextActive,
-              ]}
-            >
-              Cafe
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setFilterRole("Admin")}
-            style={[
-              styles.filterButton,
-              filterRole === "Admin" && styles.filterButtonActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.filterButtonText,
-                filterRole === "Admin" && styles.filterButtonTextActive,
-              ]}
-            >
-              Admin
-            </Text>
+          <TouchableOpacity onPress={handleSearch} style={styles.searchButton}>
+            <Ionicons name="search" size={24} color="#8B4513" />
           </TouchableOpacity>
         </View>
+
         <View style={styles.filterContainer}>
-          <Text style={styles.filterLabel}>Status:</Text>
           <TouchableOpacity
-            onPress={() => setFilterStatus("All")}
             style={[
               styles.filterButton,
-              filterStatus === "All" && styles.filterButtonActive,
+              filter === "all" && styles.filterButtonActive,
             ]}
+            onPress={() => setFilter("all")}
           >
             <Text
               style={[
-                styles.filterButtonText,
-                filterStatus === "All" && styles.filterButtonTextActive,
+                styles.filterText,
+                filter === "all" && styles.filterTextActive,
               ]}
             >
-              Toate
+              All
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => setFilterStatus("Active")}
             style={[
               styles.filterButton,
-              filterStatus === "Active" && styles.filterButtonActive,
+              filter === "active" && styles.filterButtonActive,
             ]}
+            onPress={() => setFilter("active")}
           >
             <Text
               style={[
-                styles.filterButtonText,
-                filterStatus === "Active" && styles.filterButtonTextActive,
+                styles.filterText,
+                filter === "active" && styles.filterTextActive,
               ]}
             >
-              Activ
+              Active
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => setFilterStatus("Blocked")}
             style={[
               styles.filterButton,
-              filterStatus === "Blocked" && styles.filterButtonActive,
+              filter === "suspended" && styles.filterButtonActive,
             ]}
+            onPress={() => setFilter("suspended")}
           >
             <Text
               style={[
-                styles.filterButtonText,
-                filterStatus === "Blocked" && styles.filterButtonTextActive,
+                styles.filterText,
+                filter === "suspended" && styles.filterTextActive,
               ]}
             >
-              Blocat
+              Suspended
             </Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* User List */}
-      <FlatList
-        data={filteredUsers}
-        renderItem={renderUserItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={() => (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="sad-outline" size={50} color="#CCC" />
-            <Text style={styles.emptyListText}>Niciun utilizator găsit.</Text>
-            <Text style={styles.emptyListSubText}>
-              Încearcă să ajustezi filtrele.
-            </Text>
-          </View>
+      {/* Users List */}
+      <ScrollView
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+      >
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color="#8B4513"
+            style={styles.loader}
+          />
+        ) : filteredUsers.length > 0 ? (
+          filteredUsers.map((user) => (
+            <View key={user.id} style={styles.userCard}>
+              <View style={styles.userInfo}>
+                <Text style={styles.userName}>
+                  {user.displayName || "Unnamed User"}
+                </Text>
+                <Text style={styles.userEmail}>{user.email}</Text>
+                <Text style={styles.userRole}>Role: {user.role}</Text>
+                <Text style={styles.userDate}>
+                  Registered: {formatDate(user.registrationDate)}
+                </Text>
+              </View>
+
+              <View style={styles.userActions}>
+                <TouchableOpacity
+                  style={[
+                    styles.statusButton,
+                    user.status === "active" && styles.statusButtonActive,
+                  ]}
+                  onPress={() => handleStatusChange(user.id, "active")}
+                >
+                  <Text style={styles.statusButtonText}>Active</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.statusButton,
+                    user.status === "suspended" && styles.statusButtonSuspended,
+                  ]}
+                  onPress={() => handleStatusChange(user.id, "suspended")}
+                >
+                  <Text style={styles.statusButtonText}>Suspend</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.statusButton,
+                    user.status === "blocked" && styles.statusButtonBlocked,
+                  ]}
+                  onPress={() => handleStatusChange(user.id, "blocked")}
+                >
+                  <Text style={styles.statusButtonText}>Block</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.noUsersText}>No users found</Text>
         )}
-      />
+      </ScrollView>
     </ScreenWrapper>
   );
 }
 
-// --- Styles ---
 const styles = StyleSheet.create({
-  controlsContainer: {
-    paddingHorizontal: 15,
-    paddingTop: 10,
-    paddingBottom: 15,
-    backgroundColor: "#F8F8F8",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-  },
   searchContainer: {
+    padding: 15,
+    backgroundColor: "#fff",
+  },
+  searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFF",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: "#DDD",
-    marginBottom: 15,
-  },
-  searchIcon: {
-    marginRight: 8,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    marginBottom: 10,
   },
   searchInput: {
     flex: 1,
-    height: 40,
-    fontSize: 15,
-    color: "#333",
+    paddingVertical: 12,
+    fontSize: 16,
   },
-  clearIconContainer: {
-    padding: 5,
+  searchButton: {
+    padding: 10,
   },
   filterContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  filterLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#555",
-    marginRight: 10,
-    minWidth: 50, // Ensure alignment
+    justifyContent: "space-between",
+    marginTop: 10,
   },
   filterButton: {
-    paddingVertical: 5,
+    flex: 1,
+    paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 15,
-    backgroundColor: "#E0E0E0",
-    marginRight: 8,
+    borderRadius: 20,
+    backgroundColor: "#f5f5f5",
+    marginHorizontal: 5,
+    alignItems: "center",
   },
   filterButtonActive: {
-    backgroundColor: "#4E342E", // Dark brown for active filter
+    backgroundColor: "#8B4513",
   },
-  filterButtonText: {
-    fontSize: 13,
-    color: "#444",
+  filterText: {
+    color: "#666",
+    fontSize: 14,
   },
-  filterButtonTextActive: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
+  filterTextActive: {
+    color: "#fff",
   },
-  listContainer: {
-    paddingHorizontal: 15,
-    paddingTop: 10,
-    paddingBottom: 20,
+  scrollView: {
+    flex: 1,
+  },
+  loader: {
+    marginTop: 20,
   },
   userCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    marginBottom: 12,
-    padding: 12,
-    flexDirection: "row",
-    alignItems: "center",
+    backgroundColor: "#fff",
+    margin: 10,
+    padding: 15,
+    borderRadius: 10,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  userInfoContainer: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  avatarPlaceholder: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
-    backgroundColor: "#BDBDBD",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  userDetails: {
-    flex: 1,
+  userInfo: {
+    marginBottom: 10,
   },
   userName: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "bold",
     color: "#333",
-    marginBottom: 2,
   },
   userEmail: {
-    fontSize: 13,
-    color: "#777",
-    marginBottom: 6,
+    fontSize: 14,
+    color: "#666",
+    marginTop: 2,
   },
-  badgesContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+  userRole: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 2,
   },
-  badge: {
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    borderRadius: 10,
-  },
-  badgeText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "bold",
+  userDate: {
+    fontSize: 12,
+    color: "#999",
+    marginTop: 2,
   },
   userActions: {
     flexDirection: "row",
-    alignItems: "center",
-    marginLeft: 10,
+    justifyContent: "space-between",
+    marginTop: 10,
   },
-  actionButton: {
-    padding: 6, // Increase tap area
-    marginLeft: 8,
-  },
-  emptyContainer: {
+  statusButton: {
     flex: 1,
-    justifyContent: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: "#f5f5f5",
+    marginHorizontal: 5,
     alignItems: "center",
-    marginTop: 80,
   },
-  emptyListText: {
-    textAlign: "center",
-    marginTop: 15,
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#888",
+  statusButtonActive: {
+    backgroundColor: "#4CAF50",
   },
-  emptyListSubText: {
+  statusButtonSuspended: {
+    backgroundColor: "#FFC107",
+  },
+  statusButtonBlocked: {
+    backgroundColor: "#F44336",
+  },
+  statusButtonText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  noUsersText: {
     textAlign: "center",
-    marginTop: 5,
-    fontSize: 14,
-    color: "#AAA",
+    marginTop: 20,
+    fontSize: 16,
+    color: "#666",
   },
 });
-// --------------

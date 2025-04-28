@@ -9,8 +9,7 @@ import {
   User,
   updateProfile,
 } from "firebase/auth";
-import { initializeApp } from "firebase/app";
-import { firebaseConfig } from "../config/firebase";
+import { app } from "../config/firebase";
 import userProfileService from "../services/userProfileService";
 import {
   UserProfile,
@@ -19,8 +18,7 @@ import {
   UserNotification,
 } from "../types";
 
-// Initialize Firebase app and auth
-const app = initializeApp(firebaseConfig);
+// Initialize auth using the imported app
 const auth = getAuth(app);
 
 // Create context
@@ -28,7 +26,7 @@ interface FirebaseContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ role: string }>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -101,6 +99,16 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = async (email: string, password: string) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
+
+      // Get the user profile to check their role
+      const profile = await userProfileService.getCurrentUserProfile();
+
+      if (!profile) {
+        throw new Error("User profile not found");
+      }
+
+      // Return the user's role for redirection
+      return { role: profile.role };
     } catch (error) {
       console.error("Login error:", error);
       throw error;
