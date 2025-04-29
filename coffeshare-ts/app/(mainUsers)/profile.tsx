@@ -14,7 +14,7 @@ import {
 import { Stack, router, Link } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import BottomTabBar from "../../components/BottomTabBar";
-import { useLanguage } from "../../context/LanguageContext";
+import { useLanguage, TranslationKey } from "../../context/LanguageContext";
 import { useFirebase } from "../../context/FirebaseContext";
 import { ActivityType } from "../../types";
 
@@ -73,7 +73,7 @@ export default function ProfileScreen() {
       router.replace("/(auth)/login");
     } catch (error) {
       console.error("Logout error:", error);
-      Alert.alert("Error", "Failed to log out. Please try again.");
+      Alert.alert(t("common.error"), t("dashboard.logoutError"));
     } finally {
       setLoading(false);
     }
@@ -112,7 +112,7 @@ export default function ProfileScreen() {
     },
   ];
 
-  const getActivityIcon = (type: ActivityType) => {
+  const getActivityIcon = (type: ActivityType): IconName => {
     switch (type) {
       case ActivityType.COFFEE_REDEMPTION:
         return "cafe-outline";
@@ -130,22 +130,25 @@ export default function ProfileScreen() {
     }
   };
 
-  const formatActivityText = (activity: any) => {
+  const formatActivityText = (activity: any): string => {
+    const cafeName = activity.cafeName || t("dashboard.defaultCafeName");
+    const subscriptionType = activity.subscriptionType || "";
+
     switch (activity.type) {
       case ActivityType.COFFEE_REDEMPTION:
-        return `Enjoyed coffee at ${activity.cafeName || "a coffee shop"}`;
+        return t("profile.activityCoffeeRedemption", { cafeName });
       case ActivityType.LOGIN:
-        return "Logged in to app";
+        return t("profile.activityLogin");
       case ActivityType.LOGOUT:
-        return "Logged out of app";
+        return t("profile.activityLogout");
       case ActivityType.PROFILE_UPDATE:
-        return "Updated profile information";
+        return t("profile.activityProfileUpdate");
       case ActivityType.SUBSCRIPTION_PURCHASE:
-        return `Purchased ${activity.subscriptionType || "a"} subscription`;
+        return t("profile.activitySubscriptionPurchase", { subscriptionType });
       case ActivityType.SUBSCRIPTION_RENEWAL:
-        return `Renewed ${activity.subscriptionType || "a"} subscription`;
+        return t("profile.activitySubscriptionRenewal", { subscriptionType });
       default:
-        return activity.type?.replace(/_/g, " ").toLowerCase() || "Activity";
+        return t("profile.activityDefault");
     }
   };
 
@@ -153,10 +156,13 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#8B4513" />
-        <Text style={styles.loadingText}>Loading profile...</Text>
+        <Text style={styles.loadingText}>{t("profile.loading")}</Text>
       </SafeAreaView>
     );
   }
+
+  const favoriteCafeName =
+    userProfile.stats?.favoriteCafe?.name || t("dashboard.noFavoriteCafe");
 
   return (
     <SafeAreaView style={styles.container}>
@@ -184,7 +190,7 @@ export default function ProfileScreen() {
                 <Text style={styles.placeholderText}>
                   {userProfile.displayName
                     ? userProfile.displayName.charAt(0).toUpperCase()
-                    : "U"}
+                    : t("profile.initialPlaceholder")}
                 </Text>
               </View>
             )}
@@ -222,62 +228,79 @@ export default function ProfileScreen() {
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              {userProfile.stats?.favoriteCafe?.name || "None yet"}
+              {favoriteCafeName}
             </Text>
             <Text style={styles.statLabel}>{t("favoriteCafe")}</Text>
           </View>
         </View>
 
-        {/* Subscription Card */}
         <View style={styles.subscriptionCard}>
-          <Text style={styles.sectionTitle}>Your Subscription</Text>
+          <Text style={styles.sectionTitle}>
+            {t("profile.subscriptionTitle")}
+          </Text>
           <View style={styles.subscriptionDetails}>
             <View style={styles.subscriptionRow}>
-              <Text style={styles.subscriptionLabel}>Plan:</Text>
+              <Text style={styles.subscriptionLabel}>
+                {t("profile.planLabel")}
+              </Text>
               <Text style={styles.subscriptionValue}>
-                {userProfile.subscription?.type || "None"}
+                {userProfile.subscription?.type ||
+                  t("profile.noSubscriptionPlan")}
               </Text>
             </View>
 
-            {userProfile.subscription?.type !== "None" && (
-              <>
-                <View style={styles.subscriptionRow}>
-                  <Text style={styles.subscriptionLabel}>Status:</Text>
-                  <Text
-                    style={[
-                      styles.subscriptionValue,
-                      userProfile.subscription?.isActive
-                        ? styles.activeText
-                        : styles.inactiveText,
-                    ]}
-                  >
-                    {userProfile.subscription?.isActive ? "Active" : "Inactive"}
-                  </Text>
-                </View>
-
-                <View style={styles.subscriptionRow}>
-                  <Text style={styles.subscriptionLabel}>Daily Limit:</Text>
-                  <Text style={styles.subscriptionValue}>
-                    {userProfile.subscription?.dailyLimit || 0} coffees
-                  </Text>
-                </View>
-
-                {userProfile.subscription?.expiryDate && (
+            {userProfile.subscription?.type &&
+              userProfile.subscription?.type !==
+                t("profile.noSubscriptionPlan") && (
+                <>
                   <View style={styles.subscriptionRow}>
-                    <Text style={styles.subscriptionLabel}>Expires:</Text>
-                    <Text style={styles.subscriptionValue}>
-                      {formatDate(userProfile.subscription.expiryDate)}
+                    <Text style={styles.subscriptionLabel}>
+                      {t("profile.statusLabel")}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.subscriptionValue,
+                        userProfile.subscription?.isActive
+                          ? styles.activeText
+                          : styles.inactiveText,
+                      ]}
+                    >
+                      {userProfile.subscription?.isActive
+                        ? t("profile.statusActive")
+                        : t("profile.statusInactive")}
                     </Text>
                   </View>
-                )}
-              </>
-            )}
+
+                  <View style={styles.subscriptionRow}>
+                    <Text style={styles.subscriptionLabel}>
+                      {t("profile.dailyLimitLabel")}
+                    </Text>
+                    <Text style={styles.subscriptionValue}>
+                      {t("profile.coffeesCount", {
+                        count: userProfile.subscription?.dailyLimit || 0,
+                      })}
+                    </Text>
+                  </View>
+
+                  {userProfile.subscription?.expiryDate && (
+                    <View style={styles.subscriptionRow}>
+                      <Text style={styles.subscriptionLabel}>
+                        {t("profile.expiresLabel")}
+                      </Text>
+                      <Text style={styles.subscriptionValue}>
+                        {formatDate(userProfile.subscription.expiryDate)}
+                      </Text>
+                    </View>
+                  )}
+                </>
+              )}
           </View>
         </View>
 
-        {/* Recent Activity Section */}
         <View style={styles.activityCard}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
+          <Text style={styles.sectionTitle}>
+            {t("profile.recentActivityTitle")}
+          </Text>
           {activityLogs.length > 0 ? (
             <View style={styles.activityList}>
               {activityLogs.map((activity, index) => (
@@ -301,7 +324,9 @@ export default function ProfileScreen() {
               ))}
             </View>
           ) : (
-            <Text style={styles.noActivityText}>No recent activity</Text>
+            <Text style={styles.noActivityText}>
+              {t("profile.noRecentActivity")}
+            </Text>
           )}
         </View>
 

@@ -21,7 +21,12 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Allow CoffeShare to use your location to show nearby cafes.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow CoffeShare to use your location to show nearby cafes.",
-        "UIBackgroundModes": ["location"]
+        "UIBackgroundModes": ["location"],
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["com.coffeshare.app"]
+          }
+        ]
       }
     },
     "android": {
@@ -34,7 +39,20 @@
           "apiKey": "AIzaSyCNZmJtjp2a8Y2QTVsJIZY_TQWHLzwvO5Y"
         }
       },
-      "package": "com.coffeshare.app"
+      "package": "com.coffeshare.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "com.coffeshare.app",
+              "host": "oauth2redirect"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -48,8 +66,14 @@
           "locationWhenInUsePermission": "Allow CoffeShare to use your location to show nearby cafes.",
           "isIosBackgroundLocationEnabled": false
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
-    "scheme": "coffeshare-ts"
+    "scheme": "com.coffeshare.app",
+    "extra": {
+      "eas": {
+        "projectId": "947075506777"
+      }
+    }
   }
 }

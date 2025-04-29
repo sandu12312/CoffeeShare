@@ -29,10 +29,10 @@ import { ActivityType } from "../../types";
 const HEADER_HEIGHT = 80;
 
 // Helper function to format activity data
-const formatActivityForDisplay = (activity: any) => {
+const formatActivityForDisplay = (activity: any, t: Function) => {
   return {
     id: activity.id,
-    cafe: activity.cafeName || "Coffee Shop",
+    cafe: activity.cafeName || t("dashboard.defaultCafeName"),
     date: formatDate(activity.timestamp, true),
   };
 };
@@ -86,7 +86,7 @@ export default function Dashboard() {
       router.replace("/(auth)/login");
     } catch (error) {
       console.error("Logout error:", error);
-      Alert.alert("Error", "Failed to log out. Please try again.");
+      Alert.alert(t("common.error"), t("dashboard.logoutError"));
     }
   };
 
@@ -94,8 +94,8 @@ export default function Dashboard() {
   const getSubscriptionData = () => {
     if (!userProfile || !userProfile.subscription) {
       return {
-        type: "No Subscription",
-        expires: "N/A",
+        type: t("dashboard.noSubscription"),
+        expires: t("dashboard.subscriptionExpiresN/A"),
         coffeesLeft: 0,
         coffeesTotal: 0,
       };
@@ -115,8 +115,8 @@ export default function Dashboard() {
       return [
         {
           id: "no-activity",
-          cafe: "No recent activity",
-          date: "Get your first coffee!",
+          cafe: t("dashboard.noRecentActivity"),
+          date: t("dashboard.getActivityPrompt"),
         },
       ];
     }
@@ -124,7 +124,7 @@ export default function Dashboard() {
     return activityLogs
       .filter((log) => log.type === ActivityType.COFFEE_REDEMPTION)
       .slice(0, 3)
-      .map(formatActivityForDisplay);
+      .map((activity) => formatActivityForDisplay(activity, t));
   };
 
   // Get weekly stats data
@@ -133,7 +133,7 @@ export default function Dashboard() {
       return {
         coffeesThisWeek: 0,
         comparison: "+0%",
-        favoriteCafe: "None yet",
+        favoriteCafe: t("dashboard.noFavoriteCafe"),
       };
     }
 
@@ -150,7 +150,8 @@ export default function Dashboard() {
     return {
       coffeesThisWeek: weeklyCount,
       comparison: comparison,
-      favoriteCafe: userProfile.stats.favoriteCafe?.name || "None yet",
+      favoriteCafe:
+        userProfile.stats.favoriteCafe?.name || t("dashboard.noFavoriteCafe"),
     };
   };
 
@@ -188,7 +189,7 @@ export default function Dashboard() {
     { id: "3", name: "The Grind House", distance: "1.2km", rating: 4.2 },
   ];
 
-  if (!userProfile) {
+  if (loading || !userProfile) {
     return (
       <ImageBackground
         source={require("../../assets/images/coffee-beans-textured-background.jpg")}
@@ -197,7 +198,7 @@ export default function Dashboard() {
       >
         <SafeAreaView style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FFFFFF" />
-          <Text style={styles.loadingText}>Loading your coffee data...</Text>
+          <Text style={styles.loadingText}>{t("dashboard.loadingData")}</Text>
         </SafeAreaView>
       </ImageBackground>
     );
@@ -206,6 +207,9 @@ export default function Dashboard() {
   const subscriptionData = getSubscriptionData();
   const recentActivity = getRecentActivity();
   const quickStats = getWeeklyStats();
+
+  const displayName =
+    userProfile?.displayName || user?.displayName || t("profile.coffeeLover");
 
   return (
     <ImageBackground
@@ -224,7 +228,7 @@ export default function Dashboard() {
             { transform: [{ translateY: headerTranslateY }] },
           ]}
         >
-          <Text style={styles.floatingHeaderTitle}>CoffeeShare</Text>
+          <Text style={styles.floatingHeaderTitle}>{t("common.appName")}</Text>
           <View style={styles.floatingHeaderIcons}>
             {/* Icon Buttons */}
             <TouchableOpacity style={styles.iconButton}>
@@ -259,14 +263,15 @@ export default function Dashboard() {
           {/* User Welcome Section */}
           <View style={styles.welcomeContainer}>
             <Text style={styles.welcomeText}>
-              Welcome,{" "}
-              {userProfile?.displayName || user?.displayName || "Coffee Lover"}!
+              {t("dashboard.welcomeMessage", { name: displayName })}
             </Text>
             <TouchableOpacity
               style={styles.logoutButton}
               onPress={handleLogout}
             >
-              <Text style={styles.logoutText}>Logout</Text>
+              <Text style={styles.logoutText}>
+                {t("dashboard.logoutButton")}
+              </Text>
             </TouchableOpacity>
           </View>
 

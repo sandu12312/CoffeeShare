@@ -18,6 +18,7 @@ import Button from "../../components/Button";
 import { useFirebase } from "../../context/FirebaseContext";
 import { getAuth, signOut } from "firebase/auth";
 import { app } from "../../config/firebase";
+import { useLanguage, TranslationKey } from "../../context/LanguageContext";
 
 const auth = getAuth(app);
 
@@ -26,12 +27,14 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  const { login, sendVerificationEmail } = useFirebase();
+  const { login, sendVerificationEmail, signInWithGoogle } = useFirebase();
+  const { t } = useLanguage();
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please enter both email and password");
+      Alert.alert(t("common.error"), t("login.missingCredentials"));
       return;
     }
 
@@ -43,33 +46,34 @@ export default function Login() {
       const user = auth.currentUser;
       if (user && !user.emailVerified) {
         Alert.alert(
-          "Email Not Verified",
-          "Please verify your email before logging in. Would you like us to send another verification email?",
+          t("login.emailNotVerifiedTitle"),
+          t("login.emailNotVerifiedMessage"),
           [
             {
-              text: "Send Email",
+              text: t("common.sendEmail"),
               onPress: async () => {
                 try {
                   await sendVerificationEmail();
                   Alert.alert(
-                    "Verification Email Sent",
-                    "Please check your email to verify your account."
+                    t("login.verificationEmailSentTitle"),
+                    t("login.verificationEmailSentMessage")
                   );
                 } catch (error) {
                   Alert.alert(
-                    "Error",
-                    "Failed to send verification email. Please try again later."
+                    t("common.error"),
+                    t("login.sendVerificationEmailError")
                   );
                 }
               },
             },
             {
-              text: "Cancel",
+              text: t("common.cancel"),
               style: "cancel",
               onPress: () => signOut(auth),
             },
           ]
         );
+        setLoading(false);
         return;
       }
 
@@ -89,22 +93,23 @@ export default function Login() {
       }
     } catch (error: any) {
       console.error("Login error:", error);
-      let errorMessage = "Failed to login. Please try again.";
+      let errorMessageKey: TranslationKey = "login.loginFailedDefault";
 
       if (error.code === "auth/invalid-credential") {
-        errorMessage = "Invalid email or password.";
+        errorMessageKey = "login.invalidCredentialsError";
       } else if (error.code === "auth/user-not-found") {
-        errorMessage = "No account found with this email.";
+        errorMessageKey = "login.userNotFoundError";
       } else if (error.code === "auth/wrong-password") {
-        errorMessage = "Incorrect password.";
+        errorMessageKey = "login.wrongPasswordError";
       } else if (error.code === "auth/too-many-requests") {
-        errorMessage =
-          "Too many failed login attempts. Please try again later.";
+        errorMessageKey = "login.tooManyRequestsError";
       }
 
-      Alert.alert("Login Error", errorMessage);
+      Alert.alert(t("login.loginErrorTitle"), t(errorMessageKey));
     } finally {
-      setLoading(false);
+      if (auth.currentUser?.emailVerified || !auth.currentUser) {
+        setLoading(false);
+      }
     }
   };
 
@@ -116,9 +121,36 @@ export default function Login() {
     router.push("/(auth)/register");
   };
 
-  const handleGoogleLogin = () => {
-    // TODO: Implement Google login
-    console.log("Google login pressed");
+  const handleGoogleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+      const { role } = await signInWithGoogle();
+
+      // Redirect based on user role
+      switch (role) {
+        case "admin":
+          router.push("/dashboard");
+          break;
+        case "partner":
+          router.push("/(mainCoffeePartners)/dashboard");
+          break;
+        case "user":
+          router.push("/(mainUsers)/dashboard");
+          break;
+        default:
+          router.push("/dashboard");
+      }
+    } catch (error: any) {
+      console.error("Google Login Error:", error);
+      if (error.message !== "Google sign in was cancelled or failed") {
+        Alert.alert(
+          t("login.googleSignInErrorTitle"),
+          t("login.googleSignInFailed")
+        );
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   const handleFacebookLogin = () => {
@@ -154,14 +186,16 @@ export default function Login() {
           </View>
 
           <View style={styles.formContainer}>
-            <Text style={styles.welcomeText}>Welcome Back!</Text>
-            <Text style={styles.subtitleText}>Sign in to continue</Text>
+            <Text style={styles.welcomeText}>{t("login.welcomeBack")}</Text>
+            <Text style={styles.subtitleText}>
+              {t("login.signInToContinue")}
+            </Text>
 
             <View style={styles.inputContainer}>
               <Ionicons name="mail-outline" size={20} color="#8B4513" />
               <TextInput
                 style={styles.input}
-                placeholder="Email"
+                placeholder={t("common.emailPlaceholder")}
                 placeholderTextColor="#8B4513"
                 value={email}
                 onChangeText={setEmail}
@@ -174,7 +208,7 @@ export default function Login() {
               <Ionicons name="lock-closed-outline" size={20} color="#8B4513" />
               <TextInput
                 style={styles.input}
-                placeholder="Password"
+                placeholder={t("common.passwordPlaceholder")}
                 placeholderTextColor="#8B4513"
                 value={password}
                 onChangeText={setPassword}
@@ -196,16 +230,28 @@ export default function Login() {
               onPress={handleForgotPassword}
               style={styles.forgotPasswordContainer}
             >
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              <Text style={styles.forgotPasswordText}>
+                {t("login.forgotPasswordLink")}
+              </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-              <Text style={styles.loginButtonText}>Login</Text>
+            <TouchableOpacity
+              style={styles.loginButton}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.loginButtonText}>
+                  {t("login.loginButton")}
+                </Text>
+              )}
             </TouchableOpacity>
 
             <View style={styles.dividerContainer}>
               <View style={styles.divider} />
-              <Text style={styles.dividerText}>OR</Text>
+              <Text style={styles.dividerText}>{t("common.orDivider")}</Text>
               <View style={styles.divider} />
             </View>
 
@@ -213,8 +259,13 @@ export default function Login() {
               <TouchableOpacity
                 style={styles.socialButton}
                 onPress={handleGoogleLogin}
+                disabled={googleLoading}
               >
-                <Ionicons name="logo-google" size={24} color="#DB4437" />
+                {googleLoading ? (
+                  <ActivityIndicator color="#DB4437" />
+                ) : (
+                  <Ionicons name="logo-google" size={24} color="#DB4437" />
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -226,9 +277,13 @@ export default function Login() {
             </View>
 
             <View style={styles.registerContainer}>
-              <Text style={styles.registerText}>Don't have an account? </Text>
+              <Text style={styles.registerText}>
+                {t("login.noAccountPrompt")}
+              </Text>
               <TouchableOpacity onPress={handleRegister}>
-                <Text style={styles.registerLink}>Register</Text>
+                <Text style={styles.registerLink}>
+                  {t("login.registerLink")}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

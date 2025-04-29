@@ -1,20 +1,25 @@
 import React from "react";
 import { View, Text, SafeAreaView, StyleSheet } from "react-native";
 import { Stack } from "expo-router";
+import { useLanguage } from "../../../context/LanguageContext";
 
 export default function EditProfileScreen() {
+  const { t } = useLanguage();
+
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen
         options={{
-          headerTitle: "Edit Profile",
+          headerTitle: t("editProfile"),
           headerStyle: styles.headerStyle,
           headerTitleStyle: styles.headerTitleStyle,
           headerTintColor: "#321E0E",
         }}
       />
       <View style={styles.content}>
-        <Text style={styles.placeholderText}>Edit Profile Form Goes Here</Text>
+        <Text style={styles.placeholderText}>
+          {t("editProfile.formPlaceholder")}
+        </Text>
         {/* TODO: Implement profile editing form */}
       </View>
     </SafeAreaView>

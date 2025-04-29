@@ -10,8 +10,11 @@ import {
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import BottomTabBar from "../../components/BottomTabBar";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function SubscriptionsScreen() {
+  const { t } = useLanguage();
+
   // Placeholder data
   const subscriptions = [
     {
@@ -19,7 +22,7 @@ export default function SubscriptionsScreen() {
       name: "Student Pack",
       price: "$9.99",
       coffees: 10,
-      period: "month",
+      period: t("monthly"),
       popular: false,
     },
     {
@@ -27,7 +30,7 @@ export default function SubscriptionsScreen() {
       name: "Coffee Lover",
       price: "$19.99",
       coffees: 25,
-      period: "month",
+      period: t("monthly"),
       popular: true,
     },
     {
@@ -35,7 +38,7 @@ export default function SubscriptionsScreen() {
       name: "Office Team",
       price: "$49.99",
       coffees: 70,
-      period: "month",
+      period: t("monthly"),
       popular: false,
     },
   ];
@@ -46,13 +49,11 @@ export default function SubscriptionsScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Subscriptions</Text>
+        <Text style={styles.headerTitle}>{t("subscriptions")}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.pageSubtitle}>
-          Choose the perfect plan for your coffee needs.
-        </Text>
+        <Text style={styles.pageSubtitle}>{t("choosePerfectPlan")}</Text>
 
         {subscriptions.map((plan) => (
           <View
@@ -61,7 +62,7 @@ export default function SubscriptionsScreen() {
           >
             {plan.popular && (
               <View style={styles.popularBadge}>
-                <Text style={styles.popularBadgeText}>Most Popular</Text>
+                <Text style={styles.popularBadgeText}>{t("mostPopular")}</Text>
               </View>
             )}
             <View style={styles.planHeader}>
@@ -72,16 +73,20 @@ export default function SubscriptionsScreen() {
             <View style={styles.planDetails}>
               <View style={styles.detailItem}>
                 <Ionicons name="cafe-outline" size={20} color="#8B4513" />
-                <Text style={styles.detailText}>{plan.coffees} coffees</Text>
+                <Text style={styles.detailText}>
+                  {t("profile.coffeesCount", { count: plan.coffees })}
+                </Text>
               </View>
               <View style={styles.detailItem}>
                 <Ionicons name="calendar-outline" size={20} color="#8B4513" />
-                <Text style={styles.detailText}>per {plan.period}</Text>
+                <Text style={styles.detailText}>
+                  {t("subscriptions.perPeriod", { period: plan.period })}
+                </Text>
               </View>
             </View>
 
             <TouchableOpacity style={styles.subscribeButton}>
-              <Text style={styles.subscribeButtonText}>Select Plan</Text>
+              <Text style={styles.subscribeButtonText}>{t("selectPlan")}</Text>
             </TouchableOpacity>
           </View>
         ))}

@@ -1,13 +1,16 @@
 import React from "react";
 import { View, Text, SafeAreaView, StyleSheet } from "react-native";
 import { Stack } from "expo-router";
+import { useLanguage } from "../../../context/LanguageContext";
 
 export default function PrivacySecurityScreen() {
+  const { t } = useLanguage();
+
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen
         options={{
-          headerTitle: "Privacy & Security",
+          headerTitle: t("privacySecurity"),
           headerStyle: styles.headerStyle,
           headerTitleStyle: styles.headerTitleStyle,
           headerTintColor: "#321E0E",
@@ -15,7 +18,7 @@ export default function PrivacySecurityScreen() {
       />
       <View style={styles.content}>
         <Text style={styles.placeholderText}>
-          Privacy & Security Settings Go Here
+          {t("privacySecurity.settingsPlaceholder")}
         </Text>
         {/* TODO: Implement privacy/security options */}
       </View>

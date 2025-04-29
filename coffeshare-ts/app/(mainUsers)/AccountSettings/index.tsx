@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Stack, router, Link } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useLanguage } from "../../../context/LanguageContext";
 
 // Reusable Setting Item Component
 const SettingItem = ({
@@ -30,16 +31,18 @@ const SettingItem = ({
 );
 
 export default function AccountSettingsScreen() {
+  const { t } = useLanguage();
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Configure the header */}
       <Stack.Screen
         options={{
-          headerTitle: "Account Settings",
-          headerBackTitle: "Profile", // Sets the back button text on the next screen
+          headerTitle: t("accountSettings"),
+          headerBackTitle: t("profile"),
           headerStyle: styles.headerStyle,
           headerTitleStyle: styles.headerTitleStyle,
-          headerTintColor: "#321E0E", // Color of back button and title
+          headerTintColor: "#321E0E",
         }}
       />
 
@@ -48,22 +51,27 @@ export default function AccountSettingsScreen() {
           <SettingItem
             href="/(mainUsers)/AccountSettings/EditProfile"
             icon="person-outline"
-            label="Edit Profile"
+            label={t("editProfile")}
+          />
+          <SettingItem
+            href="/(mainUsers)/AccountSettings/Language"
+            icon="language-outline"
+            label={t("language")}
           />
           <SettingItem
             href="/(mainUsers)/AccountSettings/Notifications"
             icon="notifications-outline"
-            label="Notifications"
+            label={t("notifications")}
           />
           <SettingItem
             href="/(mainUsers)/AccountSettings/PrivacySecurity"
             icon="lock-closed-outline"
-            label="Privacy & Security"
+            label={t("privacySecurity")}
           />
           <SettingItem
             href="/(mainUsers)/AccountSettings/HelpSupport"
             icon="help-circle-outline"
-            label="Help & Support"
+            label={t("helpSupport")}
           />
         </View>
       </ScrollView>

@@ -17,6 +17,7 @@ import * as Location from "expo-location";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase"; // Adjust path as necessary
 import BottomTabBar from "../../components/BottomTabBar";
+import { useLanguage } from "../../context/LanguageContext"; // Importăm useLanguage
 
 // Default region set to Timisoara, Romania
 const DEFAULT_REGION: Region = {
@@ -79,6 +80,7 @@ const FIVE_TO_GO_LOCATIONS: Cafe[] = [
 ];
 
 export default function MapScreen() {
+  const { t } = useLanguage(); // Obținem funcția t
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -103,7 +105,6 @@ export default function MapScreen() {
       const cafesData: Cafe[] = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data();
-        // Validate location data exists and is correct type
         if (
           data.location &&
           typeof data.location.latitude === "number" &&
@@ -111,9 +112,9 @@ export default function MapScreen() {
         ) {
           cafesData.push({
             id: doc.id,
-            businessName: data.businessName || "Unnamed Cafe", // Fallback name
+            businessName: data.businessName || t("map.unnamedCafe"), // Tradus fallback
             location: data.location,
-            address: data.address || "No address provided", // Fallback address
+            address: data.address || t("map.noAddress"), // Tradus fallback
           });
         } else {
           console.warn(`Cafe ${doc.id} missing or has invalid location data.`);
@@ -122,7 +123,7 @@ export default function MapScreen() {
       setCafes(cafesData);
     } catch (error) {
       console.error("Error fetching cafes:", error);
-      setFetchError("Failed to load cafes. Please try refreshing.");
+      setFetchError(t("map.cafesFetchError")); // Tradus
     }
   };
 
@@ -131,38 +132,25 @@ export default function MapScreen() {
     setLocationError(null); // Reset location error
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
-      setLocationError(
-        "Permission to access location was denied. User location dot might not show."
-      );
-      // Don't Alert here, just log error and proceed with default region
+      setLocationError(t("map.locationPermissionDenied")); // Tradus
       console.warn("Location permission denied.");
-      // setMapRegion(DEFAULT_REGION); // REMOVED - Keep Timisoara as center
       return null; // Indicate permission failure
     }
 
     try {
       let location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced, // Balance accuracy and power
+        accuracy: Location.Accuracy.Balanced,
       });
       const currentUserLocation = {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       };
-      setUserLocation(currentUserLocation); // Still set user location for the blue dot
-      // REMOVED: Do not update map region to user's location
-      // setMapRegion({
-      //   ...DEFAULT_REGION,
-      //   latitude: currentUserLocation.latitude,
-      //   longitude: currentUserLocation.longitude,
-      // });
+      setUserLocation(currentUserLocation);
       console.log("User location obtained:", currentUserLocation);
       return currentUserLocation; // Return location on success
     } catch (error) {
       console.error("Error getting current location:", error);
-      setLocationError(
-        "Could not get current location. User location dot might not show."
-      );
-      // setMapRegion(DEFAULT_REGION); // REMOVED - Keep Timisoara as center
+      setLocationError(t("map.locationFetchError")); // Tradus
       return null; // Indicate fetch failure
     }
   };
@@ -171,7 +159,7 @@ export default function MapScreen() {
   useEffect(() => {
     const loadMapData = async () => {
       setLoading(true);
-      await getLocationAsync(); // Attempt to get user location (will override default if successful)
+      await getLocationAsync();
       await fetchCafes();
       setLoading(false);
     };
@@ -189,7 +177,6 @@ export default function MapScreen() {
   }, []);
 
   // Combine dynamically fetched cafes and static 5 to Go cafes
-  // Filter BOTH lists based on the search query
   const allCafes = [...cafes, ...FIVE_TO_GO_LOCATIONS];
   const filteredCafes = allCafes.filter((cafe) =>
     cafe.businessName.toLowerCase().includes(searchQuery.toLowerCase())
@@ -209,16 +196,13 @@ export default function MapScreen() {
         showsCompass={true}
         onRegionChangeComplete={setMapRegion}
       >
-        {/* Render markers for ALL filtered cafes (dynamic + static) */}
         {filteredCafes.map((cafe) => (
           <Marker
-            key={cafe.id} // Use the unique ID from each cafe object
+            key={cafe.id}
             coordinate={cafe.location}
             title={cafe.businessName}
             description={cafe.address}
-            // You could use a different pinColor for 5togo if desired:
-            // pinColor={cafe.id.startsWith('5togo-') ? '#FFA500' : '#8B4513'}
-            pinColor={"#8B4513"} // Keeping it consistent for now
+            pinColor={"#8B4513"}
           />
         ))}
       </MapView>
@@ -227,17 +211,16 @@ export default function MapScreen() {
       <View style={styles.headerOverlay}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search Cafes..."
+          placeholder={t("map.searchPlaceholder")}
           placeholderTextColor="#A08C7D"
           value={searchQuery}
           onChangeText={setSearchQuery}
-          clearButtonMode="while-editing" // iOS clear button
+          clearButtonMode="while-editing"
         />
-        {/* Optional: Add filter functionality later */}
         <TouchableOpacity
           style={styles.filterButton}
           onPress={() =>
-            Alert.alert("Filter", "Filter functionality coming soon!")
+            Alert.alert(t("map.filterAlertTitle"), t("map.filterAlertMessage"))
           }
         >
           <Ionicons name="options-outline" size={24} color="#8B4513" />
@@ -248,12 +231,12 @@ export default function MapScreen() {
       {loading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#8B4513" />
-          <Text style={styles.loadingText}>Loading map...</Text>
+          <Text style={styles.loadingText}>{t("map.loading")}</Text>
         </View>
       )}
 
       {/* Refresh Button */}
-      {!loading && ( // Only show when not initial loading
+      {!loading && (
         <TouchableOpacity
           style={[
             styles.refreshButton,
@@ -298,15 +281,13 @@ export default function MapScreen() {
       {!loading && filteredCafes.length === 0 && allCafes.length > 0 && (
         <View style={styles.noResultsOverlay}>
           <Text style={styles.noResultsText}>
-            No cafes found matching "{searchQuery}"
+            {t("map.noResultsFound", { searchQuery: searchQuery })}
           </Text>
         </View>
       )}
       {!loading && allCafes.length === 0 && !fetchError && (
         <View style={styles.noResultsOverlay}>
-          <Text style={styles.noResultsText}>
-            No active cafes found nearby.
-          </Text>
+          <Text style={styles.noResultsText}>{t("map.noCafesNearby")}</Text>
         </View>
       )}
 

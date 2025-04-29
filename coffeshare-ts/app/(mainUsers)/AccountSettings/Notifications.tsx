@@ -1,13 +1,16 @@
 import React from "react";
 import { View, Text, SafeAreaView, StyleSheet } from "react-native";
 import { Stack } from "expo-router";
+import { useLanguage } from "../../../context/LanguageContext";
 
 export default function NotificationsScreen() {
+  const { t } = useLanguage();
+
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen
         options={{
-          headerTitle: "Notifications",
+          headerTitle: t("notifications"),
           headerStyle: styles.headerStyle,
           headerTitleStyle: styles.headerTitleStyle,
           headerTintColor: "#321E0E",
@@ -15,7 +18,7 @@ export default function NotificationsScreen() {
       />
       <View style={styles.content}>
         <Text style={styles.placeholderText}>
-          Notification Settings Go Here
+          {t("notifications.settingsPlaceholder")}
         </Text>
         {/* TODO: Implement notification toggles/preferences */}
       </View>

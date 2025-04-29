@@ -17,6 +17,7 @@ import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { useFirebase } from "../../context/FirebaseContext";
+import { useLanguage, TranslationKey } from "../../context/LanguageContext";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -29,21 +30,22 @@ export default function Register() {
   const [verificationSent, setVerificationSent] = useState(false);
 
   const { register } = useFirebase();
+  const { t } = useLanguage();
 
   const handleRegister = async () => {
     // Validate inputs
     if (!name || !email || !password || !confirmPassword) {
-      Alert.alert("Error", "Please fill in all fields");
+      Alert.alert(t("common.error"), t("register.fillAllFieldsError"));
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
+      Alert.alert(t("common.error"), t("register.passwordsMismatchError"));
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters long");
+      Alert.alert(t("common.error"), t("register.passwordTooShortError"));
       return;
     }
 
@@ -57,22 +59,22 @@ export default function Register() {
         if (result.verificationSent) {
           setVerificationSent(true);
           Alert.alert(
-            "Verification Email Sent",
-            "Please check your email to verify your account before logging in.",
+            t("register.verificationEmailSentTitle"),
+            t("register.verificationEmailSentMessage"),
             [
               {
-                text: "OK",
+                text: t("common.ok"),
                 onPress: () => router.replace("/(auth)/login"),
               },
             ]
           );
         } else {
           Alert.alert(
-            "Registration Successful",
-            "Your account has been created. Welcome to CoffeeShare!",
+            t("register.registrationSuccessfulTitle"),
+            t("register.registrationSuccessfulMessage"),
             [
               {
-                text: "Continue",
+                text: t("common.continue"),
                 onPress: () => router.replace("/(mainUsers)/dashboard"),
               },
             ]
@@ -80,23 +82,24 @@ export default function Register() {
         }
       } else {
         Alert.alert(
-          "Registration Error",
-          "Failed to create your account. Please try again."
+          t("register.registrationErrorTitle"),
+          t("register.registrationFailedDefault")
         );
       }
     } catch (error: any) {
       console.error("Registration error:", error);
-      let errorMessage = "Failed to register. Please try again.";
+      let errorMessageKey: TranslationKey =
+        "register.registrationFailedDefault";
 
       if (error.code === "auth/email-already-in-use") {
-        errorMessage = "An account with this email already exists.";
+        errorMessageKey = "register.emailInUseError";
       } else if (error.code === "auth/invalid-email") {
-        errorMessage = "Please enter a valid email address.";
+        errorMessageKey = "register.invalidEmailError";
       } else if (error.code === "auth/weak-password") {
-        errorMessage = "Password is too weak. Please use a stronger password.";
+        errorMessageKey = "register.weakPasswordError";
       }
 
-      Alert.alert("Registration Error", errorMessage);
+      Alert.alert(t("register.registrationErrorTitle"), t(errorMessageKey));
     } finally {
       setLoading(false);
     }
@@ -126,12 +129,16 @@ export default function Register() {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.appName}>CoffeeShare</Text>
+            <Text style={styles.appName}>{t("common.appName")}</Text>
           </View>
 
           <View style={styles.formContainer}>
-            <Text style={styles.welcomeText}>Create Account</Text>
-            <Text style={styles.subtitleText}>Join our coffee community</Text>
+            <Text style={styles.welcomeText}>
+              {t("register.createAccountTitle")}
+            </Text>
+            <Text style={styles.subtitleText}>
+              {t("register.joinCommunitySubtitle")}
+            </Text>
 
             <View style={styles.inputContainer}>
               <Ionicons
@@ -142,7 +149,7 @@ export default function Register() {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Full Name"
+                placeholder={t("register.fullNamePlaceholder")}
                 placeholderTextColor="#8B4513"
                 value={name}
                 onChangeText={setName}
@@ -159,7 +166,7 @@ export default function Register() {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Email"
+                placeholder={t("common.emailPlaceholder")}
                 placeholderTextColor="#8B4513"
                 value={email}
                 onChangeText={setEmail}
@@ -177,7 +184,7 @@ export default function Register() {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Password"
+                placeholder={t("common.passwordPlaceholder")}
                 placeholderTextColor="#8B4513"
                 value={password}
                 onChangeText={setPassword}
@@ -201,7 +208,7 @@ export default function Register() {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Confirm Password"
+                placeholder={t("register.confirmPasswordPlaceholder")}
                 placeholderTextColor="#8B4513"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
@@ -226,17 +233,23 @@ export default function Register() {
               {loading ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="small" color="#FFFFFF" />
-                  <Text style={styles.loadingText}>Creating Account...</Text>
+                  <Text style={styles.loadingText}>
+                    {t("register.creatingAccountLoading")}
+                  </Text>
                 </View>
               ) : (
-                <Text style={styles.registerButtonText}>Register</Text>
+                <Text style={styles.registerButtonText}>
+                  {t("register.registerButton")}
+                </Text>
               )}
             </TouchableOpacity>
 
             <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>Already have an account? </Text>
+              <Text style={styles.loginText}>
+                {t("register.alreadyHaveAccountPrompt")}
+              </Text>
               <TouchableOpacity onPress={handleLogin}>
-                <Text style={styles.loginLink}>Login</Text>
+                <Text style={styles.loginLink}>{t("register.loginLink")}</Text>
               </TouchableOpacity>
             </View>
           </View>

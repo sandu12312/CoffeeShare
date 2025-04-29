@@ -17,6 +17,7 @@ import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { useFirebase } from "../../context/FirebaseContext";
+import { useLanguage, TranslationKey } from "../../context/LanguageContext";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -24,10 +25,11 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
 
   const { resetPassword } = useFirebase();
+  const { t } = useLanguage();
 
   const handleResetPassword = async () => {
     if (!email) {
-      Alert.alert("Error", "Please enter your email address");
+      Alert.alert(t("common.error"), t("forgotPassword.enterEmailError"));
       return;
     }
 
@@ -37,16 +39,16 @@ export default function ForgotPassword() {
       setIsSubmitted(true);
     } catch (error: any) {
       console.error("Password reset error:", error);
-      let errorMessage =
-        "Failed to send password reset email. Please try again.";
+      let errorMessageKey: TranslationKey =
+        "forgotPassword.failedToSendDefault";
 
       if (error.code === "auth/user-not-found") {
-        errorMessage = "No account found with this email address.";
+        errorMessageKey = "forgotPassword.userNotFoundError";
       } else if (error.code === "auth/invalid-email") {
-        errorMessage = "Please enter a valid email address.";
+        errorMessageKey = "forgotPassword.invalidEmailError";
       }
 
-      Alert.alert("Password Reset Error", errorMessage);
+      Alert.alert(t("forgotPassword.errorTitle"), t(errorMessageKey));
     } finally {
       setLoading(false);
     }
@@ -76,15 +78,17 @@ export default function ForgotPassword() {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.appName}>CoffeeShare</Text>
+            <Text style={styles.appName}>{t("common.appName")}</Text>
           </View>
 
           <View style={styles.formContainer}>
-            <Text style={styles.welcomeText}>Forgot Password</Text>
+            <Text style={styles.welcomeText}>{t("forgotPassword.title")}</Text>
             <Text style={styles.subtitleText}>
-              {isSubmitted
-                ? "Check your email for reset instructions"
-                : "Enter your email to reset your password"}
+              {t(
+                isSubmitted
+                  ? "forgotPassword.subtitleSubmitted"
+                  : "forgotPassword.subtitleInitial"
+              )}
             </Text>
 
             {!isSubmitted ? (
@@ -98,7 +102,7 @@ export default function ForgotPassword() {
                   />
                   <TextInput
                     style={styles.input}
-                    placeholder="Email"
+                    placeholder={t("common.emailPlaceholder")}
                     placeholderTextColor="#8B4513"
                     value={email}
                     onChangeText={setEmail}
@@ -112,13 +116,13 @@ export default function ForgotPassword() {
                   onPress={handleResetPassword}
                   disabled={loading}
                 >
-                  <Text style={styles.resetButtonText}>
-                    {loading ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      "Reset Password"
-                    )}
-                  </Text>
+                  {loading ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.resetButtonText}>
+                      {t("forgotPassword.resetButton")}
+                    </Text>
+                  )}
                 </TouchableOpacity>
               </>
             ) : (
@@ -130,15 +134,19 @@ export default function ForgotPassword() {
                   style={styles.successIcon}
                 />
                 <Text style={styles.successText}>
-                  Password reset instructions have been sent to your email.
+                  {t("forgotPassword.successMessage")}
                 </Text>
               </View>
             )}
 
             <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>Remember your password? </Text>
+              <Text style={styles.loginText}>
+                {t("forgotPassword.rememberPasswordPrompt")}
+              </Text>
               <TouchableOpacity onPress={handleBackToLogin}>
-                <Text style={styles.loginLink}>Login</Text>
+                <Text style={styles.loginLink}>
+                  {t("forgotPassword.backToLoginLink")}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
