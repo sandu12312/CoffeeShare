@@ -26,7 +26,6 @@ import {
 import { UserProfile } from "../types";
 import { app } from "../config/firebase";
 
-// Initialize Firestore and Auth using the imported app
 const db = getFirestore(app);
 const auth = getAuth(app);
 
@@ -42,28 +41,23 @@ export interface AdminUserData extends UserProfile {
   };
 }
 
-// Add interface for Cafe Data (if not already defined elsewhere)
 export interface CafeData {
-  id: string; // Firestore Document ID
+  id: string;
   businessName: string;
-  contactName?: string; // Make optional if it might not always exist
-  email: string; // Needed for auth creation
+  contactName?: string;
+  email: string;
   phone?: string;
   address?: string;
   status: "pending" | "active" | "inactive" | "rejected";
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  partnerUid?: string; // Will be added upon activation
-  // Add other cafe fields (location, hours, etc.)
+  partnerUid?: string;
 }
 
 /**
  * Admin Service class to handle all admin-related operations
  */
 class AdminService {
-  /**
-   * Check if the current user has admin rights
-   */
   async isAdmin(): Promise<boolean> {
     const user = auth.currentUser;
     if (!user) return false;
@@ -163,12 +157,7 @@ class AdminService {
    */
   async searchUsers(searchQuery: string): Promise<AdminUserData[]> {
     try {
-      // Since Firebase doesn't support OR queries across different fields directly,
-      // we'll fetch a reasonable amount of users and filter on the client side
-      const usersQuery = query(
-        collection(db, "users"),
-        limit(100) // Limit to a reasonable number for client-side filtering
-      );
+      const usersQuery = query(collection(db, "users"), limit(100));
 
       const snapshot = await getDocs(usersQuery);
       const users: AdminUserData[] = [];
@@ -275,10 +264,6 @@ class AdminService {
     try {
       const userRef = doc(db, "users", userId);
       await deleteDoc(userRef);
-
-      // Note: This only deletes the Firestore document
-      // To fully delete a user, you should also delete their auth account
-      // That requires an admin SDK with Firebase Functions
     } catch (error) {
       console.error("Error deleting user:", error);
       throw error;
@@ -464,7 +449,7 @@ class AdminService {
       snapshot.forEach((doc) => {
         try {
           const data = doc.data();
-          // Add a default value for createdAt if it's missing
+
           const cafeData = {
             ...data,
             id: doc.id,
@@ -473,7 +458,6 @@ class AdminService {
           cafes.push(cafeData);
         } catch (docError) {
           console.error(`Error processing cafe document ${doc.id}:`, docError);
-          // Skip this document and continue with others
         }
       });
 
@@ -482,7 +466,7 @@ class AdminService {
       return { cafes, lastVisible: lastVisibleDoc };
     } catch (error) {
       console.error(`Error fetching all cafes:`, error);
-      // Return empty array instead of throwing error
+
       return { cafes: [], lastVisible: null };
     }
   }
@@ -499,17 +483,14 @@ class AdminService {
     email: string,
     contactName: string
   ): Promise<void> {
-    // *** SECURITY WARNING ***
-    // As before, client-side user creation is insecure. Use Firebase Functions.
-    const activationPassword = "sandu123"; // Set password as requested
+    const activationPassword = "sandu123";
 
-    let newUserUid: string | null = null; // Keep track of created user UID for potential rollback
+    let newUserUid: string | null = null;
 
     try {
-      // 1. Create Firebase Auth user
       try {
         const userCredential = await createUserWithEmailAndPassword(
-          auth, // Use the main auth instance
+          auth,
           email,
           activationPassword
         );
@@ -518,15 +499,13 @@ class AdminService {
           `Auth user created for partner ${email} with UID: ${newUserUid}`
         );
 
-        // Sign out the newly created user immediately if using the main auth instance
         await signOut(auth);
-        // NOTE: Need to handle admin re-authentication
       } catch (authError: any) {
         if (authError.code === "auth/email-already-in-use") {
           console.warn(
             `Auth user with email ${email} already exists. Cannot automatically activate.`
           );
-          // Handle this case - maybe allow linking or show an error to admin?
+
           throw new Error(
             `Activation failed: Auth user with email ${email} already exists.`
           );
@@ -535,56 +514,48 @@ class AdminService {
             "Error creating Firebase Auth user during activation:",
             authError
           );
-          throw authError; // Rethrow other auth errors
+          throw authError;
         }
       }
 
-      // 2. Use a Firestore Batch Write for atomicity
       const batch = writeBatch(db);
 
-      // 3. Update Cafe Document: Set status to active and link partnerUid
       const cafeRef = doc(db, "cafes", cafeId);
       batch.update(cafeRef, {
         status: "active",
-        partnerUid: newUserUid, // Link the cafe to the new auth user
+        partnerUid: newUserUid,
         updatedAt: serverTimestamp(),
       });
 
-      // 4. Create or Update User Profile Document
-      // Check if a basic profile might exist from another flow, otherwise create.
       const userProfileRef = doc(db, "users", newUserUid);
-      // Check if doc exists - this requires an extra read, batch only writes/updates/deletes
-      // For simplicity here, we'll use set with merge: false (overwrite/create)
-      // A more robust solution might check existence first.
+
       const userProfileData: Partial<UserProfile> = {
         uid: newUserUid,
         email: email,
-        displayName: contactName, // Use contact name from cafe data
+        displayName: contactName,
         role: "partner",
         status: "active",
-        createdAt: serverTimestamp(), // Or keep original if updating?
+        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
-      // Use setDoc without merge to create or overwrite
+
       batch.set(userProfileRef, userProfileData);
 
-      // 5. Commit the batch
       await batch.commit();
       console.log(
         `Cafe ${cafeId} activated. Partner user ${newUserUid} created and linked.`
       );
     } catch (error) {
       console.error(`Error activating cafe ${cafeId}:`, error);
-      // Minimal rollback: If auth user was created but batch failed, you might want to delete the auth user.
-      // This requires Admin SDK usually.
+
       if (newUserUid) {
         console.error(
           `Potential orphan auth user: ${newUserUid}. Manual cleanup might be needed.`
         );
       }
-      throw error; // Re-throw the error to be handled by the caller
+      throw error;
     }
-    // IMPORTANT: Handle re-authentication of the admin user here if necessary.
+
     console.warn(
       "Admin user might need to re-authenticate after partner activation."
     );
@@ -653,7 +624,6 @@ class AdminService {
    */
   async transferPartnershipRequestToCafe(requestId: string): Promise<void> {
     try {
-      // Get the partnership request
       const requestRef = doc(db, "partnership_requests", requestId);
       const requestDoc = await getDoc(requestRef);
 
@@ -663,11 +633,9 @@ class AdminService {
 
       const requestData = requestDoc.data();
 
-      // Create a new cafe document
       const cafesCollection = collection(db, "cafes");
       const newCafeRef = doc(cafesCollection);
 
-      // Prepare cafe data
       const cafeData: Omit<CafeData, "id"> = {
         businessName: requestData.businessName,
         contactName: requestData.contactName,
@@ -679,16 +647,12 @@ class AdminService {
         updatedAt: Timestamp.now(),
       };
 
-      // Use a batch write to ensure atomicity
       const batch = writeBatch(db);
 
-      // Add the new cafe document
       batch.set(newCafeRef, cafeData);
 
-      // Delete the partnership request
       batch.delete(requestRef);
 
-      // Commit the batch
       await batch.commit();
 
       console.log(
@@ -702,7 +666,6 @@ class AdminService {
 
   async deletePartnershipRequest(requestId: string): Promise<void> {
     try {
-      // Get the partnership request first to check if it exists
       const requestRef = doc(db, "partnership_requests", requestId);
       const requestDoc = await getDoc(requestRef);
 
@@ -710,7 +673,6 @@ class AdminService {
         throw new Error("Partnership request not found");
       }
 
-      // Delete the partnership request
       await deleteDoc(requestRef);
       console.log(`Partnership request ${requestId} deleted successfully`);
     } catch (error) {
@@ -720,6 +682,5 @@ class AdminService {
   }
 }
 
-// Export a singleton instance
 export const adminService = new AdminService();
 export default adminService;

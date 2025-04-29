@@ -9,9 +9,7 @@ import { FirebaseProvider } from "../context/FirebaseContext";
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
-    // We'll load default system fonts since no custom fonts are specified
-  });
+  const [fontsLoaded] = useFonts({});
 
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded) {

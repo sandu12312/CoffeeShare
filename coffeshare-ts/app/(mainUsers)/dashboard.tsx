@@ -45,14 +45,12 @@ export default function Dashboard() {
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Calculate header translateY based on scroll
   const headerTranslateY = scrollOffsetY.interpolate({
     inputRange: [0, HEADER_HEIGHT],
     outputRange: [0, -HEADER_HEIGHT],
     extrapolate: "clamp",
   });
 
-  // Fetch user activities on component mount
   useEffect(() => {
     fetchUserActivities();
   }, []);
@@ -90,7 +88,6 @@ export default function Dashboard() {
     }
   };
 
-  // Get personalized subscription data
   const getSubscriptionData = () => {
     if (!userProfile || !userProfile.subscription) {
       return {

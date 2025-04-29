@@ -39,9 +39,7 @@ export default function LandingPage() {
     type: "success" | "error" | "";
   }>({ message: "", type: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // --- End Form State ---
 
-  // Redirect mobile users away from this page
   useEffect(() => {
     if (Platform.OS !== "web") {
       router.replace("/(auth)/welcome");
@@ -49,13 +47,11 @@ export default function LandingPage() {
   }, []);
 
   if (Platform.OS !== "web") {
-    // Render nothing or a loading indicator while redirecting
     return null;
   }
 
   const handleGetStarted = () => {
-    // Navigate to app's registration or download section
-    router.push("/(auth)/register"); // Or link to app stores if preferred
+    router.push("/(auth)/register");
   };
 
   const handleAppStoreLink = () => {

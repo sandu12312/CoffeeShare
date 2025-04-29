@@ -15,19 +15,17 @@ import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from "react-native-maps";
 import * as Location from "expo-location";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../../config/firebase"; // Adjust path as necessary
+import { db } from "../../config/firebase";
 import BottomTabBar from "../../components/BottomTabBar";
-import { useLanguage } from "../../context/LanguageContext"; // Importăm useLanguage
+import { useLanguage } from "../../context/LanguageContext";
 
-// Default region set to Timisoara, Romania
 const DEFAULT_REGION: Region = {
   latitude: 45.7579, // Timisoara Latitude
   longitude: 21.2287, // Timisoara Longitude
-  latitudeDelta: 0.04, // Zoom level adjusted for a city view
+  latitudeDelta: 0.04,
   longitudeDelta: 0.02,
 };
 
-// Interface for Cafe data structure
 interface Cafe {
   id: string;
   businessName: string;
@@ -93,9 +91,8 @@ export default function MapScreen() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [mapRegion, setMapRegion] = useState<Region>(DEFAULT_REGION);
 
-  // Function to fetch active cafes from Firestore
   const fetchCafes = async () => {
-    setFetchError(null); // Reset fetch error
+    setFetchError(null);
     try {
       const cafesQuery = query(
         collection(db, "cafes"),
@@ -112,9 +109,9 @@ export default function MapScreen() {
         ) {
           cafesData.push({
             id: doc.id,
-            businessName: data.businessName || t("map.unnamedCafe"), // Tradus fallback
+            businessName: data.businessName || t("map.unnamedCafe"),
             location: data.location,
-            address: data.address || t("map.noAddress"), // Tradus fallback
+            address: data.address || t("map.noAddress"),
           });
         } else {
           console.warn(`Cafe ${doc.id} missing or has invalid location data.`);
@@ -147,15 +144,13 @@ export default function MapScreen() {
       };
       setUserLocation(currentUserLocation);
       console.log("User location obtained:", currentUserLocation);
-      return currentUserLocation; // Return location on success
+      return currentUserLocation;
     } catch (error) {
       console.error("Error getting current location:", error);
-      setLocationError(t("map.locationFetchError")); // Tradus
-      return null; // Indicate fetch failure
+      setLocationError(t("map.locationFetchError"));
     }
   };
 
-  // Initial load effect
   useEffect(() => {
     const loadMapData = async () => {
       setLoading(true);
@@ -176,7 +171,6 @@ export default function MapScreen() {
     setRefreshing(false);
   }, []);
 
-  // Combine dynamically fetched cafes and static 5 to Go cafes
   const allCafes = [...cafes, ...FIVE_TO_GO_LOCATIONS];
   const filteredCafes = allCafes.filter((cafe) =>
     cafe.businessName.toLowerCase().includes(searchQuery.toLowerCase())
