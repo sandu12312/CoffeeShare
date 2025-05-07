@@ -626,28 +626,30 @@ class UserProfileService {
       let q = query(
         collection(db, "activityLogs"),
         where("userId", "==", user.uid),
-        orderBy("timestamp", "desc")
+        orderBy("timestamp", "desc"),
+        firestoreLimit(limit)
       );
 
-      if (type) {
-        q = query(q, where("type", "==", type));
-      }
-
-      if (limit) {
-        q = query(q, firestoreLimit(limit));
-      }
-
+      // If type is specified, we'll filter the results in memory
+      // This avoids the need for a composite index
       const querySnapshot = await getDocs(q);
       const logs: ActivityLog[] = [];
 
       querySnapshot.forEach((doc) => {
-        logs.push({
+        const log = {
           id: doc.id,
           ...doc.data(),
-        } as ActivityLog);
+        } as ActivityLog;
+
+        // If type is specified, only include matching logs
+        if (!type || log.type === type) {
+          logs.push(log);
+        }
       });
 
-      return logs;
+      // If we filtered by type, we might have fewer results than the limit
+      // So we'll take only the first 'limit' items
+      return logs.slice(0, limit);
     } catch (error) {
       console.error("Error getting activity logs:", error);
       throw error;

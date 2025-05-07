@@ -78,7 +78,7 @@ const FIVE_TO_GO_LOCATIONS: Cafe[] = [
 ];
 
 export default function MapScreen() {
-  const { t } = useLanguage(); // Obținem funcția t
+  const { t } = useLanguage();
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -189,12 +189,6 @@ export default function MapScreen() {
         showsMyLocationButton={true}
         showsCompass={true}
         onRegionChangeComplete={setMapRegion}
-        onMapReady={() => {
-          console.log("Map is ready");
-        }}
-        onPress={(e) => {
-          console.log("Map pressed at:", e.nativeEvent.coordinate);
-        }}
       >
         {filteredCafes.map((cafe) => (
           <Marker
@@ -277,7 +271,7 @@ export default function MapScreen() {
         </View>
       )}
 
-      {/* No Results Message - Adjusted Logic */}
+      {/* No Results Message */}
       {!loading && filteredCafes.length === 0 && allCafes.length > 0 && (
         <View style={styles.noResultsOverlay}>
           <Text style={styles.noResultsText}>
