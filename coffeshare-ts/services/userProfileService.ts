@@ -615,52 +615,41 @@ class UserProfileService {
   /**
    * Get user activity logs
    */
-  async getUserActivityLogs(
-    limit = 20,
-    activityType?: ActivityType
+  async getActivityLogs(
+    limit = 10,
+    type?: ActivityType
   ): Promise<ActivityLog[]> {
     const user = auth.currentUser;
     if (!user) throw new Error("No authenticated user found");
 
     try {
-      // Create a simpler query that doesn't require a composite index
-      let q;
+      let q = query(
+        collection(db, "activityLogs"),
+        where("userId", "==", user.uid),
+        orderBy("timestamp", "desc")
+      );
 
-      if (activityType) {
-        // If activityType is provided, query by userId and type only
-        q = query(
-          collection(db, "activityLogs"),
-          where("userId", "==", user.uid),
-          where("type", "==", activityType),
-          firestoreLimit(limit)
-        );
-      } else {
-        // If no activityType, just query by userId
-        q = query(
-          collection(db, "activityLogs"),
-          where("userId", "==", user.uid),
-          firestoreLimit(limit)
-        );
+      if (type) {
+        q = query(q, where("type", "==", type));
+      }
+
+      if (limit) {
+        q = query(q, firestoreLimit(limit));
       }
 
       const querySnapshot = await getDocs(q);
-      const activities: ActivityLog[] = [];
+      const logs: ActivityLog[] = [];
 
       querySnapshot.forEach((doc) => {
-        activities.push({
+        logs.push({
           id: doc.id,
           ...doc.data(),
         } as ActivityLog);
       });
 
-      // Sort the results by timestamp in memory
-      return activities.sort((a, b) => {
-        const timestampA = a.timestamp?.toMillis() || 0;
-        const timestampB = b.timestamp?.toMillis() || 0;
-        return timestampB - timestampA; // Descending order (newest first)
-      });
+      return logs;
     } catch (error) {
-      console.error("Error fetching activity logs:", error);
+      console.error("Error getting activity logs:", error);
       throw error;
     }
   }

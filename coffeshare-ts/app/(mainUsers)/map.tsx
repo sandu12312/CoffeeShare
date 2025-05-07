@@ -189,6 +189,12 @@ export default function MapScreen() {
         showsMyLocationButton={true}
         showsCompass={true}
         onRegionChangeComplete={setMapRegion}
+        onMapReady={() => {
+          console.log("Map is ready");
+        }}
+        onPress={(e) => {
+          console.log("Map pressed at:", e.nativeEvent.coordinate);
+        }}
       >
         {filteredCafes.map((cafe) => (
           <Marker

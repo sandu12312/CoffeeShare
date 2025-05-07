@@ -61,7 +61,7 @@ export default function QRScreen() {
         setError(null);
       } catch (err) {
         console.error("Eroare la generarea tokenului TOTP:", err);
-        setError(t("errorGeneratingOtp") || "Eroare la generarea codului");
+        setError(t("common.error"));
       }
     }
   }, [user?.uid, t]);
@@ -95,15 +95,11 @@ export default function QRScreen() {
         intervalRef.current = setInterval(generateNewOtp, 15 * 1000);
       } catch (err) {
         console.error("Eroare la inițializarea TOTP:", err);
-        setError(
-          t("errorInitializingOtp") || "Eroare la inițializarea securității"
-        );
+        setError(t("common.error"));
         totpInstanceRef.current = null;
       }
     } else {
-      setError(
-        t("errorFetchingSecret") || "Nu s-a putut obține secretul de securitate"
-      );
+      setError(t("common.error"));
     }
     setIsLoading(false);
   }, [user?.uid, user?.email, generateNewOtp, t]);
@@ -134,8 +130,8 @@ export default function QRScreen() {
     <ScreenWrapper>
       <View style={styles.container}>
         <View style={styles.content}>
-          <Text style={styles.title}>{t("yourQRCode")}</Text>
-          <Text style={styles.subtitle}>{t("showQRToPartner15s")}</Text>
+          <Text style={styles.title}>{t("scanQRCode")}</Text>
+          <Text style={styles.subtitle}>{t("scanQRDescription")}</Text>
 
           <View style={styles.qrContainer}>
             {isLoading ? (
@@ -150,7 +146,7 @@ export default function QRScreen() {
                 color="black"
               />
             ) : (
-              <Text style={styles.errorText}>{t("unableToGenerateQR")}</Text>
+              <Text style={styles.errorText}>{t("common.error")}</Text>
             )}
           </View>
 
