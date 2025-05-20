@@ -281,6 +281,21 @@ export default function Dashboard() {
             onRenew={handleRenewSubscription}
           />
 
+          {/* QR Code Button */}
+          <TouchableOpacity
+            style={styles.qrCodeButton}
+            onPress={() => router.push("/(main)/generateQR?cafeId=1")}
+            disabled={subscriptionData.coffeesLeft <= 0}
+          >
+            <Ionicons name="qr-code-outline" size={24} color="#FFFFFF" />
+            <Text style={styles.qrCodeButtonText}>{t("scanQRCode")}</Text>
+            {subscriptionData.coffeesLeft <= 0 && (
+              <View style={styles.disabledOverlay}>
+                <Text style={styles.disabledText}>No Coffees Left Today</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
           {/* Recommended Cafes Card */}
           <RecommendedCafesCard
             cafes={recommendedCafes}
@@ -459,5 +474,39 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     color: "#8B4513",
     fontWeight: "bold",
+  },
+  qrCodeButton: {
+    backgroundColor: "#8B4513",
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 15,
+    position: "relative",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  qrCodeButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    marginLeft: 8,
+  },
+  disabledOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  disabledText: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+    fontSize: 14,
+    textAlign: "center",
   },
 });

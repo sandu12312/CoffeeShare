@@ -124,6 +124,7 @@ export type TranslationKey =
   | "common.ok"
   | "common.continue"
   | "common.appName"
+  | "common.goBack"
   // Added for Forgot Password Screen
   | "forgotPassword.title"
   | "forgotPassword.subtitleInitial"
@@ -199,7 +200,22 @@ export type TranslationKey =
   // Added for Privacy & Security Screen
   | "privacySecurity.settingsPlaceholder"
   // Added for Help & Support Screen
-  | "helpSupport.infoPlaceholder";
+  | "helpSupport.infoPlaceholder"
+  // Added for Scanner Screen
+  | "scanner.invalidQrMissingFields"
+  | "scanner.invalidQrFormat"
+  | "scanner.qrExpired"
+  | "scanner.errorVerifying"
+  | "scanner.enterValidQrCode"
+  | "scanner.checkingPermission"
+  | "scanner.noCameraAccess"
+  | "scanner.grantPermission"
+  | "scanner.enterQrCodeData"
+  | "scanner.pasteQrCodeHere"
+  | "scanner.positionQrCode"
+  | "scanner.enterCodeManually"
+  | "scanner.qrSuccessfullyRedeemed"
+  | "scanner.processingQrCode";
 
 // Exportă și interfața contextului dacă e necesar în altă parte
 export interface LanguageContextType {
@@ -457,6 +473,27 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     // Help & Support Screen Specific
     "helpSupport.infoPlaceholder":
       "Informațiile pentru Ajutor & Suport vor fi aici",
+
+    // Common additional keys
+    "common.goBack": "Înapoi",
+
+    // Scanner Screen Specific
+    "scanner.invalidQrMissingFields": "Cod QR invalid: Câmpuri lipsă",
+    "scanner.invalidQrFormat": "Format QR invalid. Te rog încearcă din nou.",
+    "scanner.qrExpired": "Acest cod QR a expirat",
+    "scanner.errorVerifying":
+      "Eroare la verificarea codului QR. Te rog încearcă din nou.",
+    "scanner.enterValidQrCode": "Te rog introdu date valide pentru codul QR.",
+    "scanner.checkingPermission": "Se verifică permisiunea camerei...",
+    "scanner.noCameraAccess":
+      "Fără acces la cameră. Te rog acordă permisiunea.",
+    "scanner.grantPermission": "Acordă Permisiune",
+    "scanner.enterQrCodeData": "Introdu Date Cod QR",
+    "scanner.pasteQrCodeHere": "Lipește datele codului QR aici",
+    "scanner.positionQrCode": "Poziționează codul QR în cadru",
+    "scanner.enterCodeManually": "Introdu Codul Manual",
+    "scanner.qrSuccessfullyRedeemed": "Cod QR Valorificat cu Succes!",
+    "scanner.processingQrCode": "Se procesează Codul QR...",
   },
   en: {
     // Auth
@@ -699,6 +736,26 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
 
     // Help & Support Screen Specific
     "helpSupport.infoPlaceholder": "Help & Support Information Goes Here",
+
+    // Common additional keys
+    "common.goBack": "Go Back",
+
+    // Scanner Screen Specific
+    "scanner.invalidQrMissingFields":
+      "Invalid QR Code: Missing required fields",
+    "scanner.invalidQrFormat": "Invalid QR format. Please try again.",
+    "scanner.qrExpired": "This QR code has expired",
+    "scanner.errorVerifying": "Error verifying QR code. Please try again.",
+    "scanner.enterValidQrCode": "Please enter a valid QR code data.",
+    "scanner.checkingPermission": "Checking camera permission...",
+    "scanner.noCameraAccess": "No access to camera. Please grant permission.",
+    "scanner.grantPermission": "Grant Permission",
+    "scanner.enterQrCodeData": "Enter QR Code Data",
+    "scanner.pasteQrCodeHere": "Paste QR code data here",
+    "scanner.positionQrCode": "Position the QR code within the frame",
+    "scanner.enterCodeManually": "Enter Code Manually",
+    "scanner.qrSuccessfullyRedeemed": "QR Code Successfully Redeemed!",
+    "scanner.processingQrCode": "Processing QR Code...",
   },
 };
 
