@@ -60,8 +60,19 @@ export default function Dashboard() {
       setLoading(true);
       const logs = await getActivityLogs(10, ActivityType.COFFEE_REDEMPTION);
       setActivityLogs(logs);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching activity logs:", error);
+      // Check if error is due to index building
+      if (
+        error.message &&
+        error.message.includes("index is currently building")
+      ) {
+        Alert.alert(
+          t("cafe.indexBuildingTitle"),
+          t("cafe.indexBuildingMessage"),
+          [{ text: t("common.ok") }]
+        );
+      }
     } finally {
       setLoading(false);
     }

@@ -215,7 +215,38 @@ export type TranslationKey =
   | "scanner.positionQrCode"
   | "scanner.enterCodeManually"
   | "scanner.qrSuccessfullyRedeemed"
-  | "scanner.processingQrCode";
+  | "scanner.processingQrCode"
+  // Added for Scanning QR Screen
+  | "scanning.loading"
+  | "scanning.refreshing"
+  | "scanning.refreshIn"
+  | "scanning.qrValidityInfo"
+  // Added for Coffee Partner Dashboard
+  | "cafe.welcomeMessage"
+  | "cafe.coffeesServedToday"
+  | "cafe.estimatedRevenue"
+  | "cafe.newCustomersToday"
+  | "cafe.statsForDate"
+  | "cafe.realTimeData"
+  | "cafe.quickActions"
+  | "cafe.scanQRAction"
+  | "cafe.viewReportsAction"
+  | "cafe.manageProductsAction"
+  | "cafe.cafeSettingsAction"
+  // Added for Coffee Partner Reports
+  | "cafe.loadingReports"
+  | "cafe.reportsAndStats"
+  | "cafe.periodLastDays"
+  | "cafe.totalScans"
+  | "cafe.uniqueCustomers"
+  | "cafe.peakHour"
+  | "cafe.avgScansPerDay"
+  | "cafe.scansPerDay"
+  | "cafe.coffeeScansChart"
+  | "cafe.exportData"
+  | "cafe.exportComingSoon"
+  | "cafe.indexBuildingTitle"
+  | "cafe.indexBuildingMessage";
 
 // Exportă și interfața contextului dacă e necesar în altă parte
 export interface LanguageContextType {
@@ -494,6 +525,42 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     "scanner.enterCodeManually": "Introdu Codul Manual",
     "scanner.qrSuccessfullyRedeemed": "Cod QR Valorificat cu Succes!",
     "scanner.processingQrCode": "Se procesează Codul QR...",
+
+    // Scanning QR Screen Specific
+    "scanning.loading": "Se generează codul QR...",
+    "scanning.refreshing": "Se reîmprospătează codul QR...",
+    "scanning.refreshIn": "Se reîmprospătează în {seconds} secunde",
+    "scanning.qrValidityInfo":
+      "Pentru siguranță, codul QR se reîmprospătează automat la fiecare 15 secunde.",
+
+    // Coffee Partner Dashboard Specific
+    "cafe.welcomeMessage": "Bine ai venit, {name}!",
+    "cafe.coffeesServedToday": "Cafele servite azi",
+    "cafe.estimatedRevenue": "Încasări estimate",
+    "cafe.newCustomersToday": "Clienți noi azi",
+    "cafe.statsForDate": "Statistici pentru data",
+    "cafe.realTimeData": "date în timp real",
+    "cafe.quickActions": "Acțiuni Rapide",
+    "cafe.scanQRAction": "Scanează QR",
+    "cafe.viewReportsAction": "Vezi Rapoarte",
+    "cafe.manageProductsAction": "Gestionează Produse",
+    "cafe.cafeSettingsAction": "Setări Cafenea",
+
+    // Coffee Partner Reports Specific
+    "cafe.loadingReports": "Se încarcă rapoartele...",
+    "cafe.reportsAndStats": "Rapoarte și Statistici",
+    "cafe.periodLastDays": "Perioada: Ultimele {days} zile",
+    "cafe.totalScans": "Total Scanări",
+    "cafe.uniqueCustomers": "Clienți Unici",
+    "cafe.peakHour": "Ora de Vârf",
+    "cafe.avgScansPerDay": "Medie Scanări/Zi",
+    "cafe.scansPerDay": "Scanări pe Zi (Săptămâna Curentă)",
+    "cafe.coffeeScansChart": "Grafic Scanări",
+    "cafe.exportData": "Exportă Date",
+    "cafe.exportComingSoon": "Funcționalitate de export în curând!",
+    "cafe.indexBuildingTitle": "Optimizare în Curs",
+    "cafe.indexBuildingMessage":
+      "Baza de date este în curs de optimizare. Te rugăm să încerci din nou în câteva minute.",
   },
   en: {
     // Auth
@@ -756,6 +823,42 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     "scanner.enterCodeManually": "Enter Code Manually",
     "scanner.qrSuccessfullyRedeemed": "QR Code Successfully Redeemed!",
     "scanner.processingQrCode": "Processing QR Code...",
+
+    // Scanning QR Screen Specific
+    "scanning.loading": "Generating QR code...",
+    "scanning.refreshing": "Refreshing QR code...",
+    "scanning.refreshIn": "Refreshing in {seconds} seconds",
+    "scanning.qrValidityInfo":
+      "For security, the QR code automatically refreshes every 15 seconds.",
+
+    // Coffee Partner Dashboard Specific
+    "cafe.welcomeMessage": "Welcome, {name}!",
+    "cafe.coffeesServedToday": "Coffees served today",
+    "cafe.estimatedRevenue": "Estimated revenue",
+    "cafe.newCustomersToday": "New customers today",
+    "cafe.statsForDate": "Stats for date",
+    "cafe.realTimeData": "real-time data",
+    "cafe.quickActions": "Quick Actions",
+    "cafe.scanQRAction": "Scan QR",
+    "cafe.viewReportsAction": "View Reports",
+    "cafe.manageProductsAction": "Manage Products",
+    "cafe.cafeSettingsAction": "Cafe Settings",
+
+    // Coffee Partner Reports Specific
+    "cafe.loadingReports": "Loading reports...",
+    "cafe.reportsAndStats": "Reports and Statistics",
+    "cafe.periodLastDays": "Period: Last {days} days",
+    "cafe.totalScans": "Total Scans",
+    "cafe.uniqueCustomers": "Unique Customers",
+    "cafe.peakHour": "Peak Hour",
+    "cafe.avgScansPerDay": "Avg. Scans/Day",
+    "cafe.scansPerDay": "Scans per Day (Current Week)",
+    "cafe.coffeeScansChart": "Coffee Scans Chart",
+    "cafe.exportData": "Export Data",
+    "cafe.exportComingSoon": "Export functionality coming soon!",
+    "cafe.indexBuildingTitle": "Optimization in Progress",
+    "cafe.indexBuildingMessage":
+      "The database is currently being optimized. Please try again in a few minutes.",
   },
 };
 

@@ -1,54 +1,187 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
 } from "react-native";
 import { useLanguage } from "../../context/LanguageContext";
+import { useFirebase } from "../../context/FirebaseContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import partnerAnalyticsService from "../../services/partnerAnalyticsService";
+import { DocumentData } from "firebase/firestore";
 
-// Placeholder for a potential charting library
+// Placeholder for a chart library
 // import { LineChart } from 'react-native-chart-kit';
 
 export default function ReportsScreen() {
   const { t } = useLanguage();
   const router = useRouter();
+  const { user } = useFirebase();
 
-  // Dummy data for now
-  const reportData = {
-    totalScans: 1250,
-    uniqueCustomers: 315,
-    peakHour: "14:00 - 15:00",
-    averageScansPerDay: 41,
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [partnerId, setPartnerId] = useState<string>(user?.uid || "");
+  const [cafeId, setCafeId] = useState<string>("");
+  const [reportData, setReportData] = useState({
+    totalScans: 0,
+    uniqueCustomers: 0,
+    peakHour: "",
+    averageScansPerDay: 0,
+  });
+  const [analyticsData, setAnalyticsData] = useState<DocumentData[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+
+  useEffect(() => {
+    if (user) {
+      loadReportData();
+    }
+  }, [user]);
+
+  const loadReportData = async () => {
+    try {
+      setLoading(true);
+
+      // Get the partner's associated cafe
+      const partnerData = await partnerAnalyticsService.getPartnerDetails(
+        user?.uid || ""
+      );
+      if (!partnerData) {
+        throw new Error("Partner data not found");
+      }
+
+      setPartnerId(user?.uid || "");
+      setCafeId(partnerData.associatedCafeId || "");
+
+      try {
+        // Get last 7 days of analytics
+        const recentAnalytics =
+          await partnerAnalyticsService.getRecentAnalytics(user?.uid || "", 7);
+        setAnalyticsData(recentAnalytics);
+
+        if (recentAnalytics.length > 0) {
+          // Get the most recent date
+          const sortedDates = recentAnalytics
+            .map((item) => item.date)
+            .sort((a, b) => b.localeCompare(a));
+
+          const mostRecentDate = sortedDates[0];
+          setSelectedDate(mostRecentDate);
+
+          // Calculate totals and averages
+          let totalScans = 0;
+          let totalCustomers = new Set();
+
+          recentAnalytics.forEach((item) => {
+            totalScans += item.coffeesServed || 0;
+
+            // Add unique customers
+            if (Array.isArray(item.uniqueCustomers)) {
+              item.uniqueCustomers.forEach((customerId: string) => {
+                totalCustomers.add(customerId);
+              });
+            }
+          });
+
+          // Get peak hour
+          const peakHour = await partnerAnalyticsService.getPeakHour(
+            user?.uid || "",
+            mostRecentDate
+          );
+
+          // Set report data
+          setReportData({
+            totalScans,
+            uniqueCustomers: totalCustomers.size,
+            peakHour: peakHour || "14:00 - 15:00",
+            averageScansPerDay: Math.round(
+              totalScans / (recentAnalytics.length || 1)
+            ),
+          });
+        }
+      } catch (error: any) {
+        // Check if error is due to index building
+        if (
+          error.message &&
+          error.message.includes("index is currently building")
+        ) {
+          Alert.alert(
+            t("cafe.indexBuildingTitle"),
+            t("cafe.indexBuildingMessage"),
+            [{ text: t("common.ok") }]
+          );
+        } else {
+          throw error; // Re-throw other errors
+        }
+      }
+    } catch (error) {
+      console.error("Error loading report data:", error);
+      Alert.alert(t("common.error"), "Failed to load report data");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
-  // Placeholder chart data
-  const chartData = {
-    labels: ["Lun", "Mar", "Mie", "Joi", "Vin", "Sam", "Dum"],
-    datasets: [
-      {
-        data: [
-          Math.random() * 100,
-          Math.random() * 100,
-          Math.random() * 100,
-          Math.random() * 100,
-          Math.random() * 100,
-          Math.random() * 100,
-          Math.random() * 100,
-        ],
-      },
-    ],
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadReportData();
   };
+
+  // Prepare chart data from the analytics
+  const prepareChartData = () => {
+    // Sort data by date
+    const sortedData = [...analyticsData].sort((a, b) => {
+      return a.date.localeCompare(b.date);
+    });
+
+    // Get last 7 days or less
+    const last7Days = sortedData.slice(-7);
+
+    // Format for chart
+    return {
+      labels: last7Days.map((item) => {
+        // Format date to day of week (Mon, Tue, etc)
+        const date = new Date(item.date);
+        return date.toLocaleDateString(undefined, { weekday: "short" });
+      }),
+      datasets: [
+        {
+          data: last7Days.map((item) => item.coffeesServed || 0),
+        },
+      ],
+    };
+  };
+
+  const chartData =
+    analyticsData.length > 0
+      ? prepareChartData()
+      : {
+          labels: ["Lun", "Mar", "Mie", "Joi", "Vin", "Sam", "Dum"],
+          datasets: [{ data: [0, 0, 0, 0, 0, 0, 0] }],
+        };
 
   const handleExportData = () => {
     // TODO: Implement data export functionality
-    console.log("Export data triggered");
-    alert("Funcționalitate de export în curând!");
+    Alert.alert(t("cafe.exportComingSoon"));
   };
+
+  if (loading) {
+    return (
+      <ScreenWrapper>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8B4513" />
+          <Text style={styles.loadingText}>{t("cafe.loadingReports")}</Text>
+        </View>
+      </ScreenWrapper>
+    );
+  }
 
   return (
     <ScreenWrapper>
@@ -59,59 +192,59 @@ export default function ReportsScreen() {
         >
           <Ionicons name="arrow-back" size={24} color="#321E0E" />
         </TouchableOpacity>
-        {/* TODO: Add translation key 'reportsTitle' */}
-        <Text style={styles.headerTitle}>Rapoarte și Statistici</Text>
+        <Text style={styles.headerTitle}>{t("cafe.reportsAndStats")}</Text>
       </View>
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        {/* TODO: Add Date Range Selector component */}
-        <Text style={styles.sectionTitle}>Perioada: Ultimele 30 de zile</Text>
+      <ScrollView
+        contentContainerStyle={styles.scrollViewContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Date range info */}
+        <Text style={styles.sectionTitle}>
+          {t("cafe.periodLastDays", { days: analyticsData.length })}
+        </Text>
 
         {/* Key Metrics */}
         <View style={styles.metricsContainer}>
           <View style={styles.metricCard}>
             <Ionicons name="scan-outline" size={24} color="#8B4513" />
             <Text style={styles.metricValue}>{reportData.totalScans}</Text>
-            {/* TODO: Add translation key 'totalScans' */}
-            <Text style={styles.metricLabel}>Total Scanări</Text>
+            <Text style={styles.metricLabel}>{t("cafe.totalScans")}</Text>
           </View>
           <View style={styles.metricCard}>
             <Ionicons name="people-outline" size={24} color="#2196F3" />
             <Text style={styles.metricValue}>{reportData.uniqueCustomers}</Text>
-            {/* TODO: Add translation key 'uniqueCustomers' */}
-            <Text style={styles.metricLabel}>Clienți Unici</Text>
+            <Text style={styles.metricLabel}>{t("cafe.uniqueCustomers")}</Text>
           </View>
           <View style={styles.metricCard}>
             <Ionicons name="time-outline" size={24} color="#FF9800" />
             <Text style={styles.metricValue}>{reportData.peakHour}</Text>
-            {/* TODO: Add translation key 'peakHour' */}
-            <Text style={styles.metricLabel}>Ora de Vârf</Text>
+            <Text style={styles.metricLabel}>{t("cafe.peakHour")}</Text>
           </View>
           <View style={styles.metricCard}>
             <Ionicons name="stats-chart-outline" size={24} color="#4CAF50" />
             <Text style={styles.metricValue}>
               {reportData.averageScansPerDay}
             </Text>
-            {/* TODO: Add translation key 'avgScansPerDay' */}
-            <Text style={styles.metricLabel}>Medie Scanări/Zi</Text>
+            <Text style={styles.metricLabel}>{t("cafe.avgScansPerDay")}</Text>
           </View>
         </View>
 
         {/* Charts Section */}
-        <Text style={styles.sectionTitle}>
-          Scanări pe Zi (Săptămâna Curentă)
-        </Text>
+        <Text style={styles.sectionTitle}>{t("cafe.scansPerDay")}</Text>
         <View style={styles.chartPlaceholder}>
           {/* <LineChart
             data={chartData}
-            width={Dimensions.get('window').width - 40} // from react-native
+            width={Dimensions.get('window').width - 40}
             height={220}
-            yAxisSuffix=" scanări"
-            yAxisInterval={1} // optional, defaults to 1
+            yAxisSuffix=" coffees"
+            yAxisInterval={1}
             chartConfig={{
               backgroundColor: "#e26a00",
               backgroundGradientFrom: "#fb8c00",
               backgroundGradientTo: "#ffa726",
-              decimalPlaces: 0, // optional, defaults to 2dp
+              decimalPlaces: 0,
               color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
               labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
               style: {
@@ -130,7 +263,23 @@ export default function ReportsScreen() {
             }}
           /> */}
           <Ionicons name="bar-chart-outline" size={80} color="#E0E0E0" />
-          <Text style={styles.placeholderText}>Grafic Scanări</Text>
+          <Text style={styles.placeholderText}>
+            {t("cafe.coffeeScansChart")}
+          </Text>
+
+          {/* Chart values */}
+          {analyticsData.length > 0 && (
+            <View style={styles.chartValues}>
+              {chartData.labels.map((label, index) => (
+                <View key={index} style={styles.chartValueItem}>
+                  <Text style={styles.chartValueDay}>{label}</Text>
+                  <Text style={styles.chartValueNumber}>
+                    {chartData.datasets[0].data[index]}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Export Button */}
@@ -139,8 +288,7 @@ export default function ReportsScreen() {
           onPress={handleExportData}
         >
           <Ionicons name="download-outline" size={20} color="#FFFFFF" />
-          {/* TODO: Add translation key 'exportData' */}
-          <Text style={styles.exportButtonText}>Exportă Date</Text>
+          <Text style={styles.exportButtonText}>{t("cafe.exportData")}</Text>
         </TouchableOpacity>
       </ScrollView>
     </ScreenWrapper>
@@ -148,11 +296,21 @@ export default function ReportsScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#666",
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 15,
-    paddingTop: 50, // Adjust for status bar height
+    paddingTop: 50,
     paddingBottom: 15,
     backgroundColor: "#FFF",
     borderBottomWidth: 1,
@@ -187,7 +345,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
     alignItems: "center",
-    width: "48%", // Slightly less than 50% for spacing
+    width: "48%",
     marginBottom: 15,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -211,15 +369,36 @@ const styles = StyleSheet.create({
   chartPlaceholder: {
     backgroundColor: "#F0F0F0",
     borderRadius: 10,
-    height: 220,
+    minHeight: 220,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
+    padding: 15,
   },
   placeholderText: {
     color: "#A0A0A0",
     marginTop: 10,
     fontSize: 16,
+  },
+  chartValues: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginTop: 20,
+    paddingHorizontal: 10,
+  },
+  chartValueItem: {
+    alignItems: "center",
+  },
+  chartValueDay: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 4,
+  },
+  chartValueNumber: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#321E0E",
   },
   exportButton: {
     backgroundColor: "#8B4513",
