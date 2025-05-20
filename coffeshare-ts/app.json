@@ -1,17 +1,18 @@
 {
   "expo": {
-    "name": "coffeshare-ts",
-    "slug": "coffeshare-ts",
+    "name": "CoffeeShare",
+    "slug": "coffeshare",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.coffeshare.app",
@@ -26,7 +27,8 @@
           {
             "CFBundleURLSchemes": ["com.coffeshare.app"]
           }
-        ]
+        ],
+        "NSCameraUsageDescription": "Allow CoffeShare to use your camera to scan QR codes."
       }
     },
     "android": {
@@ -52,7 +54,8 @@
           ],
           "category": ["BROWSABLE", "DEFAULT"]
         }
-      ]
+      ],
+      "permissions": ["CAMERA"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -67,13 +70,22 @@
           "isIosBackgroundLocationEnabled": false
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow CoffeShare to use your camera to scan QR codes."
+        }
+      ],
+      "expo-barcode-scanner"
     ],
-    "scheme": "com.coffeshare.app",
+    "scheme": "coffeshare",
     "extra": {
       "eas": {
         "projectId": "947075506777"
       }
-    }
+    },
+    "sdkVersion": "52.0.0"
   }
 }

@@ -6,7 +6,6 @@ import React, {
   useRef,
 } from "react";
 import {
-  getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
@@ -18,7 +17,7 @@ import {
   GoogleAuthProvider,
   signInWithCredential,
 } from "firebase/auth";
-import { app } from "../config/firebase";
+import { app, auth, db } from "../config/firebase";
 import { userProfileService } from "../services/userProfileService";
 import {
   UserProfile,
@@ -27,11 +26,7 @@ import {
   UserNotification,
 } from "../types";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../config/firebase";
 import * as Google from "expo-auth-session/providers/google";
-
-// Initialize auth using the imported app
-const auth = getAuth(app);
 
 // Define type for Google Sign-In resolver
 type GoogleSignInResolver = (value: { role: string }) => void;
