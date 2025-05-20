@@ -1,3 +1,4 @@
+import "react-native-gesture-handler";
 import { Stack } from "expo-router";
 import { useCallback } from "react";
 import { useFonts } from "expo-font";
@@ -5,6 +6,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { View } from "react-native";
 import { LanguageProvider } from "../context/LanguageContext";
 import { FirebaseProvider } from "../context/FirebaseContext";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -22,16 +24,18 @@ export default function RootLayout() {
   }
 
   return (
-    <FirebaseProvider>
-      <LanguageProvider>
-        <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-            }}
-          />
-        </View>
-      </LanguageProvider>
-    </FirebaseProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <FirebaseProvider>
+        <LanguageProvider>
+          <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+              }}
+            />
+          </View>
+        </LanguageProvider>
+      </FirebaseProvider>
+    </GestureHandlerRootView>
   );
 }

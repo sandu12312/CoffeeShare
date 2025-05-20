@@ -154,6 +154,15 @@ export default function AdminDashboardScreen() {
             <Text style={styles.cardTitle}>Manage Cafes</Text>
           </TouchableOpacity>
 
+          {/* Card: Add Cafe Location */}
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => navigateTo("/(admin)/add-cafe-location")}
+          >
+            <Ionicons name="location-outline" size={40} color="#FF5722" />
+            <Text style={styles.cardTitle}>Add Cafe Location</Text>
+          </TouchableOpacity>
+
           {/* Card: Manage Subscriptions */}
           <TouchableOpacity
             style={styles.card}
