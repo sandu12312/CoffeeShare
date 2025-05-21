@@ -25,6 +25,17 @@ import RecentActivityCard from "../../components/RecentActivityCard";
 import QuickStatsCard from "../../components/QuickStatsCard";
 import { formatDate } from "../../utils/dateUtils";
 import { ActivityType } from "../../types";
+import { auth, db } from "../../config/firebase";
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs,
+} from "firebase/firestore";
 
 const HEADER_HEIGHT = 80;
 
@@ -44,6 +55,7 @@ export default function Dashboard() {
   const lastScrollY = useRef(0);
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [subscription, setSubscription] = useState<any>(null);
 
   const headerTranslateY = scrollOffsetY.interpolate({
     inputRange: [0, HEADER_HEIGHT],
@@ -52,12 +64,22 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    fetchUserActivities();
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        await Promise.all([fetchUserActivities(), fetchSubscription()]);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   const fetchUserActivities = async () => {
     try {
-      setLoading(true);
       const logs = await getActivityLogs(10, ActivityType.COFFEE_REDEMPTION);
       setActivityLogs(logs);
     } catch (error: any) {
@@ -73,6 +95,53 @@ export default function Dashboard() {
           [{ text: t("common.ok") }]
         );
       }
+    }
+  };
+
+  // Fetch subscription data
+  const fetchSubscription = async () => {
+    if (!user || !user.uid) return;
+
+    try {
+      setLoading(true);
+      // Get user document to find current subscription ID
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+
+      if (userDoc.exists() && userDoc.data().currentSubscription) {
+        // Get the subscription document
+        const subscriptionId = userDoc.data().currentSubscription;
+        const subscriptionDoc = await getDoc(
+          doc(db, "subscriptions", subscriptionId)
+        );
+
+        if (subscriptionDoc.exists()) {
+          setSubscription({
+            id: subscriptionDoc.id,
+            ...subscriptionDoc.data(),
+          });
+        } else {
+          // Try to get the most recent subscription
+          const subscriptionsQuery = query(
+            collection(db, "subscriptions"),
+            where("userId", "==", user.uid),
+            where("status", "==", "active"),
+            orderBy("createdAt", "desc"),
+            limit(1)
+          );
+
+          const subscriptionsSnapshot = await getDocs(subscriptionsQuery);
+
+          if (!subscriptionsSnapshot.empty) {
+            const latestSubscription = subscriptionsSnapshot.docs[0];
+            setSubscription({
+              id: latestSubscription.id,
+              ...latestSubscription.data(),
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
     } finally {
       setLoading(false);
     }
@@ -99,21 +168,35 @@ export default function Dashboard() {
     }
   };
 
+  // Get subscription data for display
   const getSubscriptionData = () => {
-    if (!userProfile || !userProfile.subscription) {
+    if (!subscription) {
       return {
         type: t("dashboard.noSubscription"),
         expires: t("dashboard.subscriptionExpiresN/A"),
-        coffeesLeft: 0,
-        coffeesTotal: 0,
+        beansLeft: 0,
+        beansTotal: 0,
+        hasActiveSubscription: false,
       };
     }
 
+    // Check if subscription is active
+    const isActive = subscription.status === "active";
+
+    // Calculate expiry date (30 days from creation for now)
+    const createdAt = subscription.createdAt?.toDate() || new Date();
+    const expiryDate = new Date(createdAt);
+    expiryDate.setDate(expiryDate.getDate() + 30);
+
+    // Check if subscription has expired
+    const hasExpired = expiryDate < new Date();
+
     return {
-      type: userProfile.subscription.type,
-      expires: formatDate(userProfile.subscription.expiryDate),
-      coffeesLeft: userProfile.subscription.remainingToday || 0,
-      coffeesTotal: userProfile.subscription.dailyLimit || 0,
+      type: subscription.planName || "Bean Subscription",
+      expires: formatDate(expiryDate),
+      beansLeft: subscription.beansRemaining || 0,
+      beansTotal: subscription.beansTotal || 0,
+      hasActiveSubscription: isActive && !hasExpired,
     };
   };
 
@@ -283,29 +366,27 @@ export default function Dashboard() {
             </TouchableOpacity>
           </View>
 
-          {/* Subscription Card - Using Real User Data */}
+          {/* Subscription Card - Using Bean-based Subscription Data */}
           <SubscriptionCard
             type={subscriptionData.type}
             expires={subscriptionData.expires}
-            coffeesLeft={subscriptionData.coffeesLeft}
-            coffeesTotal={subscriptionData.coffeesTotal}
+            beansLeft={subscriptionData.beansLeft}
+            beansTotal={subscriptionData.beansTotal}
             onRenew={handleRenewSubscription}
+            isLoading={loading}
           />
 
-          {/* QR Code Button */}
-          <TouchableOpacity
-            style={styles.qrCodeButton}
-            onPress={() => router.push("/(main)/generateQR?cafeId=1")}
-            disabled={subscriptionData.coffeesLeft <= 0}
-          >
-            <Ionicons name="qr-code-outline" size={24} color="#FFFFFF" />
-            <Text style={styles.qrCodeButtonText}>{t("scanQRCode")}</Text>
-            {subscriptionData.coffeesLeft <= 0 && (
-              <View style={styles.disabledOverlay}>
-                <Text style={styles.disabledText}>No Coffees Left Today</Text>
-              </View>
+          {/* QR Code Button - Show only if the user has an active subscription with beans */}
+          {subscriptionData.hasActiveSubscription &&
+            subscriptionData.beansLeft > 0 && (
+              <TouchableOpacity
+                style={styles.qrCodeButton}
+                onPress={() => router.push("/(mainUsers)/qr")}
+              >
+                <Ionicons name="qr-code-outline" size={24} color="#FFFFFF" />
+                <Text style={styles.qrCodeButtonText}>{t("scanQRCode")}</Text>
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
 
           {/* Recommended Cafes Card */}
           <RecommendedCafesCard

@@ -1,50 +1,115 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLanguage } from "../context/LanguageContext";
 
 interface SubscriptionCardProps {
   type: string;
   expires: string;
-  coffeesLeft: number;
-  coffeesTotal: number;
+  beansLeft: number;
+  beansTotal: number;
   onRenew: () => void;
+  isLoading?: boolean;
 }
 
 export default function SubscriptionCard({
   type,
   expires,
-  coffeesLeft,
-  coffeesTotal,
+  beansLeft,
+  beansTotal,
   onRenew,
+  isLoading = false,
 }: SubscriptionCardProps) {
   const { t } = useLanguage();
 
-  const progress = coffeesTotal > 0 ? (coffeesLeft / coffeesTotal) * 100 : 0;
+  const progress = beansTotal > 0 ? (beansLeft / beansTotal) * 100 : 0;
+
+  // Render bean icons based on the ratio of beans left to total beans
+  const renderBeanIcons = () => {
+    const totalIcons = 5; // Maximum number of icons to display
+    const filledIcons = Math.min(
+      totalIcons,
+      Math.floor((beansLeft / beansTotal) * totalIcons) || 0
+    );
+
+    const icons = [];
+
+    for (let i = 0; i < totalIcons; i++) {
+      icons.push(
+        <Ionicons
+          key={i}
+          name="cafe"
+          size={18}
+          color={i < filledIcons ? "#FFFFFF" : "rgba(255, 255, 255, 0.3)"}
+          style={[styles.beanIcon, i >= filledIcons && { opacity: 0.4 }]}
+        />
+      );
+    }
+
+    return <View style={styles.beanIconsContainer}>{icons}</View>;
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.card}>
+        <ActivityIndicator size="large" color="#FFFFFF" />
+        <Text style={styles.loadingText}>{t("map.loading")}</Text>
+      </View>
+    );
+  }
+
+  const noSubscription = !type || type === t("dashboard.noSubscription");
 
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Ionicons name="star-outline" size={24} color="#FFFFFF" />
+        <Ionicons name="cafe" size={24} color="#FFFFFF" />
         <Text style={styles.cardTitle}>{type}</Text>
       </View>
       <Text style={styles.expiresText}>Expires: {expires}</Text>
 
       <View style={styles.coffeeInfoContainer}>
         <View style={styles.coffeeCounter}>
-          <Text style={styles.coffeeCount}>{coffeesLeft}</Text>
-          <Text style={styles.coffeeTotal}> / {coffeesTotal}</Text>
+          <Text style={styles.coffeeCount}>{beansLeft}</Text>
+          <Text style={styles.coffeeTotal}> / {beansTotal}</Text>
         </View>
-        <Text style={styles.coffeeText}>{t("coffeesLeftToday")}</Text>
+        <Text style={styles.coffeeText}>Beans Remaining</Text>
       </View>
 
-      <View style={styles.progressBarBackground}>
-        <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
+      {!noSubscription && renderBeanIcons()}
+
+      <View style={styles.progressContainer}>
+        <View style={styles.progressBarBackground}>
+          <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
+        </View>
+        {progress <= 25 && (
+          <Text style={styles.lowBeansWarning}>Low on beans!</Text>
+        )}
       </View>
 
-      <TouchableOpacity style={styles.renewButton} onPress={onRenew}>
-        <Text style={styles.renewButtonText}>{t("renewSubscription")}</Text>
-        <Ionicons name="refresh-circle-outline" size={20} color="#8B4513" />
+      <TouchableOpacity
+        style={[
+          styles.renewButton,
+          noSubscription && styles.getSubscriptionButton,
+        ]}
+        onPress={onRenew}
+      >
+        <Text style={styles.renewButtonText}>
+          {noSubscription ? t("dashboard.viewAll") : t("renewSubscription")}
+        </Text>
+        <Ionicons
+          name={
+            noSubscription ? "add-circle-outline" : "refresh-circle-outline"
+          }
+          size={20}
+          color="#8B4513"
+        />
       </TouchableOpacity>
     </View>
   );
@@ -61,6 +126,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 5,
+    minHeight: 200,
+    justifyContent: "center",
+  },
+  loadingText: {
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginTop: 10,
   },
   cardHeader: {
     flexDirection: "row",
@@ -103,18 +175,35 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.8)",
     alignSelf: "flex-end",
   },
+  beanIconsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  beanIcon: {
+    marginHorizontal: 4,
+  },
+  progressContainer: {
+    marginBottom: 20,
+  },
   progressBarBackground: {
     height: 8,
     backgroundColor: "rgba(0, 0, 0, 0.2)",
     borderRadius: 4,
     overflow: "hidden",
-    marginBottom: 20,
     marginTop: 4,
   },
   progressBarFill: {
     height: "100%",
     backgroundColor: "#FFFFFF",
     borderRadius: 4,
+  },
+  lowBeansWarning: {
+    color: "#FFF8DC",
+    fontSize: 12,
+    fontWeight: "bold",
+    marginTop: 6,
+    textAlign: "right",
   },
   renewButton: {
     backgroundColor: "#FFFFFF",
@@ -128,6 +217,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
+  },
+  getSubscriptionButton: {
+    backgroundColor: "#FFF8E0",
   },
   renewButtonText: {
     color: "#8B4513",

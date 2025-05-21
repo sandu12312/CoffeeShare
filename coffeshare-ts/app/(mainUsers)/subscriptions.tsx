@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -6,15 +6,28 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Image,
   Animated,
   Modal,
   Dimensions,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import BottomTabBar from "../../components/BottomTabBar";
+import BoxesPlan from "../../components/BoxesPlan";
 import { useLanguage } from "../../context/LanguageContext";
+import { auth, db } from "../../config/firebase";
+import {
+  doc,
+  setDoc,
+  addDoc,
+  collection,
+  getDoc,
+  Timestamp,
+  updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 
 const { width } = Dimensions.get("window");
 
@@ -30,11 +43,28 @@ interface SubscriptionPlan {
   tag: string | null;
 }
 
+interface UserSubscription {
+  id?: string;
+  userId: string;
+  planName: string;
+  planId: string;
+  beansTotal: number;
+  beansUsed: number;
+  beansRemaining: number;
+  price: string;
+  createdAt: any;
+  status: "active" | "expired" | "pending";
+}
+
 export default function SubscriptionsScreen() {
   const { t } = useLanguage();
   const [howItWorksVisible, setHowItWorksVisible] = useState(false);
   const [activeIndex, setActiveIndex] = useState(1); // Default to middle plan
   const [isMonthly, setIsMonthly] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentSubscription, setCurrentSubscription] =
+    useState<UserSubscription | null>(null);
 
   // Animation values for card scaling
   const animatedScales = [
@@ -80,6 +110,42 @@ export default function SubscriptionsScreen() {
     },
   ];
 
+  // Get current user and subscription data on mount
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user) {
+      setCurrentUser(user);
+      fetchUserSubscription(user.uid);
+    }
+  }, []);
+
+  // Fetch user's current subscription if any
+  const fetchUserSubscription = async (userId: string) => {
+    try {
+      const userDoc = await getDoc(doc(db, "users", userId));
+      if (userDoc.exists() && userDoc.data().currentSubscription) {
+        const subscriptionId = userDoc.data().currentSubscription;
+        const subscriptionDoc = await getDoc(
+          doc(db, "subscriptions", subscriptionId)
+        );
+
+        if (subscriptionDoc.exists()) {
+          setCurrentSubscription({
+            id: subscriptionDoc.id,
+            ...subscriptionDoc.data(),
+          } as UserSubscription);
+
+          // Set usedBeans based on the subscription data
+          const subscriptionData = subscriptionDoc.data();
+          setUsedBeans(subscriptionData.beansUsed || 0);
+          setTotalBeans(subscriptionData.beansTotal || 0);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+    }
+  };
+
   // Select a plan and animate the cards
   const selectPlan = (index: number) => {
     // Reset all cards to smaller scale
@@ -95,45 +161,79 @@ export default function SubscriptionsScreen() {
     setActiveIndex(index);
   };
 
-  // Mocked user bean usage
-  const usedBeans = 23;
-  const totalBeans = 75;
+  // Mocked user bean usage - will be updated from Firebase if subscription exists
+  const [usedBeans, setUsedBeans] = useState(0);
+  const [totalBeans, setTotalBeans] = useState(75);
 
   const toggleSubscriptionType = () => {
     setIsMonthly(!isMonthly);
   };
 
-  const subscribeToPlan = () => {
-    const selectedPlan = subscriptions[activeIndex];
-    alert(`🎉 You've received ${selectedPlan.beans} Beans! Enjoy your coffee!`);
-  };
-
-  // Render bean icons for visual representation of quantity
-  const renderBeanIcons = (count: number) => {
-    const maxVisibleBeans = 5;
-    const beanArray = [];
-
-    for (let i = 0; i < Math.min(count, maxVisibleBeans); i++) {
-      beanArray.push(
-        <Ionicons
-          key={i}
-          name="cafe"
-          size={12}
-          color="#8B4513"
-          style={styles.beanIcon}
-        />
-      );
+  // Actual implementation to save subscription to Firebase
+  const subscribeToPlan = async () => {
+    if (!currentUser) {
+      Alert.alert("Error", "You must be logged in to subscribe to a plan");
+      return;
     }
 
-    if (count > maxVisibleBeans) {
-      beanArray.push(
-        <Text key="more" style={styles.moreBeans}>
-          +{count - maxVisibleBeans}
-        </Text>
-      );
-    }
+    setLoading(true);
+    try {
+      const selectedPlan = subscriptions[activeIndex];
 
-    return <View style={styles.beansContainer}>{beanArray}</View>;
+      // Create new subscription document
+      const newSubscription: Omit<UserSubscription, "id"> = {
+        userId: currentUser.uid,
+        planName: selectedPlan.name,
+        planId: selectedPlan.id,
+        beansTotal: selectedPlan.beans,
+        beansUsed: 0,
+        beansRemaining: selectedPlan.beans,
+        price: selectedPlan.price,
+        createdAt: serverTimestamp(),
+        status: "active",
+      };
+
+      // Add to subscriptions collection
+      const subscriptionRef = await addDoc(
+        collection(db, "subscriptions"),
+        newSubscription
+      );
+
+      // Update user document with subscription reference
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        currentPlan: {
+          name: selectedPlan.name,
+          beans: selectedPlan.beans,
+          date: serverTimestamp(),
+        },
+        currentSubscription: subscriptionRef.id,
+      });
+
+      // Update local state with the new subscription
+      setCurrentSubscription({
+        id: subscriptionRef.id,
+        ...newSubscription,
+        createdAt: Timestamp.now(),
+      });
+
+      // Update beans counts
+      setUsedBeans(0);
+      setTotalBeans(selectedPlan.beans);
+
+      // Show success message
+      Alert.alert(
+        "Subscription Activated",
+        `🎉 You've received ${selectedPlan.beans} Beans! Enjoy your coffee!`
+      );
+    } catch (error) {
+      console.error("Error creating subscription:", error);
+      Alert.alert(
+        "Error",
+        "Failed to activate subscription. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -185,57 +285,38 @@ export default function SubscriptionsScreen() {
         </View>
 
         {/* Bean Usage Tracker (only shown for subscribers) */}
-        <View style={styles.usageTrackerContainer}>
-          <Text style={styles.usageTitle}>
-            You've used {usedBeans} of your {totalBeans} Beans this month
-          </Text>
-          <View style={styles.progressBarBackground}>
-            <View
-              style={[
-                styles.progressBarFill,
-                { width: `${(usedBeans / totalBeans) * 100}%` },
-              ]}
-            />
+        {currentSubscription && (
+          <View style={styles.usageTrackerContainer}>
+            <Text style={styles.usageTitle}>
+              You've used {usedBeans} of your {totalBeans} Beans this month
+            </Text>
+            <View style={styles.progressBarBackground}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  { width: `${(usedBeans / totalBeans) * 100}%` },
+                ]}
+              />
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Plan Cards */}
         <View style={styles.plansContainer}>
           {subscriptions.map((plan, index) => (
-            <Animated.View
+            <BoxesPlan
               key={plan.id}
-              style={[
-                styles.planCard,
-                index === activeIndex && styles.selectedPlanCard,
-                { transform: [{ scale: animatedScales[index] }] },
-              ]}
-            >
-              <TouchableOpacity
-                style={styles.planCardTouchable}
-                onPress={() => selectPlan(index)}
-                activeOpacity={0.8}
-              >
-                {plan.tag && (
-                  <View style={styles.tagContainer}>
-                    <Text style={styles.tagText}>{plan.tag}</Text>
-                  </View>
-                )}
-
-                <View style={styles.planIconContainer}>
-                  <Ionicons name={plan.icon as any} size={32} color="#8B4513" />
-                </View>
-
-                <Text style={styles.planName}>{plan.name}</Text>
-                <Text style={styles.planPrice}>{plan.price}</Text>
-
-                <View style={styles.beansInfoContainer}>
-                  <Text style={styles.beansCount}>{plan.beans} Beans</Text>
-                  {renderBeanIcons(plan.beans / 10)}
-                </View>
-
-                <Text style={styles.planDescription}>{plan.description}</Text>
-              </TouchableOpacity>
-            </Animated.View>
+              id={plan.id}
+              title={plan.name}
+              price={plan.price}
+              beans={plan.beans}
+              description={plan.description}
+              icon={plan.icon}
+              tag={plan.tag}
+              isSelected={index === activeIndex}
+              animatedScale={animatedScales[index]}
+              onSelect={() => selectPlan(index)}
+            />
           ))}
         </View>
 
@@ -243,9 +324,24 @@ export default function SubscriptionsScreen() {
         <TouchableOpacity
           style={styles.subscribeButton}
           onPress={subscribeToPlan}
+          disabled={loading}
         >
-          <Text style={styles.subscribeButtonText}>Start Sipping</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Text style={styles.subscribeButtonText}>
+              {currentSubscription ? "Change Plan" : "Start Sipping"}
+            </Text>
+          )}
         </TouchableOpacity>
+
+        {/* Current Plan Note */}
+        {currentSubscription && (
+          <Text style={styles.currentPlanNote}>
+            You're currently on the {currentSubscription.planName} plan with{" "}
+            {currentSubscription.beansRemaining} beans remaining
+          </Text>
+        )}
       </ScrollView>
 
       {/* How It Works Modal */}
@@ -425,96 +521,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 20,
   },
-  planCard: {
-    width: width * 0.28,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 4,
-    marginHorizontal: 5,
-  },
-  planCardTouchable: {
-    flex: 1,
-  },
-  selectedPlanCard: {
-    borderColor: "#8B4513",
-    borderWidth: 2,
-  },
-  tagContainer: {
-    position: "absolute",
-    top: -10,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-    zIndex: 1,
-  },
-  tagText: {
-    backgroundColor: "#8B4513",
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "700",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    overflow: "hidden",
-  },
-  planIconContainer: {
-    width: 60,
-    height: 60,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F8F4EF",
-    borderRadius: 30,
-    alignSelf: "center",
-    marginBottom: 12,
-    marginTop: 10,
-  },
-  planName: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#321E0E",
-    textAlign: "center",
-    marginBottom: 6,
-  },
-  planPrice: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#8B4513",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  beansInfoContainer: {
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  beansCount: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#321E0E",
-    marginBottom: 4,
-  },
-  beansContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  beanIcon: {
-    marginHorizontal: 1,
-  },
-  moreBeans: {
-    fontSize: 10,
-    color: "#8B4513",
-    marginLeft: 2,
-  },
-  planDescription: {
-    fontSize: 11,
-    color: "#666666",
-    textAlign: "center",
-    lineHeight: 14,
-  },
   subscribeButton: {
     backgroundColor: "#8B4513",
     paddingVertical: 16,
@@ -530,6 +536,13 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "700",
+  },
+  currentPlanNote: {
+    textAlign: "center",
+    color: "#6A4028",
+    fontSize: 14,
+    marginTop: 15,
+    fontStyle: "italic",
   },
   modalOverlay: {
     flex: 1,

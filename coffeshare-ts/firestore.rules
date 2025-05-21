@@ -25,13 +25,16 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "partner";
     }
     
-    // User profiles
+    // User profiles - MODIFIED: less restrictive update rules for self-updates
     match /users/{userId} {
       // Anyone can create a profile, including admins creating profiles for others
       allow create: if isAuth() && (request.auth.uid == userId || isAdmin());
       
       // Users can read and update their own profile
-      allow read, update: if isOwner(userId) || isAdmin();
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Users can update their own profile, including subscription updates
+      allow update: if isAuth() && request.auth.uid == userId || isAdmin();
       
       // Only admins can delete profiles
       allow delete: if isAdmin();
@@ -96,13 +99,26 @@ service cloud.firestore {
       );
     }
     
-    // Subscriptions - user can read their own, admin can read/write all
+    // Subscriptions - user can read/write their own, admin can read/write all
+    // MODIFIED: more permissive to allow user subscription management
     match /subscriptions/{subscriptionId} {
+      // Read: any authenticated user can read their own subscriptions
       allow read: if isAuth() && (
-        resource.data.userId == request.auth.uid || 
+        (resource != null && resource.data.userId == request.auth.uid) ||
         isAdmin()
       );
-      allow write: if isAdmin();
+      
+      // Create: any authenticated user can create a subscription for themselves
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      
+      // Update: users can update their own subscriptions, admins can update any
+      allow update: if isAuth() && (
+        (resource != null && resource.data.userId == request.auth.uid) ||
+        isAdmin()
+      );
+      
+      // Delete: only admins can delete subscriptions
+      allow delete: if isAdmin();
     }
     
     // Reviews - anyone can read, authenticated users can create
