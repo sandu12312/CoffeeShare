@@ -170,6 +170,7 @@ export type TranslationKey =
   | "map.cafesFetchError"
   | "map.noResultsFound"
   | "map.noCafesNearby"
+  | "map.viewDetails"
   // Added for Profile Screen
   | "profile.loading"
   | "profile.initialPlaceholder"
@@ -462,6 +463,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
       "Cafenelele nu au putut fi încărcate. Te rog reîmprospătează.",
     "map.noResultsFound": 'Nicio cafenea găsită pentru "{searchQuery}"',
     "map.noCafesNearby": "Nicio cafenea activă găsită în apropiere.",
+    "map.viewDetails": "Vezi detalii",
 
     // Profile Screen Specific
     "profile.loading": "Se încarcă profilul...",
@@ -763,6 +765,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     "map.cafesFetchError": "Failed to load cafes. Please try refreshing.",
     "map.noResultsFound": 'No cafes found matching "{searchQuery}"',
     "map.noCafesNearby": "No active cafes found nearby.",
+    "map.viewDetails": "View details",
 
     // Profile Screen Specific
     "profile.loading": "Loading profile...",
