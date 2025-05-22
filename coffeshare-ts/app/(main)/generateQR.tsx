@@ -124,10 +124,7 @@ const GenerateQRScreen = () => {
       <ScreenWrapper>
         <QRCodeGenerator
           cafeId={cafeId}
-          cafeName={cafe.name}
           productId={selectedProduct || undefined}
-          productName={selectedProductName || undefined}
-          onClose={() => setShowQRCode(false)}
         />
       </ScreenWrapper>
     );

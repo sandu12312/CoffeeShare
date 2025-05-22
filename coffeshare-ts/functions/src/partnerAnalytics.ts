@@ -1,4 +1,6 @@
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v2";
+import { onDocumentUpdated } from "firebase-functions/v2/firestore";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
 
 // Make sure Firebase Admin is initialized
@@ -8,26 +10,18 @@ try {
   admin.initializeApp();
 }
 
-interface RedemptionData {
-  cafeId: string;
-  userId: string;
-  timestamp: FirebaseFirestore.Timestamp;
-  productId?: string;
-  productPrice?: number;
-}
-
 /**
  * Track coffee partner analytics when a QR code is redeemed
  * This runs after the QR code is verified and redeemed
  */
-export const trackPartnerAnalytics = functions.firestore
-  .document("qrCodes/{qrCodeId}")
-  .onUpdate(async (change, context) => {
-    const newValue = change.after.data();
-    const previousValue = change.before.data();
+export const trackPartnerAnalytics = onDocumentUpdated(
+  "qrCodes/{qrCodeId}",
+  async (event) => {
+    const previousValue = event.data?.before?.data();
+    const newValue = event.data?.after?.data();
 
     // Only proceed if the QR code has been redeemed (changed from unused to used)
-    if (!previousValue.isUsed && newValue.isUsed) {
+    if (previousValue && newValue && !previousValue.isUsed && newValue.isUsed) {
       try {
         const cafeId = newValue.cafeId;
         const userId = newValue.userId;
@@ -45,7 +39,7 @@ export const trackPartnerAnalytics = functions.firestore
 
         if (!cafeDoc.exists) {
           console.error(`Cafe with ID ${cafeId} not found`);
-          return null;
+          return;
         }
 
         const cafeData = cafeDoc.data();
@@ -53,7 +47,7 @@ export const trackPartnerAnalytics = functions.firestore
 
         if (!partnerId) {
           console.error(`No partner ID found for cafe ${cafeId}`);
-          return null;
+          return;
         }
 
         // Get product price if available
@@ -122,10 +116,8 @@ export const trackPartnerAnalytics = functions.firestore
               price: productPrice,
             }),
             // Keep track of hourly distribution for peak hour analysis
-            hourlyDistribution: admin.firestore.FieldValue.increment(
-              1,
-              `hour_${now.getHours()}`
-            ),
+            [`hourlyDistribution.hour_${now.getHours()}`]:
+              admin.firestore.FieldValue.increment(1),
             lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
           },
           { merge: true }
@@ -158,23 +150,20 @@ export const trackPartnerAnalytics = functions.firestore
         console.log(
           `Successfully tracked analytics for cafe ${cafeId}, partner ${partnerId}`
         );
-        return null;
       } catch (error) {
         console.error("Error tracking partner analytics:", error);
-        return null;
       }
     }
-
-    return null;
-  });
+  }
+);
 
 /**
  * Calculate and update daily, weekly, and monthly summary analytics for a partner
  * This runs on a schedule (once per day at midnight)
  */
-export const calculatePartnerAnalyticsSummaries = functions.pubsub
-  .schedule("0 0 * * *") // Run every day at midnight
-  .onRun(async (context) => {
+export const calculatePartnerAnalyticsSummaries = onSchedule(
+  "0 0 * * *",
+  async (event) => {
     try {
       // Get all partners
       const partnersSnapshot = await admin
@@ -196,9 +185,6 @@ export const calculatePartnerAnalyticsSummaries = functions.pubsub
         const lastWeekDate = new Date(now);
         lastWeekDate.setDate(now.getDate() - 7);
         const lastWeekStr = lastWeekDate.toISOString().split("T")[0];
-
-        // Get the current month
-        const currentMonth = now.toISOString().substring(0, 7); // YYYY-MM
 
         // Get yesterday's analytics to update the cafe-specific dashboard
         const yesterdayDoc = await admin
@@ -237,7 +223,7 @@ export const calculatePartnerAnalyticsSummaries = functions.pubsub
           coffeesServed: 0,
           revenue: 0,
           newCustomers: 0,
-          uniqueCustomers: new Set(),
+          uniqueCustomers: new Set<string>(),
         };
 
         // Get the last 7 days analytics
@@ -258,7 +244,7 @@ export const calculatePartnerAnalyticsSummaries = functions.pubsub
           weeklyStats.newCustomers += data.newCustomers || 0;
 
           // Add unique customers
-          (data.uniqueCustomers || []).forEach((customerId) => {
+          (data.uniqueCustomers || []).forEach((customerId: string) => {
             weeklyStats.uniqueCustomers.add(customerId);
           });
         });
@@ -282,9 +268,8 @@ export const calculatePartnerAnalyticsSummaries = functions.pubsub
       }
 
       console.log("Successfully calculated partner analytics summaries");
-      return null;
     } catch (error) {
       console.error("Error calculating partner analytics summaries:", error);
-      return null;
     }
-  });
+  }
+);
