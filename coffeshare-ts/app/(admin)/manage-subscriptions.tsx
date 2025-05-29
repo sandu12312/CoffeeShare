@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,121 +7,181 @@ import {
   TouchableOpacity,
   Alert,
   Switch,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useLanguage } from "../../context/LanguageContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import CoffeePartnerHeader from "../../components/CoffeePartnerHeader";
-
-// --- Dummy Data ---
-type SubscriptionStatus = "Active" | "Inactive";
-
-interface SubscriptionPlan {
-  id: string;
-  name: string;
-  priceMonthly: number;
-  priceYearly?: number; // Optional yearly price
-  coffeesPerDay: number | "Unlimited";
-  description: string;
-  status: SubscriptionStatus;
-}
-
-const DUMMY_SUBSCRIPTIONS: SubscriptionPlan[] = [
-  {
-    id: "sub1",
-    name: "Student Pack",
-    priceMonthly: 50,
-    coffeesPerDay: 2,
-    description: "Perfect pentru studenți, acces la majoritatea cafenelelor.",
-    status: "Active",
-  },
-  {
-    id: "sub2",
-    name: "Elite",
-    priceMonthly: 90,
-    priceYearly: 900,
-    coffeesPerDay: 3,
-    description: "Acces la produse premium și oferte speciale.",
-    status: "Active",
-  },
-  {
-    id: "sub3",
-    name: "Premium",
-    priceMonthly: 150,
-    priceYearly: 1500,
-    coffeesPerDay: "Unlimited",
-    description: "Cafele nelimitate și acces VIP.",
-    status: "Active",
-  },
-  {
-    id: "sub4",
-    name: "Weekend Warrior",
-    priceMonthly: 40,
-    coffeesPerDay: 2, // Only on Sat/Sun - logic implied
-    description: "Două cafele pe zi în weekend.",
-    status: "Inactive",
-  },
-];
-// ------------------
+import AddEditSubscriptionModal from "../../components/AddEditSubscriptionModal";
+import {
+  SubscriptionService,
+  SubscriptionPlan,
+} from "../../services/subscriptionService";
+import Toast from "react-native-toast-message";
 
 export default function ManageSubscriptionsScreen() {
   const { t } = useLanguage();
   const router = useRouter();
-  const [subscriptions, setSubscriptions] =
-    useState<SubscriptionPlan[]>(DUMMY_SUBSCRIPTIONS);
+  const [subscriptions, setSubscriptions] = useState<SubscriptionPlan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showAddEditModal, setShowAddEditModal] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
 
-  // --- Action Handlers ---
+  // Load subscription plans on mount
+  useEffect(() => {
+    loadSubscriptions();
+  }, []);
+
+  // Load subscription plans from Firebase
+  const loadSubscriptions = async () => {
+    try {
+      setLoading(true);
+      const plans = await SubscriptionService.getAllSubscriptionPlans();
+      setSubscriptions(plans);
+    } catch (error) {
+      console.error("Error loading subscriptions:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to load subscription plans",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadSubscriptions();
+    setRefreshing(false);
+  };
+
+  // Handle add new subscription
   const handleAddSubscription = () => {
-    // TODO: Navigate to Add/Edit Subscription screen
-    Alert.alert("Adaugă Abonament", "Funcționalitate în curând!");
+    setEditingPlan(null);
+    setShowAddEditModal(true);
   };
 
-  const handleEditSubscription = (sub: SubscriptionPlan) => {
-    // TODO: Navigate to Add/Edit Subscription screen with data
+  // Handle edit subscription
+  const handleEditSubscription = (plan: SubscriptionPlan) => {
+    setEditingPlan(plan);
+    setShowAddEditModal(true);
+  };
+
+  // Handle toggle status
+  const handleToggleStatus = async (plan: SubscriptionPlan) => {
+    try {
+      const newStatus = !plan.isActive;
+      await SubscriptionService.updateSubscriptionPlan(plan.id!, {
+        isActive: newStatus,
+      });
+
+      // Update local state
+      setSubscriptions((prevSubs) =>
+        prevSubs.map((s) =>
+          s.id === plan.id ? { ...s, isActive: newStatus } : s
+        )
+      );
+
+      Toast.show({
+        type: "success",
+        text1: newStatus ? "Plan Activated" : "Plan Deactivated",
+        text2: `${plan.name} has been ${
+          newStatus ? "activated" : "deactivated"
+        }`,
+      });
+    } catch (error) {
+      console.error("Error toggling plan status:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to update plan status",
+      });
+    }
+  };
+
+  // Handle delete subscription
+  const handleDeleteSubscription = (plan: SubscriptionPlan) => {
     Alert.alert(
-      "Editează Abonament",
-      `Funcționalitate pentru ${sub.name} în curând!`
+      "Delete Subscription Plan",
+      `Are you sure you want to delete "${plan.name}"? This action cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await SubscriptionService.deleteSubscriptionPlan(plan.id!);
+
+              Toast.show({
+                type: "success",
+                text1: "Plan Deleted",
+                text2: `${plan.name} has been deleted`,
+              });
+
+              // Reload subscriptions
+              loadSubscriptions();
+            } catch (error) {
+              console.error("Error deleting plan:", error);
+              Toast.show({
+                type: "error",
+                text1: "Error",
+                text2: "Failed to delete plan",
+              });
+            }
+          },
+        },
+      ]
     );
   };
 
-  const handleToggleStatus = (sub: SubscriptionPlan) => {
-    // TODO: Implement status toggle logic (update state/backend)
-    const newStatus = sub.status === "Active" ? "Inactive" : "Active";
-    setSubscriptions((prevSubs) =>
-      prevSubs.map((s) => (s.id === sub.id ? { ...s, status: newStatus } : s))
-    );
-    Alert.alert(
-      sub.status === "Active"
-        ? "Dezactivează Abonament"
-        : "Activează Abonament",
-      `Ai ${sub.status === "Active" ? "dezactivat" : "activat"} ${
-        sub.name
-      }. (Simulat)`
-    );
+  // Handle modal success
+  const handleModalSuccess = () => {
+    loadSubscriptions();
   };
-  // ---------------------
 
-  // --- Render Item ---
+  // Format price
+  const formatPrice = (price: number) => {
+    return `${price.toFixed(2)} RON`;
+  };
+
+  // Render subscription item
   const renderSubscriptionItem = ({ item }: { item: SubscriptionPlan }) => {
-    const statusColor = item.status === "Active" ? "#4CAF50" : "#9E9E9E";
-    const coffeesText =
-      item.coffeesPerDay === "Unlimited"
-        ? "Nelimitat"
-        : `${item.coffeesPerDay}`;
+    const statusColor = item.isActive ? "#4CAF50" : "#9E9E9E";
 
     return (
       <View style={styles.subCard}>
         <View style={styles.subInfoContainer}>
-          <Text style={styles.subName}>{item.name}</Text>
+          <View style={styles.nameContainer}>
+            <Text style={styles.subName}>{item.name}</Text>
+            {item.popular && (
+              <View style={styles.popularBadge}>
+                <Text style={styles.popularText}>POPULAR</Text>
+              </View>
+            )}
+            {item.tag && (
+              <View style={styles.tagBadge}>
+                <Text style={styles.tagText}>{item.tag}</Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.subDetails}>
-            Preț: ${item.priceMonthly}/lună{" "}
-            {item.priceYearly ? `($${item.priceYearly}/an)` : ""}
+            Price: {formatPrice(item.price)}/month
           </Text>
-          <Text style={styles.subDetails}>Cafele: {coffeesText}/zi</Text>
-          <Text style={styles.subDescription}>{item.description}</Text>
-          <View style={[styles.badge, { backgroundColor: statusColor }]}>
-            <Text style={styles.badgeText}>{item.status}</Text>
+          <Text style={styles.subDetails}>Beans: {item.credits} credits</Text>
+          {item.description && (
+            <Text style={styles.subDescription}>{item.description}</Text>
+          )}
+          <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
+            <Text style={styles.statusText}>
+              {item.isActive ? "Active" : "Inactive"}
+            </Text>
           </View>
         </View>
         <View style={styles.subActions}>
@@ -131,24 +191,40 @@ export default function ManageSubscriptionsScreen() {
           >
             <Ionicons name="pencil-outline" size={22} color="#757575" />
           </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleDeleteSubscription(item)}
+            style={styles.actionButton}
+          >
+            <Ionicons name="trash-outline" size={22} color="#E53935" />
+          </TouchableOpacity>
           <Switch
-            trackColor={{ false: "#767577", true: "#81C784" }} // Lighter green for active track
-            thumbColor={item.status === "Active" ? "#4CAF50" : "#f4f3f4"}
+            trackColor={{ false: "#767577", true: "#81C784" }}
+            thumbColor={item.isActive ? "#4CAF50" : "#f4f3f4"}
             ios_backgroundColor="#3e3e3e"
-            onValueChange={() => handleToggleStatus(item)} // Use the handler
-            value={item.status === "Active"}
+            onValueChange={() => handleToggleStatus(item)}
+            value={item.isActive || false}
             style={styles.switchStyle}
           />
         </View>
       </View>
     );
   };
-  // -------------------
+
+  if (loading && !refreshing) {
+    return (
+      <ScreenWrapper>
+        <CoffeePartnerHeader title={"Manage Subscriptions"} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8B4513" />
+          <Text style={styles.loadingText}>Loading subscription plans...</Text>
+        </View>
+      </ScreenWrapper>
+    );
+  }
 
   return (
     <ScreenWrapper>
-      {/* TODO: Add translation key 'manageSubscriptionsTitle' */}
-      <CoffeePartnerHeader title={"Gestionează Abonamente"} />
+      <CoffeePartnerHeader title={"Manage Subscriptions"} />
 
       {/* Add Subscription Button */}
       <TouchableOpacity
@@ -156,33 +232,58 @@ export default function ManageSubscriptionsScreen() {
         onPress={handleAddSubscription}
       >
         <Ionicons name="add-circle-outline" size={22} color="#FFFFFF" />
-        {/* TODO: Add translation key 'addNewSubscription' */}
-        <Text style={styles.addButtonText}>Adaugă Abonament Nou</Text>
+        <Text style={styles.addButtonText}>Add New Subscription Plan</Text>
       </TouchableOpacity>
 
       {/* Subscription List */}
       <FlatList
         data={subscriptions}
         renderItem={renderSubscriptionItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id || ""}
         contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            <Ionicons name="sad-outline" size={50} color="#CCC" />
+            <Ionicons name="albums-outline" size={50} color="#CCC" />
             <Text style={styles.emptyListText}>
-              Niciun abonament configurat.
+              No subscription plans created yet.
+            </Text>
+            <Text style={styles.emptySubtext}>
+              Create your first plan to start offering subscriptions!
             </Text>
           </View>
         )}
+      />
+
+      {/* Add/Edit Modal */}
+      <AddEditSubscriptionModal
+        visible={showAddEditModal}
+        onClose={() => {
+          setShowAddEditModal(false);
+          setEditingPlan(null);
+        }}
+        onSuccess={handleModalSuccess}
+        editPlan={editingPlan}
       />
     </ScreenWrapper>
   );
 }
 
-// --- Styles ---
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#8B4513",
+  },
   addButton: {
-    backgroundColor: "#4CAF50", // Green for add
+    backgroundColor: "#4CAF50",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -209,7 +310,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     padding: 15,
     flexDirection: "row",
-    alignItems: "flex-start", // Align items to the top
+    alignItems: "flex-start",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
@@ -220,11 +321,40 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 10,
   },
+  nameContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    marginBottom: 5,
+  },
   subName: {
     fontSize: 17,
     fontWeight: "700",
     color: "#333",
-    marginBottom: 5,
+    marginRight: 8,
+  },
+  popularBadge: {
+    backgroundColor: "#FF9800",
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  popularText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+  tagBadge: {
+    backgroundColor: "#2196F3",
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 4,
+  },
+  tagText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "600",
   },
   subDetails: {
     fontSize: 14,
@@ -237,14 +367,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontStyle: "italic",
   },
-  badge: {
+  statusBadge: {
     paddingVertical: 3,
     paddingHorizontal: 8,
     borderRadius: 10,
     alignSelf: "flex-start",
     marginTop: 5,
   },
-  badgeText: {
+  statusText: {
     color: "#FFFFFF",
     fontSize: 11,
     fontWeight: "bold",
@@ -253,14 +383,14 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "space-between",
-    minHeight: 60, // Ensure space for switch and button
+    minHeight: 80,
   },
   actionButton: {
     padding: 6,
-    marginBottom: 10, // Space between edit and switch
+    marginBottom: 5,
   },
   switchStyle: {
-    transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }], // Make switch slightly smaller
+    transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }],
   },
   emptyContainer: {
     flex: 1,
@@ -276,5 +406,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#888",
   },
+  emptySubtext: {
+    textAlign: "center",
+    marginTop: 8,
+    fontSize: 14,
+    color: "#AAA",
+  },
 });
-// --------------

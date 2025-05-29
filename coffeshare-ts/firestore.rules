@@ -40,6 +40,50 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     
+    // Partners - main partner documents and subcollections
+    match /partners/{partnerId} {
+      // Allow partners to read/write their own main document, admins can access all
+      allow read, write: if isAuth() && (
+        request.auth.uid == partnerId ||
+        request.auth.token.email == partnerId ||
+        isAdmin()
+      );
+      
+      // Analytics subcollection - partners can read their own, admins can read/write all
+      match /analytics/{document=**} {
+        allow read: if isAuth() && (
+          request.auth.token.email == partnerId ||
+          request.auth.uid == partnerId ||
+          isAdmin()
+        );
+        allow write: if isAdmin(); // Only admins or system can write analytics
+      }
+      
+      // Monthly summary subcollection
+      match /monthlySummary/{document=**} {
+        allow read: if isAuth() && (
+          request.auth.token.email == partnerId ||
+          request.auth.uid == partnerId ||
+          isAdmin()
+        );
+        allow write: if isAdmin(); // Only admins or system can write summaries
+      }
+    }
+
+    // Coffee Partners - partners can read/write their own data, admins can read/write all
+    match /coffeePartners/{partnerId} {
+      allow read: if isAuth() && (
+        request.auth.token.email == partnerId || 
+        request.auth.uid == partnerId ||
+        isAdmin()
+      );
+      allow write: if isAuth() && (
+        request.auth.token.email == partnerId || 
+        request.auth.uid == partnerId ||
+        isAdmin()
+      );
+    }
+    
     // Activity logs - only accessible by the user or admins
     match /activityLogs/{logId} {
       allow create: if isAuth() && (request.resource.data.userId == request.auth.uid || isAdmin());
@@ -78,7 +122,7 @@ service cloud.firestore {
       // Allow authenticated users to list all cafes (needed for admin functionality)
       allow list: if isAuth();
       
-      // Allow creation of new cafes (needed for transferring partnership requests)
+      // Allow creation of new cafes (needed for transferring partnership requests and admin registration)
       allow create: if isAuth();
       
       // Allow cafe owners to update their own cafes
@@ -91,7 +135,26 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     
-    // Products - public read, partner/admin write
+    // Products subcollection structure - cafe-specific products
+    match /products/{cafeEmail}/items/{productId} {
+      allow read: if true; // Public read for menu display
+      allow write: if isAuth() && (
+        request.auth.token.email == cafeEmail ||
+        isPartner() || 
+        isAdmin()
+      );
+    }
+    
+    // Products placeholder documents
+    match /products/{cafeEmail}/placeholder/{placeholderId} {
+      allow read, write: if isAuth() && (
+        request.auth.token.email == cafeEmail ||
+        isPartner() || 
+        isAdmin()
+      );
+    }
+
+    // Products - fallback for single-level products collection
     match /products/{productId} {
       allow read: if true;
       allow write: if isAuth() && (
@@ -147,6 +210,57 @@ service cloud.firestore {
       
       // Only admins can update requests
       allow update: if isAdmin();
+    }
+    
+    // Pending Partner Registrations - admin-managed registration requests
+    match /pendingPartnerRegistrations/{registrationId} {
+      // Only admins can read pending registrations
+      allow read: if isAdmin();
+      
+      // Only admins can create new registration requests
+      allow create: if isAdmin();
+      
+      // Admins can update status, system can update via confirmation token
+      allow update: if isAdmin();
+      
+      // Only admins can delete registrations
+      allow delete: if isAdmin();
+    }
+    
+    // Subscription Plans - admin-managed subscription offerings
+    match /subscriptionPlans/{planId} {
+      // Anyone can read subscription plans (for display)
+      allow read: if true;
+      
+      // Only admins can create new plans
+      allow create: if isAdmin();
+      
+      // Only admins can update plans
+      allow update: if isAdmin();
+      
+      // Only admins can delete plans
+      allow delete: if isAdmin();
+    }
+    
+    // User Subscriptions - individual user subscription records
+    match /userSubscriptions/{subscriptionId} {
+      // Users can read their own subscriptions, admins can read all
+      allow read: if isAuth() && (
+        resource.data.userId == request.auth.uid || 
+        isAdmin()
+      );
+      
+      // Users can create their own subscriptions
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      
+      // Users can update their own subscriptions (e.g., credits usage), admins can update any
+      allow update: if isAuth() && (
+        resource.data.userId == request.auth.uid || 
+        isAdmin()
+      );
+      
+      // Only admins can delete subscriptions
+      allow delete: if isAdmin();
     }
   }
 } 

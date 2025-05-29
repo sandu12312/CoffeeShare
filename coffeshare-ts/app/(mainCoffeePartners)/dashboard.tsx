@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  Platform,
 } from "react-native";
 import { useLanguage } from "../../context/LanguageContext";
 import { useFirebase } from "../../context/FirebaseContext";
@@ -20,6 +21,8 @@ import partnerAnalyticsService, {
 } from "../../services/partnerAnalyticsService";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
+import * as Animatable from "react-native-animatable";
+import { LinearGradient } from "expo-linear-gradient";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width / 2 - 30;
@@ -116,49 +119,63 @@ export default function CoffeePartnerDashboard() {
 
   if (loading) {
     return (
-      <ScreenWrapper>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8B4513" />
-          <Text style={styles.loadingText}>Loading dashboard...</Text>
-        </View>
-      </ScreenWrapper>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#8B4513" />
+        <Text style={styles.loadingText}>Loading dashboard...</Text>
+      </View>
     );
   }
 
   return (
-    <ScreenWrapper>
+    <View style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scrollViewContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#8B4513"
+          />
         }
+        showsVerticalScrollIndicator={false}
       >
+        {/* Header */}
         <View style={styles.headerContainer}>
-          <Text style={styles.title}>{t("dashboard")}</Text>
-          <Text style={styles.subtitle}>
-            {t("cafe.welcomeMessage", { name: cafeName })}
-          </Text>
+          <LinearGradient
+            colors={["#8B4513", "#A0522D"]}
+            style={styles.headerGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Ionicons name="cafe" size={32} color="#F5E6D3" />
+            <Text style={styles.title}>{t("dashboard")}</Text>
+            <Text style={styles.subtitle}>
+              {t("cafe.welcomeMessage", { name: cafeName })}
+            </Text>
+          </LinearGradient>
         </View>
 
         {/* Quick Stats Section */}
         <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
+          <View style={[styles.statCard, styles.statCardElevated]}>
             <Ionicons name="cafe-outline" size={30} color="#8B4513" />
             <Text style={styles.statValue}>
               {dailyStats?.coffeesServed || 0}
             </Text>
             <Text style={styles.statLabel}>{t("cafe.coffeesServedToday")}</Text>
           </View>
-          <View style={styles.statCard}>
+
+          <View style={[styles.statCard, styles.statCardElevated]}>
             <Ionicons name="cash-outline" size={30} color="#4CAF50" />
-            <Text style={styles.statValue}>
+            <Text style={[styles.statValue, styles.revenueText]}>
               ${(dailyStats?.revenue || 0).toFixed(2)}
             </Text>
             <Text style={styles.statLabel}>{t("cafe.estimatedRevenue")}</Text>
           </View>
-          <View style={styles.statCard}>
+
+          <View style={[styles.statCard, styles.statCardElevated]}>
             <Ionicons name="person-add-outline" size={30} color="#2196F3" />
-            <Text style={styles.statValue}>
+            <Text style={[styles.statValue, styles.customersText]}>
               {dailyStats?.newCustomers || 0}
             </Text>
             <Text style={styles.statLabel}>{t("cafe.newCustomersToday")}</Text>
@@ -178,47 +195,83 @@ export default function CoffeePartnerDashboard() {
 
         {/* Quick Actions Section */}
         <Text style={styles.sectionTitle}>{t("cafe.quickActions")}</Text>
+
         <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.actionButton} onPress={handleScanQR}>
-            <Ionicons name="qr-code-outline" size={24} color="#FFFFFF" />
-            <Text style={styles.actionButtonText}>
-              {t("cafe.scanQRAction")}
-            </Text>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleScanQR}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={["#8B4513", "#A0522D"]}
+              style={styles.actionButtonGradient}
+            >
+              <Ionicons name="qr-code-outline" size={24} color="#FFFFFF" />
+              <Text style={styles.actionButtonText}>
+                {t("cafe.scanQRAction")}
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.actionButton}
             onPress={handleViewReports}
+            activeOpacity={0.8}
           >
-            <Ionicons name="analytics-outline" size={24} color="#FFFFFF" />
-            <Text style={styles.actionButtonText}>
-              {t("cafe.viewReportsAction")}
-            </Text>
+            <LinearGradient
+              colors={["#3C2415", "#5D3A1A"]}
+              style={styles.actionButtonGradient}
+            >
+              <Ionicons name="analytics-outline" size={24} color="#FFFFFF" />
+              <Text style={styles.actionButtonText}>
+                {t("cafe.viewReportsAction")}
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.actionButton}
             onPress={handleManageProducts}
+            activeOpacity={0.8}
           >
-            <Ionicons name="list-outline" size={24} color="#FFFFFF" />
-            <Text style={styles.actionButtonText}>
-              {t("cafe.manageProductsAction")}
-            </Text>
+            <LinearGradient
+              colors={["#D2691E", "#DEB887"]}
+              style={styles.actionButtonGradient}
+            >
+              <Ionicons name="list-outline" size={24} color="#FFFFFF" />
+              <Text style={styles.actionButtonText}>
+                {t("cafe.manageProductsAction")}
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.actionButton}
             onPress={handleSettings}
+            activeOpacity={0.8}
           >
-            <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
-            <Text style={styles.actionButtonText}>
-              {t("cafe.cafeSettingsAction")}
-            </Text>
+            <LinearGradient
+              colors={["#704214", "#8B5A2B"]}
+              style={styles.actionButtonGradient}
+            >
+              <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
+              <Text style={styles.actionButtonText}>
+                {t("cafe.cafeSettingsAction")}
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </ScreenWrapper>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F5E6D3",
+    paddingTop: Platform.OS === "ios" ? 50 : 30,
+  },
   scrollViewContent: {
     paddingBottom: 80,
   },
@@ -226,42 +279,56 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#F5E6D3",
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: "#666",
+    color: "#8B4513",
+    fontWeight: "500",
   },
   headerContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    marginHorizontal: 20,
+    marginTop: 20,
+    borderRadius: 20,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  container: {
-    flex: 1,
-    backgroundColor: "#f8f8f8",
+  headerGradient: {
+    paddingHorizontal: 20,
+    paddingVertical: 25,
+    alignItems: "center",
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "bold",
-    color: "#321E0E",
+    color: "#F5E6D3",
+    marginTop: 10,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#666",
+    fontSize: 18,
+    color: "#FFF8F3",
     marginTop: 4,
+    fontWeight: "500",
   },
   dateInfoContainer: {
     paddingHorizontal: 20,
     marginBottom: 10,
+    alignItems: "center",
   },
   dateInfoText: {
-    fontSize: 12,
-    color: "#888",
+    fontSize: 14,
+    color: "#8B4513",
     fontStyle: "italic",
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    overflow: "hidden",
   },
   statsContainer: {
     flexDirection: "row",
@@ -272,35 +339,44 @@ const styles = StyleSheet.create({
   },
   statCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 10,
-    padding: 15,
-    alignItems: "center",
-    justifyContent: "center",
+    borderRadius: 16,
     width: CARD_WIDTH,
     minHeight: 120,
     marginBottom: 20,
+    padding: 15,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statCardElevated: {
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
-    color: "#321E0E",
+    color: "#3C2415",
     marginTop: 8,
     marginBottom: 4,
+  },
+  revenueText: {
+    color: "#4CAF50",
+  },
+  customersText: {
+    color: "#2196F3",
   },
   statLabel: {
     fontSize: 13,
     color: "#666",
     textAlign: "center",
+    fontWeight: "500",
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#321E0E",
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#3C2415",
     paddingHorizontal: 20,
     marginTop: 10,
     marginBottom: 15,
@@ -312,20 +388,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   actionButton: {
-    backgroundColor: "#8B4513",
-    borderRadius: 10,
-    paddingVertical: 12,
+    borderRadius: 16,
+    width: CARD_WIDTH,
+    marginBottom: 20,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  actionButtonGradient: {
+    paddingVertical: 16,
     paddingHorizontal: 10,
     alignItems: "center",
     justifyContent: "center",
-    width: CARD_WIDTH,
-    marginBottom: 20,
     flexDirection: "row",
     minHeight: 60,
   },
   actionButtonText: {
     color: "#FFFFFF",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "bold",
     marginLeft: 8,
   },

@@ -5,6 +5,9 @@ export default function CoffeePartnersLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
+        contentStyle: {
+          backgroundColor: "#F5E6D3",
+        },
       }}
     />
   );

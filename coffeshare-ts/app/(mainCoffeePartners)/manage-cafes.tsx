@@ -36,6 +36,8 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { db, auth } from "../../config/firebase";
+import * as Animatable from "react-native-animatable";
+import { LinearGradient } from "expo-linear-gradient";
 
 // Type definition for partnership requests
 interface PartnershipRequest {
@@ -519,105 +521,178 @@ A password reset email has been sent to the partner.`,
     : requests;
 
   // Render each partnership request item
-  const renderItem = ({ item }: { item: PartnershipRequest }) => {
+  const renderItem = ({
+    item,
+    index,
+  }: {
+    item: PartnershipRequest;
+    index: number;
+  }) => {
     const isActionInProgress = actionInProgressId === item.id;
 
     return (
-      <View style={styles.requestCard}>
-        <View style={styles.requestInfoContainer}>
-          {/* Icon */}
-          <View style={styles.iconContainer}>
-            <Ionicons name="storefront-outline" size={24} color="#FFF" />
+      <Animatable.View
+        animation="fadeInUp"
+        delay={index * 100}
+        style={styles.requestCard}
+      >
+        <LinearGradient
+          colors={["#FFFFFF", "#FFF8F3"]}
+          style={styles.requestGradient}
+        >
+          <View style={styles.requestInfoContainer}>
+            {/* Icon */}
+            <LinearGradient
+              colors={["#8B4513", "#A0522D"]}
+              style={styles.iconContainer}
+            >
+              <Ionicons name="storefront-outline" size={26} color="#F5E6D3" />
+            </LinearGradient>
+
+            {/* Details */}
+            <View style={styles.requestDetails}>
+              <Text style={styles.businessName}>{item.businessName}</Text>
+              <View style={styles.contactRow}>
+                <Ionicons name="person-outline" size={14} color="#666" />
+                <Text style={styles.contactName}>{item.contactName}</Text>
+              </View>
+              <View style={styles.contactRow}>
+                <Ionicons name="mail-outline" size={14} color="#666" />
+                <Text style={styles.contactInfo}>{item.email}</Text>
+              </View>
+              {item.phone && (
+                <View style={styles.contactRow}>
+                  <Ionicons name="call-outline" size={14} color="#666" />
+                  <Text style={styles.contactInfo}>{item.phone}</Text>
+                </View>
+              )}
+
+              {item.address && (
+                <View style={styles.addressContainer}>
+                  <Ionicons name="location-outline" size={14} color="#666" />
+                  <Text style={styles.address}>{item.address}</Text>
+                </View>
+              )}
+
+              {item.message && (
+                <View style={styles.messageContainer}>
+                  <Text style={styles.message} numberOfLines={2}>
+                    "{item.message}"
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.dateContainer}>
+                <Ionicons name="time-outline" size={14} color="#999" />
+                <Text style={styles.dateInfo}>
+                  {item.createdAt.toDate().toLocaleDateString()}
+                </Text>
+              </View>
+            </View>
           </View>
 
-          {/* Details */}
-          <View style={styles.requestDetails}>
-            <Text style={styles.businessName}>{item.businessName}</Text>
-            <Text style={styles.contactName}>{item.contactName}</Text>
-            <Text style={styles.contactInfo}>
-              {item.email} {item.phone ? `| ${item.phone}` : ""}
-            </Text>
+          {/* Actions */}
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => handleApproveRequest(item)}
+              disabled={isActionInProgress}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={
+                  isActionInProgress
+                    ? ["#A5D6A7", "#C8E6C9"]
+                    : ["#4CAF50", "#66BB6A"]
+                }
+                style={styles.actionButtonGradient}
+              >
+                {isActionInProgress ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={18}
+                      color="#FFFFFF"
+                    />
+                    <Text style={styles.actionButtonText}>Approve</Text>
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
 
-            {item.address && <Text style={styles.address}>{item.address}</Text>}
-
-            {item.message && (
-              <Text style={styles.message} numberOfLines={2}>
-                "{item.message}"
-              </Text>
-            )}
-
-            <Text style={styles.dateInfo}>
-              Request Date: {item.createdAt.toDate().toLocaleDateString()}
-            </Text>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => handleRejectRequest(item)}
+              disabled={isActionInProgress}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={
+                  isActionInProgress
+                    ? ["#EF9A9A", "#FFCDD2"]
+                    : ["#F44336", "#EF5350"]
+                }
+                style={styles.actionButtonGradient}
+              >
+                {isActionInProgress ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Ionicons name="close-circle" size={18} color="#FFFFFF" />
+                    <Text style={styles.actionButtonText}>Reject</Text>
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
-        </View>
-
-        {/* Actions */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.approveButton]}
-            onPress={() => handleApproveRequest(item)}
-            disabled={isActionInProgress}
-          >
-            {isActionInProgress ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <Ionicons name="checkmark-circle" size={16} color="#FFFFFF" />
-                <Text style={styles.actionButtonText}>Approve</Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.rejectButton]}
-            onPress={() => handleRejectRequest(item)}
-            disabled={isActionInProgress}
-          >
-            {isActionInProgress ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <Ionicons name="close-circle" size={16} color="#FFFFFF" />
-                <Text style={styles.actionButtonText}>Reject</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
+        </LinearGradient>
+      </Animatable.View>
     );
   };
 
   return (
     <ScreenWrapper>
-      <CoffeePartnerHeader title="Manage Partnership Requests" />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Manage Partnership Requests</Text>
+      </View>
 
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Ionicons
-          name="search"
-          size={20}
-          color="#777"
-          style={styles.searchIcon}
-        />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search by name, email, or address..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholderTextColor="#999"
-          returnKeyType="search"
-          onSubmitEditing={() => Keyboard.dismiss()}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity
-            onPress={() => setSearchQuery("")}
-            style={styles.clearButton}
-          >
-            <Ionicons name="close-circle" size={18} color="#999" />
-          </TouchableOpacity>
-        )}
-      </View>
+      <Animatable.View
+        animation="fadeInDown"
+        duration={600}
+        style={styles.searchContainer}
+      >
+        <LinearGradient
+          colors={["#FFFFFF", "#FFF8F3"]}
+          style={styles.searchGradient}
+        >
+          <Ionicons
+            name="search"
+            size={20}
+            color="#8B4513"
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by name, email, or address..."
+            placeholderTextColor="#A0522D"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+            onSubmitEditing={() => Keyboard.dismiss()}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setSearchQuery("")}
+              style={styles.clearButton}
+            >
+              <Ionicons name="close-circle" size={18} color="#8B4513" />
+            </TouchableOpacity>
+          )}
+        </LinearGradient>
+      </Animatable.View>
 
       {/* List of Requests */}
       {loading ? (
@@ -634,10 +709,11 @@ A password reset email has been sent to the partner.`,
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContainer}
           extraData={actionInProgressId}
+          showsVerticalScrollIndicator={false}
         />
       ) : (
         <View style={styles.emptyContainer}>
-          <Ionicons name="cafe-outline" size={60} color="#CCC" />
+          <Ionicons name="cafe-outline" size={80} color="#D7CCC8" />
           <Text style={styles.emptyText}>No partnership requests found</Text>
           <Text style={styles.emptySubText}>
             {searchQuery
@@ -651,31 +727,46 @@ A password reset email has been sent to the partner.`,
 }
 
 const styles = StyleSheet.create({
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 15,
+    backgroundColor: "#F5E6D3",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#3C2415",
+    textAlign: "center",
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+    backgroundColor: "#F5E6D3",
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: "#666",
+    color: "#8B4513",
+    fontWeight: "500",
   },
   searchContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  searchGradient: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
+    borderRadius: 12,
     paddingHorizontal: 12,
-    margin: 16,
-    marginBottom: 8,
     height: 48,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
   },
   searchIcon: {
     marginRight: 8,
@@ -683,7 +774,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: "#333",
+    color: "#3C2415",
   },
   clearButton: {
     padding: 4,
@@ -693,106 +784,128 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   requestCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
     marginBottom: 16,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 4,
+    overflow: "hidden",
+  },
+  requestGradient: {
+    padding: 16,
   },
   requestInfoContainer: {
     flexDirection: "row",
     marginBottom: 16,
   },
   iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: "#8B4513",
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 14,
   },
   requestDetails: {
     flex: 1,
   },
   businessName: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: "bold",
-    color: "#333",
+    color: "#3C2415",
+    marginBottom: 6,
+  },
+  contactRow: {
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 4,
+    gap: 6,
   },
   contactName: {
-    fontSize: 16,
+    fontSize: 15,
     color: "#555",
-    marginBottom: 4,
+    fontWeight: "500",
   },
   contactInfo: {
     fontSize: 14,
-    color: "#777",
+    color: "#666",
+  },
+  addressContainer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginTop: 4,
     marginBottom: 4,
+    gap: 6,
   },
   address: {
     fontSize: 14,
     color: "#777",
-    marginBottom: 4,
+    flex: 1,
+  },
+  messageContainer: {
+    backgroundColor: "#FFF8F3",
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 8,
+    marginBottom: 6,
   },
   message: {
     fontSize: 14,
-    color: "#777",
+    color: "#666",
     fontStyle: "italic",
-    marginTop: 4,
-    marginBottom: 4,
+  },
+  dateContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6,
+    gap: 6,
   },
   dateInfo: {
     fontSize: 12,
     color: "#999",
-    marginTop: 4,
   },
   actionsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: 12,
   },
   actionButton: {
+    flex: 1,
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  actionButtonGradient: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
-    borderRadius: 8,
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  approveButton: {
-    backgroundColor: "#4CAF50",
-  },
-  rejectButton: {
-    backgroundColor: "#F44336",
+    paddingVertical: 12,
+    gap: 6,
   },
   actionButtonText: {
     color: "#FFFFFF",
     fontWeight: "bold",
-    marginLeft: 6,
+    fontSize: 15,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+    backgroundColor: "#F5E6D3",
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#999",
-    marginTop: 16,
+    color: "#8B4513",
+    marginTop: 20,
   },
   emptySubText: {
     fontSize: 14,
-    color: "#999",
+    color: "#A0522D",
     textAlign: "center",
     marginTop: 8,
-    paddingHorizontal: 20,
+    paddingHorizontal: 40,
   },
 });

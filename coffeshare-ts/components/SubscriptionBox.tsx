@@ -1,72 +1,131 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLanguage } from "../context/LanguageContext";
 
 interface SubscriptionBoxProps {
+  id: string;
   title: string;
-  price: string;
-  description: string;
-  features: string[];
+  price: number;
+  credits: number;
+  description?: string;
   isPopular?: boolean;
+  tag?: string;
+  isSelected: boolean;
   onSelect: () => void;
+  animatedScale?: Animated.Value;
   icon?: keyof typeof Ionicons.glyphMap;
   color?: string;
 }
 
 export default function SubscriptionBox({
+  id,
   title,
   price,
+  credits,
   description,
-  features,
   isPopular = false,
+  tag,
+  isSelected,
   onSelect,
-  icon = "star-outline",
+  animatedScale,
+  icon = "cafe-outline",
   color = "#8B4513",
 }: SubscriptionBoxProps) {
   const { t } = useLanguage();
 
+  // Choose icon based on beans/credits
+  const getIcon = (): keyof typeof Ionicons.glyphMap => {
+    if (icon) return icon;
+    if (credits <= 50) return "cafe-outline";
+    if (credits <= 100) return "cafe";
+    return "flame";
+  };
+
+  // Choose color based on selection or popularity
+  const getCardColor = () => {
+    if (isSelected) return color;
+    if (isPopular) return "#FF9800";
+    return "#E0E0E0";
+  };
+
   return (
-    <View style={[styles.box, { borderColor: color }]}>
-      {isPopular && (
-        <View style={[styles.popularBadge, { backgroundColor: color }]}>
-          <Text style={styles.popularText}>{t("popular")}</Text>
+    <Animated.View
+      style={[
+        styles.box,
+        {
+          transform: [{ scale: animatedScale || 1 }],
+          borderColor: isSelected ? color : "#E0E0E0",
+        },
+      ]}
+    >
+      {(isPopular || tag) && (
+        <View
+          style={[
+            styles.badge,
+            { backgroundColor: isPopular ? "#FF9800" : "#2196F3" },
+          ]}
+        >
+          <Text style={styles.badgeText}>{tag || "Popular"}</Text>
         </View>
       )}
 
-      <View style={styles.header}>
-        <Ionicons name={icon} size={24} color={color} />
-        <Text style={[styles.title, { color }]}>{title}</Text>
-      </View>
+      <TouchableOpacity onPress={onSelect} activeOpacity={0.8}>
+        <View style={styles.iconContainer}>
+          <Ionicons
+            name={getIcon()}
+            size={40}
+            color={isSelected ? color : "#666"}
+          />
+        </View>
 
-      <Text style={styles.price}>{price}</Text>
-      <Text style={styles.description}>{description}</Text>
+        <Text style={[styles.title, isSelected && { color }]}>{title}</Text>
 
-      <View style={styles.featuresContainer}>
-        {features.map((feature, index) => (
-          <View key={index} style={styles.featureItem}>
-            <Ionicons name="checkmark-circle" size={16} color={color} />
-            <Text style={styles.featureText}>{feature}</Text>
-          </View>
-        ))}
-      </View>
+        <View style={styles.beansContainer}>
+          <Text style={[styles.beansAmount, isSelected && { color }]}>
+            {credits}
+          </Text>
+          <Text style={styles.beansLabel}>Beans</Text>
+        </View>
 
-      <TouchableOpacity
-        style={[styles.selectButton, { backgroundColor: color }]}
-        onPress={onSelect}
-      >
-        <Text style={styles.selectButtonText}>{t("select")}</Text>
+        <Text style={styles.price}>
+          {price.toFixed(0)} RON
+          <Text style={styles.priceLabel}>/month</Text>
+        </Text>
+
+        {description && (
+          <Text style={styles.description} numberOfLines={2}>
+            {description}
+          </Text>
+        )}
+
+        <View
+          style={[
+            styles.selectIndicator,
+            isSelected && styles.selectIndicatorActive,
+          ]}
+        >
+          {isSelected && (
+            <Ionicons name="checkmark-circle" size={24} color={color} />
+          )}
+        </View>
       </TouchableOpacity>
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   box: {
+    width: "30%",
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: 12,
+    padding: 12,
     borderWidth: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -74,63 +133,79 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     position: "relative",
+    minHeight: 200,
   },
-  popularBadge: {
+  badge: {
     position: "absolute",
-    top: -12,
-    right: 20,
-    paddingHorizontal: 12,
+    top: -8,
+    right: -8,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 8,
     zIndex: 1,
   },
-  popularText: {
+  badgeText: {
     color: "#FFFFFF",
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "bold",
   },
-  header: {
-    flexDirection: "row",
+  iconContainer: {
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 8,
+    marginTop: 8,
   },
   title: {
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: "bold",
-    marginLeft: 10,
+    textAlign: "center",
+    marginBottom: 8,
+    color: "#333",
+    minHeight: 36,
   },
-  price: {
+  beansContainer: {
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  beansAmount: {
     fontSize: 24,
     fontWeight: "bold",
+    color: "#333",
+  },
+  beansLabel: {
+    fontSize: 12,
+    color: "#666",
+  },
+  price: {
+    fontSize: 16,
+    fontWeight: "600",
     color: "#321E0E",
+    textAlign: "center",
     marginBottom: 8,
+  },
+  priceLabel: {
+    fontSize: 12,
+    fontWeight: "normal",
+    color: "#666",
   },
   description: {
-    fontSize: 14,
-    color: "#666666",
-    marginBottom: 16,
+    fontSize: 11,
+    color: "#666",
+    textAlign: "center",
+    marginTop: 4,
+    lineHeight: 16,
   },
-  featuresContainer: {
-    marginBottom: 20,
-  },
-  featureItem: {
-    flexDirection: "row",
+  selectIndicator: {
+    position: "absolute",
+    bottom: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#F0F0F0",
     alignItems: "center",
-    marginBottom: 8,
+    justifyContent: "center",
   },
-  featureText: {
-    fontSize: 14,
-    color: "#333333",
-    marginLeft: 8,
-  },
-  selectButton: {
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  selectButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
+  selectIndicatorActive: {
+    backgroundColor: "transparent",
   },
 });

@@ -17,6 +17,8 @@ import { useRouter } from "expo-router";
 import CoffeePartnerHeader from "../../components/CoffeePartnerHeader";
 import adminService, { AdminUserData } from "../../services/adminService";
 import { formatDate } from "../../utils/dateUtils";
+import RegisterCoffeePartnerForm from "../../components/RegisterCoffeePartnerForm";
+import PendingRegistrationsModal from "../../components/PendingRegistrationsModal";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width / 2 - 30; // For potential 2-column layout
@@ -26,6 +28,9 @@ export default function AdminDashboardScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showRegisterForm, setShowRegisterForm] = useState(false);
+  const [showPendingRegistrations, setShowPendingRegistrations] =
+    useState(false);
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeSubscriptions: 0,
@@ -59,6 +64,11 @@ export default function AdminDashboardScreen() {
     router.push(path);
   };
 
+  const handleRegisterSuccess = () => {
+    // Refresh dashboard data when a new partner is registered
+    loadDashboardData();
+  };
+
   if (loading && !refreshing) {
     return (
       <ScreenWrapper>
@@ -82,6 +92,26 @@ export default function AdminDashboardScreen() {
         }
       >
         <Text style={styles.welcomeMessage}>Admin Control Panel</Text>
+
+        {/* Quick Action: Register Coffee Partner */}
+        <TouchableOpacity
+          style={styles.quickActionButton}
+          onPress={() => setShowRegisterForm(true)}
+        >
+          <Ionicons name="person-add-outline" size={24} color="#FFF" />
+          <Text style={styles.quickActionText}>
+            Register New Coffee Partner
+          </Text>
+        </TouchableOpacity>
+
+        {/* Quick Action: View Pending Registrations */}
+        <TouchableOpacity
+          style={styles.pendingActionButton}
+          onPress={() => setShowPendingRegistrations(true)}
+        >
+          <Ionicons name="mail-unread-outline" size={24} color="#FFF" />
+          <Text style={styles.quickActionText}>View Pending Registrations</Text>
+        </TouchableOpacity>
 
         {/* Quick Stats Section */}
         <View style={styles.statsContainer}>
@@ -194,6 +224,19 @@ export default function AdminDashboardScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Register Coffee Partner Form Modal */}
+      <RegisterCoffeePartnerForm
+        visible={showRegisterForm}
+        onClose={() => setShowRegisterForm(false)}
+        onSuccess={handleRegisterSuccess}
+      />
+
+      {/* Pending Registrations Modal */}
+      <PendingRegistrationsModal
+        visible={showPendingRegistrations}
+        onClose={() => setShowPendingRegistrations(false)}
+      />
     </ScreenWrapper>
   );
 }
@@ -219,6 +262,42 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 25,
     textAlign: "center",
+  },
+  quickActionButton: {
+    backgroundColor: "#4CAF50",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginBottom: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  quickActionText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 10,
+  },
+  pendingActionButton: {
+    backgroundColor: "#007BFF",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginBottom: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   statsContainer: {
     flexDirection: "row",

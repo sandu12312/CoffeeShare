@@ -25,17 +25,11 @@ import RecentActivityCard from "../../components/RecentActivityCard";
 import QuickStatsCard from "../../components/QuickStatsCard";
 import { formatDate } from "../../utils/dateUtils";
 import { ActivityType } from "../../types";
-import { auth, db } from "../../config/firebase";
+import { auth } from "../../config/firebase";
 import {
-  doc,
-  getDoc,
-  collection,
-  query,
-  where,
-  orderBy,
-  limit,
-  getDocs,
-} from "firebase/firestore";
+  SubscriptionService,
+  UserSubscription,
+} from "../../services/subscriptionService";
 
 const HEADER_HEIGHT = 80;
 
@@ -104,41 +98,12 @@ export default function Dashboard() {
 
     try {
       setLoading(true);
-      // Get user document to find current subscription ID
-      const userDoc = await getDoc(doc(db, "users", user.uid));
+      // Get user's active subscription using the subscription service
+      const activeSubscription =
+        await SubscriptionService.getUserActiveSubscription(user.uid);
 
-      if (userDoc.exists() && userDoc.data().currentSubscription) {
-        // Get the subscription document
-        const subscriptionId = userDoc.data().currentSubscription;
-        const subscriptionDoc = await getDoc(
-          doc(db, "subscriptions", subscriptionId)
-        );
-
-        if (subscriptionDoc.exists()) {
-          setSubscription({
-            id: subscriptionDoc.id,
-            ...subscriptionDoc.data(),
-          });
-        } else {
-          // Try to get the most recent subscription
-          const subscriptionsQuery = query(
-            collection(db, "subscriptions"),
-            where("userId", "==", user.uid),
-            where("status", "==", "active"),
-            orderBy("createdAt", "desc"),
-            limit(1)
-          );
-
-          const subscriptionsSnapshot = await getDocs(subscriptionsQuery);
-
-          if (!subscriptionsSnapshot.empty) {
-            const latestSubscription = subscriptionsSnapshot.docs[0];
-            setSubscription({
-              id: latestSubscription.id,
-              ...latestSubscription.data(),
-            });
-          }
-        }
+      if (activeSubscription) {
+        setSubscription(activeSubscription);
       }
     } catch (error) {
       console.error("Error fetching subscription:", error);
@@ -183,19 +148,21 @@ export default function Dashboard() {
     // Check if subscription is active
     const isActive = subscription.status === "active";
 
-    // Calculate expiry date (30 days from creation for now)
-    const createdAt = subscription.createdAt?.toDate() || new Date();
-    const expiryDate = new Date(createdAt);
+    // Calculate expiry date (30 days from activation for now)
+    const activatedAt = subscription.activatedAt?.toDate
+      ? subscription.activatedAt.toDate()
+      : subscription.activatedAt;
+    const expiryDate = new Date(activatedAt);
     expiryDate.setDate(expiryDate.getDate() + 30);
 
     // Check if subscription has expired
     const hasExpired = expiryDate < new Date();
 
     return {
-      type: subscription.planName || "Bean Subscription",
+      type: subscription.subscriptionName || "Bean Subscription",
       expires: formatDate(expiryDate),
-      beansLeft: subscription.beansRemaining || 0,
-      beansTotal: subscription.beansTotal || 0,
+      beansLeft: subscription.creditsLeft || 0,
+      beansTotal: subscription.creditsTotal || 0,
       hasActiveSubscription: isActive && !hasExpired,
     };
   };

@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  Dimensions,
 } from "react-native";
 import { useLanguage } from "../../context/LanguageContext";
 import { useFirebase } from "../../context/FirebaseContext";
@@ -16,9 +17,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import partnerAnalyticsService from "../../services/partnerAnalyticsService";
 import { DocumentData } from "firebase/firestore";
+import * as Animatable from "react-native-animatable";
+import { LinearGradient } from "expo-linear-gradient";
 
 // Placeholder for a chart library
 // import { LineChart } from 'react-native-chart-kit';
+
+const { width } = Dimensions.get("window");
 
 export default function ReportsScreen() {
   const { t } = useLanguage();
@@ -190,106 +195,200 @@ export default function ReportsScreen() {
           onPress={() => router.back()}
           style={styles.backButton}
         >
-          <Ionicons name="arrow-back" size={24} color="#321E0E" />
+          <Ionicons name="arrow-back" size={24} color="#3C2415" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t("cafe.reportsAndStats")}</Text>
+        <View style={{ width: 24 }} />
       </View>
+
       <ScrollView
         contentContainerStyle={styles.scrollViewContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#8B4513"
+          />
         }
+        showsVerticalScrollIndicator={false}
       >
         {/* Date range info */}
-        <Text style={styles.sectionTitle}>
-          {t("cafe.periodLastDays", { days: analyticsData.length })}
-        </Text>
+        <Animatable.View animation="fadeInDown" duration={600}>
+          <LinearGradient
+            colors={["#8B4513", "#A0522D"]}
+            style={styles.dateRangeContainer}
+          >
+            <Ionicons name="calendar-outline" size={20} color="#F5E6D3" />
+            <Text style={styles.dateRangeText}>
+              {t("cafe.periodLastDays", { days: analyticsData.length })}
+            </Text>
+          </LinearGradient>
+        </Animatable.View>
 
         {/* Key Metrics */}
         <View style={styles.metricsContainer}>
-          <View style={styles.metricCard}>
-            <Ionicons name="scan-outline" size={24} color="#8B4513" />
-            <Text style={styles.metricValue}>{reportData.totalScans}</Text>
-            <Text style={styles.metricLabel}>{t("cafe.totalScans")}</Text>
-          </View>
-          <View style={styles.metricCard}>
-            <Ionicons name="people-outline" size={24} color="#2196F3" />
-            <Text style={styles.metricValue}>{reportData.uniqueCustomers}</Text>
-            <Text style={styles.metricLabel}>{t("cafe.uniqueCustomers")}</Text>
-          </View>
-          <View style={styles.metricCard}>
-            <Ionicons name="time-outline" size={24} color="#FF9800" />
-            <Text style={styles.metricValue}>{reportData.peakHour}</Text>
-            <Text style={styles.metricLabel}>{t("cafe.peakHour")}</Text>
-          </View>
-          <View style={styles.metricCard}>
-            <Ionicons name="stats-chart-outline" size={24} color="#4CAF50" />
-            <Text style={styles.metricValue}>
-              {reportData.averageScansPerDay}
-            </Text>
-            <Text style={styles.metricLabel}>{t("cafe.avgScansPerDay")}</Text>
-          </View>
+          <Animatable.View
+            animation="fadeInLeft"
+            delay={200}
+            style={styles.metricCard}
+          >
+            <LinearGradient
+              colors={["#FFFFFF", "#FFF8F3"]}
+              style={styles.metricGradient}
+            >
+              <View style={styles.metricIconContainer}>
+                <Ionicons name="scan-outline" size={28} color="#8B4513" />
+              </View>
+              <Text style={styles.metricValue}>{reportData.totalScans}</Text>
+              <Text style={styles.metricLabel}>{t("cafe.totalScans")}</Text>
+            </LinearGradient>
+          </Animatable.View>
+
+          <Animatable.View
+            animation="fadeInRight"
+            delay={300}
+            style={styles.metricCard}
+          >
+            <LinearGradient
+              colors={["#FFFFFF", "#F0F8FF"]}
+              style={styles.metricGradient}
+            >
+              <View style={[styles.metricIconContainer, styles.blueIcon]}>
+                <Ionicons name="people-outline" size={28} color="#2196F3" />
+              </View>
+              <Text style={[styles.metricValue, styles.blueText]}>
+                {reportData.uniqueCustomers}
+              </Text>
+              <Text style={styles.metricLabel}>
+                {t("cafe.uniqueCustomers")}
+              </Text>
+            </LinearGradient>
+          </Animatable.View>
+
+          <Animatable.View
+            animation="fadeInLeft"
+            delay={400}
+            style={styles.metricCard}
+          >
+            <LinearGradient
+              colors={["#FFFFFF", "#FFF5E6"]}
+              style={styles.metricGradient}
+            >
+              <View style={[styles.metricIconContainer, styles.orangeIcon]}>
+                <Ionicons name="time-outline" size={28} color="#FF9800" />
+              </View>
+              <Text style={[styles.metricValue, styles.orangeText]}>
+                {reportData.peakHour}
+              </Text>
+              <Text style={styles.metricLabel}>{t("cafe.peakHour")}</Text>
+            </LinearGradient>
+          </Animatable.View>
+
+          <Animatable.View
+            animation="fadeInRight"
+            delay={500}
+            style={styles.metricCard}
+          >
+            <LinearGradient
+              colors={["#FFFFFF", "#F0FFF0"]}
+              style={styles.metricGradient}
+            >
+              <View style={[styles.metricIconContainer, styles.greenIcon]}>
+                <Ionicons
+                  name="stats-chart-outline"
+                  size={28}
+                  color="#4CAF50"
+                />
+              </View>
+              <Text style={[styles.metricValue, styles.greenText]}>
+                {reportData.averageScansPerDay}
+              </Text>
+              <Text style={styles.metricLabel}>{t("cafe.avgScansPerDay")}</Text>
+            </LinearGradient>
+          </Animatable.View>
         </View>
 
         {/* Charts Section */}
-        <Text style={styles.sectionTitle}>{t("cafe.scansPerDay")}</Text>
-        <View style={styles.chartPlaceholder}>
-          {/* <LineChart
-            data={chartData}
-            width={Dimensions.get('window').width - 40}
-            height={220}
-            yAxisSuffix=" coffees"
-            yAxisInterval={1}
-            chartConfig={{
-              backgroundColor: "#e26a00",
-              backgroundGradientFrom: "#fb8c00",
-              backgroundGradientTo: "#ffa726",
-              decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              style: {
-                borderRadius: 16
-              },
-              propsForDots: {
-                r: "6",
-                strokeWidth: "2",
-                stroke: "#ffa726"
-              }
-            }}
-            bezier
-            style={{
-              marginVertical: 8,
-              borderRadius: 16
-            }}
-          /> */}
-          <Ionicons name="bar-chart-outline" size={80} color="#E0E0E0" />
-          <Text style={styles.placeholderText}>
-            {t("cafe.coffeeScansChart")}
-          </Text>
+        <Animatable.Text
+          animation="fadeInLeft"
+          delay={600}
+          style={styles.sectionTitle}
+        >
+          {t("cafe.scansPerDay")}
+        </Animatable.Text>
 
-          {/* Chart values */}
-          {analyticsData.length > 0 && (
-            <View style={styles.chartValues}>
-              {chartData.labels.map((label, index) => (
-                <View key={index} style={styles.chartValueItem}>
-                  <Text style={styles.chartValueDay}>{label}</Text>
-                  <Text style={styles.chartValueNumber}>
-                    {chartData.datasets[0].data[index]}
-                  </Text>
-                </View>
-              ))}
+        <Animatable.View
+          animation="fadeInUp"
+          delay={700}
+          style={styles.chartContainer}
+        >
+          <LinearGradient
+            colors={["#FFFFFF", "#FFF8F3"]}
+            style={styles.chartGradient}
+          >
+            <View style={styles.chartHeader}>
+              <Ionicons name="bar-chart" size={24} color="#8B4513" />
+              <Text style={styles.chartTitle}>
+                {t("cafe.coffeeScansChart")}
+              </Text>
             </View>
-          )}
-        </View>
+
+            {/* Chart placeholder with better visualization */}
+            <View style={styles.barChartContainer}>
+              {chartData.labels.map((label, index) => {
+                const value = chartData.datasets[0].data[index];
+                const maxValue = Math.max(...chartData.datasets[0].data, 1);
+                const barHeight = (value / maxValue) * 120;
+
+                return (
+                  <Animatable.View
+                    key={index}
+                    animation="fadeInUp"
+                    delay={800 + index * 100}
+                    style={styles.barWrapper}
+                  >
+                    <View style={styles.barContainer}>
+                      <Text style={styles.barValue}>{value}</Text>
+                      <View style={[styles.bar, { height: barHeight }]}>
+                        <LinearGradient
+                          colors={["#8B4513", "#D2691E"]}
+                          style={styles.barGradient}
+                        />
+                      </View>
+                    </View>
+                    <Text style={styles.barLabel}>{label}</Text>
+                  </Animatable.View>
+                );
+              })}
+            </View>
+
+            <View style={styles.chartFooter}>
+              <Text style={styles.chartFooterText}>
+                Total: {reportData.totalScans}{" "}
+                {reportData.totalScans === 1 ? "coffee" : "coffees"}
+              </Text>
+            </View>
+          </LinearGradient>
+        </Animatable.View>
 
         {/* Export Button */}
-        <TouchableOpacity
-          style={styles.exportButton}
-          onPress={handleExportData}
-        >
-          <Ionicons name="download-outline" size={20} color="#FFFFFF" />
-          <Text style={styles.exportButtonText}>{t("cafe.exportData")}</Text>
-        </TouchableOpacity>
+        <Animatable.View animation="bounceIn" delay={1500}>
+          <TouchableOpacity
+            style={styles.exportButton}
+            onPress={handleExportData}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={["#3C2415", "#5D3A1A"]}
+              style={styles.exportButtonGradient}
+            >
+              <Ionicons name="download-outline" size={22} color="#FFFFFF" />
+              <Text style={styles.exportButtonText}>
+                {t("cafe.exportData")}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </Animatable.View>
       </ScrollView>
     </ScreenWrapper>
   );
@@ -300,39 +399,56 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#F5E6D3",
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: "#666",
+    color: "#8B4513",
+    fontWeight: "500",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 15,
     paddingTop: 50,
     paddingBottom: 15,
-    backgroundColor: "#FFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    backgroundColor: "#F5E6D3",
   },
   backButton: {
-    marginRight: 15,
+    padding: 5,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
-    color: "#321E0E",
+    color: "#3C2415",
   },
   scrollViewContent: {
     padding: 20,
     paddingBottom: 80,
   },
-  sectionTitle: {
-    fontSize: 18,
+  dateRangeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    marginBottom: 20,
+    gap: 8,
+  },
+  dateRangeText: {
+    fontSize: 16,
     fontWeight: "600",
-    color: "#321E0E",
+    color: "#F5E6D3",
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#3C2415",
     marginBottom: 15,
+    marginTop: 10,
   },
   metricsContainer: {
     flexDirection: "row",
@@ -341,78 +457,153 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   metricCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 10,
-    padding: 15,
-    alignItems: "center",
     width: "48%",
     marginBottom: 15,
+    borderRadius: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-    minHeight: 100,
+    shadowRadius: 6,
+    elevation: 4,
+    overflow: "hidden",
+  },
+  metricGradient: {
+    padding: 16,
+    alignItems: "center",
+    minHeight: 120,
+    justifyContent: "center",
+  },
+  metricIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#FFF8F3",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  blueIcon: {
+    backgroundColor: "#E3F2FD",
+  },
+  orangeIcon: {
+    backgroundColor: "#FFF3E0",
+  },
+  greenIcon: {
+    backgroundColor: "#E8F5E9",
   },
   metricValue: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "bold",
-    color: "#321E0E",
-    marginTop: 8,
+    color: "#3C2415",
     marginBottom: 4,
+  },
+  blueText: {
+    color: "#2196F3",
+  },
+  orangeText: {
+    color: "#FF9800",
+  },
+  greenText: {
+    color: "#4CAF50",
   },
   metricLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: "#666",
     textAlign: "center",
+    fontWeight: "500",
   },
-  chartPlaceholder: {
-    backgroundColor: "#F0F0F0",
-    borderRadius: 10,
-    minHeight: 220,
-    justifyContent: "center",
+  chartContainer: {
+    borderRadius: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    overflow: "hidden",
+  },
+  chartGradient: {
+    padding: 20,
+  },
+  chartHeader: {
+    flexDirection: "row",
     alignItems: "center",
     marginBottom: 20,
-    padding: 15,
+    gap: 10,
   },
-  placeholderText: {
-    color: "#A0A0A0",
-    marginTop: 10,
-    fontSize: 16,
+  chartTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#3C2415",
   },
-  chartValues: {
+  barChartContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: "100%",
-    marginTop: 20,
+    alignItems: "flex-end",
+    height: 150,
     paddingHorizontal: 10,
+    marginBottom: 20,
   },
-  chartValueItem: {
+  barWrapper: {
+    flex: 1,
     alignItems: "center",
   },
-  chartValueDay: {
+  barContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+  bar: {
+    width: 30,
+    borderRadius: 8,
+    overflow: "hidden",
+    marginTop: 5,
+  },
+  barGradient: {
+    flex: 1,
+  },
+  barValue: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#3C2415",
+    marginBottom: 5,
+  },
+  barLabel: {
     fontSize: 12,
     color: "#666",
-    marginBottom: 4,
+    marginTop: 8,
   },
-  chartValueNumber: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#321E0E",
+  chartFooter: {
+    borderTopWidth: 1,
+    borderTopColor: "#E0E0E0",
+    paddingTop: 15,
+    alignItems: "center",
+  },
+  chartFooterText: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "500",
   },
   exportButton: {
-    backgroundColor: "#8B4513",
+    borderRadius: 16,
+    marginTop: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+    overflow: "hidden",
+  },
+  exportButtonGradient: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 15,
-    borderRadius: 8,
-    marginTop: 10,
+    paddingVertical: 16,
+    gap: 10,
   },
   exportButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
-    marginLeft: 10,
   },
 });
