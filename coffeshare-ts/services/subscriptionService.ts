@@ -368,4 +368,52 @@ export class SubscriptionService {
       throw error;
     }
   }
+
+  // Update user credits directly
+  static async updateUserCredits(
+    userId: string,
+    newCreditsAmount: number
+  ): Promise<boolean> {
+    try {
+      const activeSubscription = await this.getUserActiveSubscription(userId);
+
+      if (!activeSubscription) {
+        console.error("No active subscription found for user:", userId);
+        return false;
+      }
+
+      const subRef = doc(db, "userSubscriptions", activeSubscription.id!);
+      await updateDoc(subRef, {
+        creditsLeft: newCreditsAmount,
+        lastUpdated: serverTimestamp(),
+      });
+
+      console.log(`Updated user ${userId} credits to ${newCreditsAmount}`);
+      return true;
+    } catch (error) {
+      console.error("Error updating user credits:", error);
+      return false;
+    }
+  }
+
+  // Log user activity
+  static async logUserActivity(
+    userId: string,
+    activityType: string,
+    activityData: any
+  ): Promise<void> {
+    try {
+      await addDoc(collection(db, "userActivities"), {
+        userId,
+        type: activityType,
+        data: activityData,
+        timestamp: serverTimestamp(),
+      });
+
+      console.log(`Logged activity for user ${userId}: ${activityType}`);
+    } catch (error) {
+      console.error("Error logging user activity:", error);
+      // Don't throw error for logging failures
+    }
+  }
 }

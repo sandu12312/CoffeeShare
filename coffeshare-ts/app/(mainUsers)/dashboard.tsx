@@ -20,7 +20,6 @@ import BottomTabBar from "../../components/BottomTabBar";
 import { useLanguage } from "../../context/LanguageContext";
 import { useFirebase } from "../../context/FirebaseContext";
 import SubscriptionCard from "../../components/SubscriptionCard";
-import RecommendedCafesCard from "../../components/RecommendedCafesCard";
 import RecentActivityCard from "../../components/RecentActivityCard";
 import QuickStatsCard from "../../components/QuickStatsCard";
 import { formatDate } from "../../utils/dateUtils";
@@ -30,6 +29,7 @@ import {
   SubscriptionService,
   UserSubscription,
 } from "../../services/subscriptionService";
+import { useSubscriptionStatus } from "../../hooks/useSubscriptionStatus";
 
 const HEADER_HEIGHT = 80;
 
@@ -49,7 +49,9 @@ export default function Dashboard() {
   const lastScrollY = useRef(0);
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [subscription, setSubscription] = useState<any>(null);
+
+  // Use the new subscription status hook
+  const subscriptionStatus = useSubscriptionStatus(user?.uid);
 
   const headerTranslateY = scrollOffsetY.interpolate({
     inputRange: [0, HEADER_HEIGHT],
@@ -61,7 +63,7 @@ export default function Dashboard() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        await Promise.all([fetchUserActivities(), fetchSubscription()]);
+        await fetchUserActivities();
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -92,26 +94,6 @@ export default function Dashboard() {
     }
   };
 
-  // Fetch subscription data
-  const fetchSubscription = async () => {
-    if (!user || !user.uid) return;
-
-    try {
-      setLoading(true);
-      // Get user's active subscription using the subscription service
-      const activeSubscription =
-        await SubscriptionService.getUserActiveSubscription(user.uid);
-
-      if (activeSubscription) {
-        setSubscription(activeSubscription);
-      }
-    } catch (error) {
-      console.error("Error fetching subscription:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollOffsetY } } }],
     {
@@ -135,35 +117,14 @@ export default function Dashboard() {
 
   // Get subscription data for display
   const getSubscriptionData = () => {
-    if (!subscription) {
-      return {
-        type: t("dashboard.noSubscription"),
-        expires: t("dashboard.subscriptionExpiresN/A"),
-        beansLeft: 0,
-        beansTotal: 0,
-        hasActiveSubscription: false,
-      };
-    }
-
-    // Check if subscription is active
-    const isActive = subscription.status === "active";
-
-    // Calculate expiry date (30 days from activation for now)
-    const activatedAt = subscription.activatedAt?.toDate
-      ? subscription.activatedAt.toDate()
-      : subscription.activatedAt;
-    const expiryDate = new Date(activatedAt);
-    expiryDate.setDate(expiryDate.getDate() + 30);
-
-    // Check if subscription has expired
-    const hasExpired = expiryDate < new Date();
-
     return {
-      type: subscription.subscriptionName || "Bean Subscription",
-      expires: formatDate(expiryDate),
-      beansLeft: subscription.creditsLeft || 0,
-      beansTotal: subscription.creditsTotal || 0,
-      hasActiveSubscription: isActive && !hasExpired,
+      type: subscriptionStatus.subscriptionName,
+      expires: subscriptionStatus.expiresAt
+        ? formatDate(subscriptionStatus.expiresAt)
+        : t("dashboard.subscriptionExpiresN/A"),
+      beansLeft: subscriptionStatus.beansLeft,
+      beansTotal: subscriptionStatus.beansTotal,
+      hasActiveSubscription: subscriptionStatus.isActive,
     };
   };
 
@@ -218,10 +179,6 @@ export default function Dashboard() {
     router.push("/(mainUsers)/subscriptions");
   };
 
-  const handleViewAllCafes = () => {
-    router.push("/(mainUsers)/map");
-  };
-
   const handleCafePress = (cafe: any) => {
     console.log("Cafe pressed:", cafe);
     // Navigate to cafe details
@@ -240,14 +197,22 @@ export default function Dashboard() {
     router.push("/(mainUsers)/profile");
   };
 
-  // Get recommended cafes (static for now, will be dynamically loaded in the future)
-  const recommendedCafes = [
-    { id: "1", name: "Cafe Central", distance: "300m", rating: 4.5 },
-    { id: "2", name: "Morning Brew", distance: "500m", rating: 4.8 },
-    { id: "3", name: "The Grind House", distance: "1.2km", rating: 4.2 },
-  ];
-
   if (loading || !userProfile) {
+    return (
+      <ImageBackground
+        source={require("../../assets/images/coffee-beans-textured-background.jpg")}
+        style={styles.background}
+        resizeMode="cover"
+      >
+        <SafeAreaView style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+          <Text style={styles.loadingText}>{t("dashboard.loadingData")}</Text>
+        </SafeAreaView>
+      </ImageBackground>
+    );
+  }
+
+  if (loading || subscriptionStatus.loading || !userProfile) {
     return (
       <ImageBackground
         source={require("../../assets/images/coffee-beans-textured-background.jpg")}
@@ -354,13 +319,6 @@ export default function Dashboard() {
                 <Text style={styles.qrCodeButtonText}>{t("scanQRCode")}</Text>
               </TouchableOpacity>
             )}
-
-          {/* Recommended Cafes Card */}
-          <RecommendedCafesCard
-            cafes={recommendedCafes}
-            onViewAll={handleViewAllCafes}
-            onCafePress={handleCafePress}
-          />
 
           {/* Recent Activity Card - Using Real User Data */}
           <RecentActivityCard

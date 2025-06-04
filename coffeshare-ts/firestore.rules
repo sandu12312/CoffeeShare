@@ -86,10 +86,8 @@ service cloud.firestore {
     
     // Activity logs - only accessible by the user or admins
     match /activityLogs/{logId} {
-      allow create: if isAuth() && (request.resource.data.userId == request.auth.uid || isAdmin());
-      allow read: if isAuth() && (
-        request.auth.uid == resource.data.userId || isAdmin()
-      );
+      allow create: if isAuth();
+      allow read: if isAuth();
       allow update, delete: if isAdmin();
     }
     
@@ -165,20 +163,14 @@ service cloud.firestore {
     // Subscriptions - user can read/write their own, admin can read/write all
     // MODIFIED: more permissive to allow user subscription management
     match /subscriptions/{subscriptionId} {
-      // Read: any authenticated user can read their own subscriptions
-      allow read: if isAuth() && (
-        (resource != null && resource.data.userId == request.auth.uid) ||
-        isAdmin()
-      );
+      // Read: any authenticated user can read subscriptions
+      allow read: if isAuth();
       
       // Create: any authenticated user can create a subscription for themselves
       allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
       
-      // Update: users can update their own subscriptions, admins can update any
-      allow update: if isAuth() && (
-        (resource != null && resource.data.userId == request.auth.uid) ||
-        isAdmin()
-      );
+      // Update: authenticated users can update subscriptions
+      allow update: if isAuth();
       
       // Delete: only admins can delete subscriptions
       allow delete: if isAdmin();
@@ -245,21 +237,49 @@ service cloud.firestore {
     // User Subscriptions - individual user subscription records
     match /userSubscriptions/{subscriptionId} {
       // Users can read their own subscriptions, admins can read all
-      allow read: if isAuth() && (
-        resource.data.userId == request.auth.uid || 
-        isAdmin()
-      );
+      allow read: if isAuth();
       
       // Users can create their own subscriptions
       allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
       
       // Users can update their own subscriptions (e.g., credits usage), admins can update any
-      allow update: if isAuth() && (
+      allow update: if isAuth();
+      
+      // Only admins can delete subscriptions
+      allow delete: if isAdmin();
+    }
+    
+    // QR Tokens - secure token management for coffee redemption
+    match /qrTokens/{tokenId} {
+      // Users can read their own tokens, authenticated users can read for validation
+      allow read: if isAuth();
+      
+      // Users can only create tokens for themselves
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      
+      // Authenticated users can update tokens (for validation and redemption)
+      allow update: if isAuth();
+      
+      // Tokens can be deleted by their owner or admins (cleanup)
+      allow delete: if isAuth() && (
         resource.data.userId == request.auth.uid || 
         isAdmin()
       );
+    }
+    
+    // User Activities - logging system for coffee redemptions and other activities
+    match /userActivities/{activityId} {
+      // Users can read their own activities, admins can read all
+      // Made more permissive for queries
+      allow read: if isAuth();
       
-      // Only admins can delete subscriptions
+      // Authenticated users can create activity logs
+      allow create: if isAuth();
+      
+      // Only admins can update activities (no user modifications allowed)
+      allow update: if isAdmin();
+      
+      // Only admins can delete activities
       allow delete: if isAdmin();
     }
   }

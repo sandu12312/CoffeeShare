@@ -23,6 +23,7 @@ import {
   BarcodeScanningResult,
 } from "expo-camera";
 import { useFirebase } from "../../context/FirebaseContext";
+import { QRService, QRValidationResult } from "../../services/qrService";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const SCAN_AREA_SIZE = SCREEN_WIDTH * 0.7;
@@ -30,7 +31,7 @@ const SCAN_AREA_SIZE = SCREEN_WIDTH * 0.7;
 const QrScannerScreen = () => {
   const { t } = useLanguage();
   const router = useRouter();
-  const { verifyAndRedeemQRCode } = useFirebase();
+  const { user } = useFirebase(); // This should be the coffee partner user
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [manualCode, setManualCode] = useState("");
@@ -38,6 +39,8 @@ const QrScannerScreen = () => {
   const [scanSuccess, setScanSuccess] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [lastRedemption, setLastRedemption] =
+    useState<QRValidationResult | null>(null);
   const successOpacity = useRef(new Animated.Value(0)).current;
   const scanLineAnimation = useRef(new Animated.Value(0)).current;
   const cameraRef = useRef(null);
@@ -102,7 +105,7 @@ const QrScannerScreen = () => {
           duration: 300,
           useNativeDriver: true,
         }),
-        Animated.delay(2000),
+        Animated.delay(3000),
         Animated.timing(successOpacity, {
           toValue: 0,
           duration: 300,
@@ -110,51 +113,23 @@ const QrScannerScreen = () => {
         }),
       ]).start(() => {
         setScanSuccess(false);
+        setLastRedemption(null);
       });
     }
   }, [scanSuccess]);
 
-  const processQRData = (data: string) => {
+  const processQRData = async (data: string) => {
     if (scanned || processing) return;
     setScanned(true);
     setProcessing(true);
     setScanError(null);
 
     try {
-      const qrData = JSON.parse(data);
-      if (
-        !qrData.cafeId ||
-        !qrData.userId ||
-        !qrData.timestamp ||
-        !qrData.uniqueCode
-      ) {
-        setScanError(t("scanner.invalidQrMissingFields"));
-        setProcessing(false);
-        setTimeout(() => {
-          setScanned(false);
-          setScanError(null);
-        }, 2000);
-        return;
-      }
-      verifyAndRedeemQrCode(qrData);
-    } catch (error) {
-      console.error("Error processing QR code:", error);
-      setScanError(t("scanner.invalidQrFormat"));
-      setProcessing(false);
-      setTimeout(() => {
-        setScanned(false);
-        setScanError(null);
-      }, 2000);
-    }
-  };
+      // The QR data should be the token hash
+      const token = data.trim();
 
-  const verifyAndRedeemQrCode = async (qrData: any) => {
-    try {
-      const validUntil = qrData.validUntil ? new Date(qrData.validUntil) : null;
-      const now = new Date();
-
-      if (validUntil && now > validUntil) {
-        setScanError(t("scanner.qrExpired"));
+      if (!token) {
+        setScanError("Invalid QR code format");
         setProcessing(false);
         setTimeout(() => {
           setScanned(false);
@@ -163,25 +138,37 @@ const QrScannerScreen = () => {
         return;
       }
 
-      const result = await verifyAndRedeemQRCode(qrData);
+      // Get cafe ID from user context (coffee partner should have cafeId)
+      const cafeId = "default_cafe"; // TODO: Implement proper cafe identification system
+
+      // Validate and redeem the QR token
+      const result = await QRService.validateAndRedeemQRToken(token, cafeId);
 
       if (result.success) {
+        setLastRedemption(result);
         setScanSuccess(true);
         setProcessing(false);
         setTimeout(() => {
           setScanned(false);
-        }, 3000);
+        }, 4000);
       } else {
-        throw new Error(result.message);
+        setScanError(result.message);
+        setProcessing(false);
+        setTimeout(() => {
+          setScanned(false);
+          setScanError(null);
+        }, 3000);
       }
     } catch (error: any) {
-      console.error("Error verifying QR data:", error);
-      setScanError(error.message || t("scanner.errorVerifying"));
+      console.error("Error processing QR code:", error);
+      setScanError(
+        error.message || "An error occurred while processing the QR code"
+      );
       setProcessing(false);
       setTimeout(() => {
         setScanned(false);
         setScanError(null);
-      }, 2000);
+      }, 3000);
     }
   };
 
@@ -189,7 +176,7 @@ const QrScannerScreen = () => {
     if (manualCode.trim()) {
       processQRData(manualCode);
     } else {
-      Alert.alert(t("common.error"), t("scanner.enterValidQrCode"));
+      Alert.alert(t("common.error"), "Please enter a valid QR code");
     }
   };
 
@@ -250,14 +237,12 @@ const QrScannerScreen = () => {
 
         {showManualInput ? (
           <View style={styles.manualInputContainer}>
-            <Text style={styles.manualInputTitle}>
-              {t("scanner.enterQrCodeData")}
-            </Text>
+            <Text style={styles.manualInputTitle}>Enter QR Code Token</Text>
             <TextInput
               style={styles.manualInput}
               value={manualCode}
               onChangeText={setManualCode}
-              placeholder={t("scanner.pasteQrCodeHere")}
+              placeholder="Paste QR token here..."
               multiline
               placeholderTextColor="#666"
             />
@@ -275,7 +260,7 @@ const QrScannerScreen = () => {
                 style={[styles.button, styles.submitButton]}
                 onPress={handleManualSubmit}
               >
-                <Text style={styles.buttonText}>{t("select")}</Text>
+                <Text style={styles.buttonText}>Validate</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -323,7 +308,7 @@ const QrScannerScreen = () => {
                 />
               </View>
               <Text style={styles.scanInstructions}>
-                {t("scanner.positionQrCode")}
+                Position the customer's QR code within the frame
               </Text>
             </View>
 
@@ -332,22 +317,31 @@ const QrScannerScreen = () => {
               onPress={() => setShowManualInput(true)}
             >
               <Ionicons name="keypad-outline" size={24} color="#FFF" />
-              <Text style={styles.manualButtonText}>
-                {t("scanner.enterCodeManually")}
-              </Text>
+              <Text style={styles.manualButtonText}>Enter Code Manually</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {scanSuccess && (
+        {scanSuccess && lastRedemption && (
           <Animated.View
             style={[styles.statusOverlay, { opacity: successOpacity }]}
           >
             <View style={styles.statusContent}>
               <Ionicons name="checkmark-circle" size={50} color="#4CAF50" />
               <Text style={styles.successText}>
-                {t("scanner.qrSuccessfullyRedeemed")}
+                QR Code Successfully Redeemed!
               </Text>
+              {lastRedemption.userInfo && (
+                <View style={styles.redemptionInfo}>
+                  <Text style={styles.redemptionText}>
+                    Customer ID:{" "}
+                    {lastRedemption.userInfo.userId.substring(0, 8)}...
+                  </Text>
+                  <Text style={styles.redemptionText}>
+                    Beans Remaining: {lastRedemption.userInfo.beansLeft}
+                  </Text>
+                </View>
+              )}
             </View>
           </Animated.View>
         )}
@@ -362,9 +356,7 @@ const QrScannerScreen = () => {
         {processing && (
           <View style={styles.scanningOverlay}>
             <ActivityIndicator size="large" color="#fff" />
-            <Text style={styles.scanningText}>
-              {t("scanner.processingQrCode")}
-            </Text>
+            <Text style={styles.scanningText}>Validating QR Code...</Text>
             <TouchableOpacity
               style={styles.scanAgainButton}
               onPress={() => {
@@ -625,6 +617,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginLeft: 10,
     flex: 1,
+  },
+  redemptionInfo: {
+    marginTop: 10,
+    alignItems: "center",
+  },
+  redemptionText: {
+    color: "#FFF",
+    fontSize: 14,
+    marginBottom: 5,
   },
 });
 
