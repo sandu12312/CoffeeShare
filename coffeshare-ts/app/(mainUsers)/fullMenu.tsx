@@ -6,10 +6,11 @@ import {
   FlatList,
   TouchableOpacity,
   Image,
-  ActivityIndicator,
   ScrollView,
   Dimensions,
   StatusBar,
+  TextInput,
+  SafeAreaView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,11 +21,10 @@ import coffeePartnerService, {
 import cartService from "../../services/cartService";
 import Toast from "react-native-toast-message";
 import * as Animatable from "react-native-animatable";
-import { LinearGradient } from "expo-linear-gradient";
 
-const { height: screenHeight } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
-export default function FullMenuScreen() {
+export default function FullMenu() {
   const router = useRouter();
   const { user } = useFirebase();
   const params = useLocalSearchParams();
@@ -33,6 +33,7 @@ export default function FullMenuScreen() {
   const [loading, setLoading] = useState(true);
   const [cartItemCount, setCartItemCount] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const cafeId = params.cafeId as string;
   const cafeName = params.cafeName as string;
@@ -100,15 +101,16 @@ export default function FullMenuScreen() {
   const categories = ["All", "Coffee", "Tea", "Pastries", "Snacks"];
 
   const filteredProducts = products.filter((product) => {
-    if (selectedCategory === "All") return true;
-    // You can add category filtering logic here
-    return true;
+    const matchesSearch = product.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    return matchesSearch;
   });
 
   const renderProduct = ({ item, index }: { item: Product; index: number }) => (
     <Animatable.View
       animation="fadeInUp"
-      delay={index * 100}
+      delay={index * 50}
       style={styles.productCard}
     >
       <Image
@@ -117,89 +119,105 @@ export default function FullMenuScreen() {
         resizeMode="cover"
       />
       <View style={styles.productInfo}>
-        <Text style={styles.productName}>{item.name}</Text>
+        <Text style={styles.productName} numberOfLines={1}>
+          {item.name}
+        </Text>
+        <Text style={styles.productDescription} numberOfLines={2}>
+          Fresh and delicious coffee item
+        </Text>
         <View style={styles.priceRow}>
-          <View style={styles.beansContainer}>
-            <Ionicons name="ellipse" size={16} color="#8B4513" />
-            <Text style={styles.beansText}>{item.beansValue} beans</Text>
-          </View>
-          <Text style={styles.priceText}>{item.priceLei} RON</Text>
+          <Text style={styles.priceText}>{item.beansValue}</Text>
+          <Ionicons
+            name="ellipse"
+            size={12}
+            color="#8B4513"
+            style={styles.beansIcon}
+          />
         </View>
       </View>
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => handleAddToCart(item)}
       >
-        <Ionicons name="add" size={24} color="#FFFFFF" />
+        <Ionicons name="add" size={20} color="#FFFFFF" />
       </TouchableOpacity>
     </Animatable.View>
   );
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#8B4513" />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#FFA500" />
 
       {/* Header */}
-      <LinearGradient colors={["#8B4513", "#A0522D"]} style={styles.header}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backButton}
-          >
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
 
-          <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>{cafeName}</Text>
-            <Text style={styles.headerSubtitle}>Menu</Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.cartButton}
-            onPress={() => router.push("/(mainUsers)/cart")}
-          >
-            <Ionicons name="cart" size={24} color="#FFFFFF" />
-            {cartItemCount > 0 && (
-              <View style={styles.cartBadge}>
-                <Text style={styles.cartBadgeText}>{cartItemCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+        <View style={styles.searchContainer}>
+          <Ionicons
+            name="search"
+            size={18}
+            color="#999"
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder={`Search in ${cafeName}`}
+            placeholderTextColor="#999"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
         </View>
-      </LinearGradient>
+
+        <TouchableOpacity
+          onPress={() => router.push("/(mainUsers)/cart")}
+          style={styles.cartButton}
+        >
+          <Ionicons name="bag" size={24} color="#FFFFFF" />
+          {cartItemCount > 0 && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{cartItemCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
 
       {/* Categories */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.categoriesContainer}
-        contentContainerStyle={styles.categoriesContent}
-      >
-        {categories.map((category) => (
-          <TouchableOpacity
-            key={category}
-            style={[
-              styles.categoryButton,
-              selectedCategory === category && styles.categoryButtonActive,
-            ]}
-            onPress={() => setSelectedCategory(category)}
-          >
-            <Text
+      <View style={styles.categoriesContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesContent}
+        >
+          {categories.map((category) => (
+            <TouchableOpacity
+              key={category}
               style={[
-                styles.categoryText,
-                selectedCategory === category && styles.categoryTextActive,
+                styles.categoryButton,
+                selectedCategory === category && styles.categoryButtonActive,
               ]}
+              onPress={() => setSelectedCategory(category)}
             >
-              {category}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              <Text
+                style={[
+                  styles.categoryText,
+                  selectedCategory === category && styles.categoryTextActive,
+                ]}
+              >
+                {category}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
-      {/* Products */}
+      {/* Products List */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8B4513" />
           <Text style={styles.loadingText}>Loading menu...</Text>
         </View>
       ) : (
@@ -211,7 +229,7 @@ export default function FullMenuScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Ionicons name="restaurant-outline" size={64} color="#D7CCC8" />
+              <Ionicons name="cafe" size={64} color="#DDD" />
               <Text style={styles.emptyTitle}>No items available</Text>
               <Text style={styles.emptySubtitle}>
                 Check back later for updates!
@@ -220,59 +238,64 @@ export default function FullMenuScreen() {
           }
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5E6D3",
+    backgroundColor: "#F8F8F8",
   },
   header: {
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-  },
-  headerContent: {
+    backgroundColor: "#FFA500",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   backButton: {
     padding: 8,
+    marginRight: 8,
   },
-  headerCenter: {
+  searchContainer: {
     flex: 1,
+    flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 25,
+    paddingHorizontal: 16,
+    height: 40,
+    marginHorizontal: 8,
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-    marginBottom: 4,
+  searchIcon: {
+    marginRight: 8,
   },
-  headerSubtitle: {
+  searchInput: {
+    flex: 1,
     fontSize: 16,
-    color: "#F5E6D3",
-    fontWeight: "500",
+    color: "#333",
   },
   cartButton: {
     padding: 8,
+    marginLeft: 8,
     position: "relative",
   },
   cartBadge: {
     position: "absolute",
-    top: 0,
-    right: 0,
-    backgroundColor: "#FF6B6B",
+    top: 2,
+    right: 2,
+    backgroundColor: "#FF4444",
     borderRadius: 10,
     minWidth: 20,
     height: 20,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
   },
   cartBadgeText: {
     color: "#FFFFFF",
@@ -282,29 +305,26 @@ const styles = StyleSheet.create({
   categoriesContainer: {
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: "#E0D6C7",
+    borderBottomColor: "#F0F0F0",
+    paddingVertical: 12,
   },
   categoriesContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingHorizontal: 16,
   },
   categoryButton: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    marginRight: 15,
+    paddingVertical: 8,
+    marginRight: 12,
     borderRadius: 20,
-    backgroundColor: "#F5E6D3",
-    borderWidth: 1,
-    borderColor: "#E0D6C7",
+    backgroundColor: "#F8F8F8",
   },
   categoryButtonActive: {
-    backgroundColor: "#8B4513",
-    borderColor: "#8B4513",
+    backgroundColor: "#FFA500",
   },
   categoryText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#8B4513",
+    color: "#666",
   },
   categoryTextActive: {
     color: "#FFFFFF",
@@ -313,106 +333,92 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingVertical: 40,
   },
   loadingText: {
-    marginTop: 10,
     fontSize: 16,
-    color: "#8B4513",
-    fontWeight: "500",
+    color: "#666",
   },
   productsList: {
-    padding: 20,
-    paddingBottom: 100,
+    padding: 16,
   },
   productCard: {
     flexDirection: "row",
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    padding: 12,
     alignItems: "center",
-    shadowColor: "#8B4513",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
-    borderWidth: 1,
-    borderColor: "#F5E6D3",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   productImage: {
-    width: 90,
-    height: 90,
-    borderRadius: 12,
-    marginRight: 16,
-    borderWidth: 2,
-    borderColor: "#F5E6D3",
+    width: 80,
+    height: 80,
+    borderRadius: 8,
   },
   productInfo: {
     flex: 1,
-    paddingRight: 10,
+    marginLeft: 12,
+    marginRight: 8,
   },
   productName: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#321E0E",
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 4,
+  },
+  productDescription: {
+    fontSize: 14,
+    color: "#666",
     marginBottom: 8,
-    lineHeight: 24,
+    lineHeight: 18,
   },
   priceRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-  },
-  beansContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFF8F3",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#E0D6C7",
-  },
-  beansText: {
-    fontSize: 14,
-    color: "#8B4513",
-    marginLeft: 6,
-    fontWeight: "600",
   },
   priceText: {
     fontSize: 16,
-    color: "#6A4028",
-    fontWeight: "700",
+    fontWeight: "bold",
+    color: "#333",
+    marginRight: 4,
+  },
+  beansIcon: {
+    marginLeft: 2,
   },
   addButton: {
-    backgroundColor: "#8B4513",
-    borderRadius: 16,
-    width: 48,
-    height: 48,
+    backgroundColor: "#00C851",
+    borderRadius: 20,
+    width: 36,
+    height: 36,
     justifyContent: "center",
     alignItems: "center",
+    elevation: 2,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 2,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: screenHeight * 0.2,
+    paddingVertical: 40,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#8B4513",
-    marginTop: 20,
-    marginBottom: 8,
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#666",
+    marginTop: 16,
   },
   emptySubtitle: {
-    fontSize: 16,
-    color: "#6A4028",
+    fontSize: 14,
+    color: "#999",
+    marginTop: 8,
     textAlign: "center",
   },
 });
