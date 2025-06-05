@@ -68,4 +68,9 @@ export const colors = {
   success: "#7ED321",
   warning: "#F5A623",
   info: "#4A90E2",
+  white: "#FFFFFF",
+  black: "#000000",
+  gray_400: "#9CA3AF",
+  gray_500: "#6B7280",
+  gray_600: "#4B5563",
 };

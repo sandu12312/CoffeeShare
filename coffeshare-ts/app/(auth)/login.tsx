@@ -19,6 +19,7 @@ import { useFirebase } from "../../context/FirebaseContext";
 import { getAuth, signOut } from "firebase/auth";
 import { app } from "../../config/firebase";
 import { useLanguage, TranslationKey } from "../../context/LanguageContext";
+import { roleManagementService } from "../../services/roleManagementService";
 
 const auth = getAuth(app);
 
@@ -77,10 +78,11 @@ export default function Login() {
         return;
       }
 
-      // Redirect based on user role
+      // Redirect based on user role from new role management system
+      console.log("Login successful, redirecting user with role:", role);
       switch (role) {
         case "admin":
-          router.push("/dashboard");
+          router.push("/(admin)/dashboard");
           break;
         case "partner":
           router.push("/(mainCoffeePartners)/dashboard");
@@ -89,7 +91,12 @@ export default function Login() {
           router.push("/(mainUsers)/dashboard");
           break;
         default:
-          router.push("/dashboard");
+          // Fallback - treat unknown roles as regular users
+          console.warn(
+            "Unknown role detected, defaulting to user dashboard:",
+            role
+          );
+          router.push("/(mainUsers)/dashboard");
       }
     } catch (error: any) {
       console.error("Login error:", error);
@@ -126,10 +133,11 @@ export default function Login() {
       setGoogleLoading(true);
       const { role } = await signInWithGoogle();
 
-      // Redirect based on user role
+      // Redirect based on user role from new role management system
+      console.log("Google login successful, redirecting user with role:", role);
       switch (role) {
         case "admin":
-          router.push("/dashboard");
+          router.push("/(admin)/dashboard");
           break;
         case "partner":
           router.push("/(mainCoffeePartners)/dashboard");
@@ -138,7 +146,12 @@ export default function Login() {
           router.push("/(mainUsers)/dashboard");
           break;
         default:
-          router.push("/dashboard");
+          // Fallback - treat unknown roles as regular users
+          console.warn(
+            "Unknown role detected, defaulting to user dashboard:",
+            role
+          );
+          router.push("/(mainUsers)/dashboard");
       }
     } catch (error: any) {
       console.error("Google Login Error:", error);
@@ -286,6 +299,50 @@ export default function Login() {
                 </Text>
               </TouchableOpacity>
             </View>
+
+            {/* Temporary Admin Upgrade Button - Remove in production! */}
+            {email === "maximcapinus@gmail.com" && (
+              <TouchableOpacity
+                style={[
+                  styles.loginButton,
+                  { backgroundColor: "#FF6B6B", marginTop: 20 },
+                ]}
+                onPress={async () => {
+                  try {
+                    if (auth.currentUser) {
+                      await roleManagementService.changeUserRole(
+                        auth.currentUser.uid,
+                        "admin",
+                        {
+                          permissions: [
+                            "read",
+                            "write",
+                            "delete",
+                            "manage_users",
+                            "manage_partners",
+                            "system_admin",
+                          ],
+                          accessLevel: "super",
+                        }
+                      );
+                      Alert.alert(
+                        "Success",
+                        "You are now an admin! Please log out and log back in."
+                      );
+                    } else {
+                      Alert.alert("Error", "Please login first");
+                    }
+                  } catch (error) {
+                    console.error("Error upgrading to admin:", error);
+                    Alert.alert("Error", "Failed to upgrade to admin");
+                  }
+                }}
+              >
+                <Text style={styles.loginButtonText}>
+                  Make Me Admin (Dev Only)
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

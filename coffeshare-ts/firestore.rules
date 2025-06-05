@@ -6,6 +6,20 @@ service cloud.firestore {
       return request.auth != null;
     }
     
+    // MIGRATION SUPER USER - temporary full access for YywOKLC2d9MVBQjrCuUcUbBc7Vx1
+    function isMigrationSuperUser() {
+      return request.auth != null && request.auth.uid == "YywOKLC2d9MVBQjrCuUcUbBc7Vx1";
+    }
+    
+    // TEMPORARY DEBUG ADMIN - Remove this in production!
+    function isDebugAdmin() {
+      return request.auth != null && (
+        request.auth.token.email == "admin@coffeeshare.com" || // Replace with your email
+        request.auth.uid == "YywOKLC2d9MVBQjrCuUcUbBc7Vx1" || // Your specific user ID
+        request.auth.token.email == "maximcapinus@gmail.com" // Your email
+      );
+    }
+    
     // Helper function to check if user is accessing their own data
     function isOwner(userId) {
       return isAuth() && request.auth.uid == userId;
@@ -13,30 +27,62 @@ service cloud.firestore {
     
     // Helper function to check if user has admin role
     function isAdmin() {
-      return isAuth() && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+      return isMigrationSuperUser() || 
+        isDebugAdmin() ||
+        (isAuth() && (
+          // Check in legacy users collection
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin") ||
+          // Check in new admins collection
+          exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        ));
     }
     
     // Helper function to check if user has partner role (cafe owner)
     function isPartner() {
-      return isAuth() && 
+      return isMigrationSuperUser() || (isAuth() && 
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "partner";
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "partner");
     }
     
     // User profiles - MODIFIED: less restrictive update rules for self-updates
     match /users/{userId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
       // Anyone can create a profile, including admins creating profiles for others
       allow create: if isAuth() && (request.auth.uid == userId || isAdmin());
       
-      // Users can read and update their own profile
+      // Users can read their own profile, admins can read any profile
       allow read: if isOwner(userId) || isAdmin();
       
-      // Users can update their own profile, including subscription updates
-      allow update: if isAuth() && request.auth.uid == userId || isAdmin();
+      // Users can update their own profile (but not role), admins can update any profile
+      allow update: if isAuth() && (
+        (request.auth.uid == userId && 
+         (!request.resource.data.keys().hasAny(['role']) || 
+          resource.data.role == request.resource.data.role)) ||
+        isAdmin()
+      );
       
       // Only admins can delete profiles
+      allow delete: if isAdmin();
+    }
+    
+    // Admins collection - for admin users in new structure
+    match /admins/{adminId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
+      // Admins can read all admin profiles
+      allow read: if isAdmin();
+      
+      // Only admins can create new admin profiles
+      allow create: if isAdmin();
+      
+      // Admins can update admin profiles
+      allow update: if isAdmin();
+      
+      // Only admins can delete admin profiles
       allow delete: if isAdmin();
     }
     
@@ -72,6 +118,9 @@ service cloud.firestore {
 
     // Coffee Partners - partners can read/write their own data, admins can read/write all
     match /coffeePartners/{partnerId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
       allow read: if isAuth() && (
         request.auth.token.email == partnerId || 
         request.auth.uid == partnerId ||
@@ -86,6 +135,9 @@ service cloud.firestore {
     
     // Activity logs - only accessible by the user or admins
     match /activityLogs/{logId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
       allow create: if isAuth();
       allow read: if isAuth();
       allow update, delete: if isAdmin();
@@ -93,6 +145,9 @@ service cloud.firestore {
     
     // Notifications - only accessible by the user
     match /notifications/{notificationId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
       allow read, update: if isAuth() && resource.data.userId == request.auth.uid;
       allow create: if isAuth() && (request.resource.data.userId == request.auth.uid || isAdmin());
       allow delete: if isAdmin();
@@ -100,6 +155,9 @@ service cloud.firestore {
     
     // QR codes - user can create, cafe can read and update
     match /qrCodes/{qrId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
       allow create: if isAuth();
       allow read: if isAuth() && (
         resource.data.userId == request.auth.uid || 
@@ -114,6 +172,9 @@ service cloud.firestore {
     
     // Cafes - public read, partner/admin write
     match /cafes/{cafeId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
       // Allow public read access to individual cafe documents
       allow get: if true;
       
@@ -163,6 +224,9 @@ service cloud.firestore {
     // Subscriptions - user can read/write their own, admin can read/write all
     // MODIFIED: more permissive to allow user subscription management
     match /subscriptions/{subscriptionId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
       // Read: any authenticated user can read subscriptions
       allow read: if isAuth();
       
@@ -236,6 +300,9 @@ service cloud.firestore {
     
     // User Subscriptions - individual user subscription records
     match /userSubscriptions/{subscriptionId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
       // Users can read their own subscriptions, admins can read all
       allow read: if isAuth();
       
@@ -251,6 +318,9 @@ service cloud.firestore {
     
     // QR Tokens - secure token management for coffee redemption
     match /qrTokens/{tokenId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
       // Users can read their own tokens, authenticated users can read for validation
       allow read: if isAuth();
       
@@ -269,6 +339,9 @@ service cloud.firestore {
     
     // User Activities - logging system for coffee redemptions and other activities
     match /userActivities/{activityId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
       // Users can read their own activities, admins can read all
       // Made more permissive for queries
       allow read: if isAuth();

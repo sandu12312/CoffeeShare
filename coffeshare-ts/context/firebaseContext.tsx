@@ -20,6 +20,7 @@ import {
 } from "firebase/auth";
 import { app, auth, db } from "../config/firebase";
 import { userProfileService } from "../services/userProfileService";
+import { roleManagementService } from "../services/roleManagementService";
 import {
   UserProfile,
   ActivityType,
@@ -240,15 +241,32 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       const credential = GoogleAuthProvider.credential(id_token);
       signInWithCredential(auth, credential)
-        .then((result) => {
+        .then(async (result) => {
           console.log(
             "Successfully signed in with Google Firebase credential for:",
             result.user.email
           );
-          // Resolve the promise with a role (will be updated to actual role in onAuthStateChanged)
-          if (googleSignInResolverRef.current) {
-            googleSignInResolverRef.current({ role: "user" });
-            googleSignInResolverRef.current = null;
+
+          // Get the actual user role using role management service
+          try {
+            const userSearchResult = await roleManagementService.getUserByUid(
+              result.user.uid
+            );
+            const role = userSearchResult?.role || "user";
+
+            if (googleSignInResolverRef.current) {
+              googleSignInResolverRef.current({ role });
+              googleSignInResolverRef.current = null;
+            }
+          } catch (error) {
+            console.error(
+              "Error getting user role after Google sign-in:",
+              error
+            );
+            if (googleSignInResolverRef.current) {
+              googleSignInResolverRef.current({ role: "user" });
+              googleSignInResolverRef.current = null;
+            }
           }
         })
         .catch((error: AuthError) => {
@@ -282,30 +300,51 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
       if (currentUser) {
         console.log("Auth state changed, user detected:", currentUser.uid);
         try {
-          let profile = await userProfileService.getCurrentUserProfile();
-          console.log("Existing profile check:", profile);
-          if (!profile) {
-            console.log("No profile found, attempting to create one.");
-            const displayName = currentUser.displayName || "";
-            const photoURL = currentUser.photoURL || "";
-            const email = currentUser.email || "";
+          // First try to get user from role management service (checks all collections)
+          const userSearchResult = await roleManagementService.getUserByUid(
+            currentUser.uid
+          );
 
-            if (email) {
-              profile = await userProfileService.createUserProfile({
-                displayName,
-                photoURL,
-                email,
-                role: "user",
-              });
-              console.log("New profile created:", profile);
-            } else {
-              console.warn(
-                "Cannot create profile: missing email for user",
-                currentUser.uid
-              );
+          if (userSearchResult) {
+            console.log(
+              "User found in collection:",
+              userSearchResult.collection,
+              "with role:",
+              userSearchResult.role
+            );
+            // Convert the search result to UserProfile format
+            const profile: UserProfile = {
+              ...userSearchResult.userData,
+              role: userSearchResult.role,
+            } as UserProfile;
+            setUserProfile(profile);
+          } else {
+            // If not found in any collection, try legacy method
+            let profile = await userProfileService.getCurrentUserProfile();
+            console.log("Existing profile check:", profile);
+            if (!profile) {
+              console.log("No profile found, attempting to create one.");
+              const displayName = currentUser.displayName || "";
+              const photoURL = currentUser.photoURL || "";
+              const email = currentUser.email || "";
+
+              if (email) {
+                profile = await userProfileService.createUserProfile({
+                  displayName,
+                  photoURL,
+                  email,
+                  role: "user",
+                });
+                console.log("New profile created:", profile);
+              } else {
+                console.warn(
+                  "Cannot create profile: missing email for user",
+                  currentUser.uid
+                );
+              }
             }
+            setUserProfile(profile);
           }
-          setUserProfile(profile);
         } catch (error) {
           console.error("Error fetching/creating user profile:", error);
         }
@@ -331,6 +370,23 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
         email,
         password
       );
+
+      // Use the role management service to get user data from any collection
+      const userSearchResult = await roleManagementService.getUserByUid(
+        userCredential.user.uid
+      );
+
+      if (userSearchResult) {
+        console.log(
+          "User found in collection:",
+          userSearchResult.collection,
+          "with role:",
+          userSearchResult.role
+        );
+        return { role: userSearchResult.role };
+      }
+
+      // Fallback to legacy method
       const profile = await userProfileService.getCurrentUserProfile();
       return { role: profile?.role || "user" };
     } catch (error) {

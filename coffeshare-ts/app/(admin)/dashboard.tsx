@@ -13,12 +13,11 @@ import { useLanguage } from "../../context/LanguageContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-// Assuming we might reuse or adapt the partner header
+// Using the new UserManagementBox component
+import UserManagementBox from "../../components/UserManagementBox";
 import CoffeePartnerHeader from "../../components/CoffeePartnerHeader";
-import adminService, { AdminUserData } from "../../services/adminService";
+import { roleManagementService } from "../../services/roleManagementService";
 import { formatDate } from "../../utils/dateUtils";
-import RegisterCoffeePartnerForm from "../../components/RegisterCoffeePartnerForm";
-import PendingRegistrationsModal from "../../components/PendingRegistrationsModal";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width / 2 - 30; // For potential 2-column layout
@@ -28,14 +27,13 @@ export default function AdminDashboardScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [showRegisterForm, setShowRegisterForm] = useState(false);
-  const [showPendingRegistrations, setShowPendingRegistrations] =
-    useState(false);
+  const [showUserManagement, setShowUserManagement] = useState(false);
   const [stats, setStats] = useState({
     totalUsers: 0,
-    activeSubscriptions: 0,
-    totalCafes: 0,
-    recentRegistrations: [] as AdminUserData[],
+    totalAdmins: 0,
+    totalPartners: 0,
+    activeUsers: 0,
+    pendingPartners: 0,
   });
 
   useEffect(() => {
@@ -45,7 +43,7 @@ export default function AdminDashboardScreen() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const dashboardStats = await adminService.getDashboardStats();
+      const dashboardStats = await roleManagementService.getAllRoleStatistics();
       setStats(dashboardStats);
     } catch (error) {
       console.error("Error loading dashboard data:", error);
@@ -64,8 +62,8 @@ export default function AdminDashboardScreen() {
     router.push(path);
   };
 
-  const handleRegisterSuccess = () => {
-    // Refresh dashboard data when a new partner is registered
+  const handleUserManagementUpdate = () => {
+    // Refresh dashboard data when users are updated
     loadDashboardData();
   };
 
@@ -83,7 +81,6 @@ export default function AdminDashboardScreen() {
 
   return (
     <ScreenWrapper>
-      {/* Using partner header for now, can be customized later */}
       <CoffeePartnerHeader title={"Admin Dashboard"} showBackButton={true} />
       <ScrollView
         contentContainerStyle={styles.scrollViewContent}
@@ -93,24 +90,13 @@ export default function AdminDashboardScreen() {
       >
         <Text style={styles.welcomeMessage}>Admin Control Panel</Text>
 
-        {/* Quick Action: Register Coffee Partner */}
+        {/* Quick Action: User Management */}
         <TouchableOpacity
           style={styles.quickActionButton}
-          onPress={() => setShowRegisterForm(true)}
+          onPress={() => setShowUserManagement(true)}
         >
-          <Ionicons name="person-add-outline" size={24} color="#FFF" />
-          <Text style={styles.quickActionText}>
-            Register New Coffee Partner
-          </Text>
-        </TouchableOpacity>
-
-        {/* Quick Action: View Pending Registrations */}
-        <TouchableOpacity
-          style={styles.pendingActionButton}
-          onPress={() => setShowPendingRegistrations(true)}
-        >
-          <Ionicons name="mail-unread-outline" size={24} color="#FFF" />
-          <Text style={styles.quickActionText}>View Pending Registrations</Text>
+          <Ionicons name="people-outline" size={24} color="#FFF" />
+          <Text style={styles.quickActionText}>User Management</Text>
         </TouchableOpacity>
 
         {/* Quick Stats Section */}
@@ -120,46 +106,32 @@ export default function AdminDashboardScreen() {
             <Text style={styles.statLabel}>Total Users</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.activeSubscriptions}</Text>
-            <Text style={styles.statLabel}>Active Subscriptions</Text>
+            <Text style={styles.statValue}>{stats.totalAdmins}</Text>
+            <Text style={styles.statLabel}>Administrators</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.totalCafes}</Text>
-            <Text style={styles.statLabel}>Partner Cafes</Text>
+            <Text style={styles.statValue}>{stats.totalPartners}</Text>
+            <Text style={styles.statLabel}>Coffee Partners</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{stats.activeUsers}</Text>
+            <Text style={styles.statLabel}>Active Users</Text>
           </View>
         </View>
 
-        {/* Recent Registrations */}
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Recent Registrations</Text>
-          {stats.recentRegistrations.length > 0 ? (
-            stats.recentRegistrations.map((user) => (
-              <View key={user.id} style={styles.userItem}>
-                <View style={styles.userInfo}>
-                  <Text style={styles.userName}>
-                    {user.displayName || "User"}
-                  </Text>
-                  <Text style={styles.userEmail}>{user.email}</Text>
-                </View>
-                <View style={styles.userMeta}>
-                  <Text style={styles.userRole}>{user.role}</Text>
-                  <Text style={styles.userDate}>
-                    {formatDate(user.createdAt)}
-                  </Text>
-                </View>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.emptyText}>No recent registrations</Text>
-          )}
-
+        {/* Pending Partners Alert */}
+        {stats.pendingPartners > 0 && (
           <TouchableOpacity
-            style={styles.viewAllButton}
-            onPress={() => navigateTo("/(admin)/manage-users")}
+            style={styles.pendingAlert}
+            onPress={() => setShowUserManagement(true)}
           >
-            <Text style={styles.viewAllText}>View All Users</Text>
+            <Ionicons name="warning-outline" size={20} color="#FF6B35" />
+            <Text style={styles.pendingAlertText}>
+              {stats.pendingPartners} partners awaiting verification
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color="#FF6B35" />
           </TouchableOpacity>
-        </View>
+        )}
 
         {/* Admin Controls Grid */}
         <Text style={styles.sectionTitle}>Management Options</Text>
@@ -170,7 +142,6 @@ export default function AdminDashboardScreen() {
             onPress={() => navigateTo("/(admin)/manage-users")}
           >
             <Ionicons name="people-outline" size={40} color="#3F51B5" />
-            {/* TODO: Translation key */}
             <Text style={styles.cardTitle}>Manage Users</Text>
           </TouchableOpacity>
 
@@ -180,7 +151,6 @@ export default function AdminDashboardScreen() {
             onPress={() => navigateTo("/(admin)/manage-cafes")}
           >
             <Ionicons name="storefront-outline" size={40} color="#009688" />
-            {/* TODO: Translation key */}
             <Text style={styles.cardTitle}>Manage Cafes</Text>
           </TouchableOpacity>
 
@@ -199,7 +169,6 @@ export default function AdminDashboardScreen() {
             onPress={() => navigateTo("/(admin)/manage-subscriptions")}
           >
             <Ionicons name="card-outline" size={40} color="#FF9800" />
-            {/* TODO: Translation key */}
             <Text style={styles.cardTitle}>Manage Subscriptions</Text>
           </TouchableOpacity>
 
@@ -209,7 +178,6 @@ export default function AdminDashboardScreen() {
             onPress={() => navigateTo("/(admin)/statistics")}
           >
             <Ionicons name="bar-chart-outline" size={40} color="#E91E63" />
-            {/* TODO: Translation key */}
             <Text style={styles.cardTitle}>Statistics</Text>
           </TouchableOpacity>
 
@@ -219,24 +187,26 @@ export default function AdminDashboardScreen() {
             onPress={() => navigateTo("/(admin)/app-settings")}
           >
             <Ionicons name="settings-outline" size={40} color="#607D8B" />
-            {/* TODO: Translation key */}
             <Text style={styles.cardTitle}>App Settings</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
-      {/* Register Coffee Partner Form Modal */}
-      <RegisterCoffeePartnerForm
-        visible={showRegisterForm}
-        onClose={() => setShowRegisterForm(false)}
-        onSuccess={handleRegisterSuccess}
-      />
-
-      {/* Pending Registrations Modal */}
-      <PendingRegistrationsModal
-        visible={showPendingRegistrations}
-        onClose={() => setShowPendingRegistrations(false)}
-      />
+      {/* User Management Modal */}
+      {showUserManagement && (
+        <View style={styles.userManagementModal}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>User Management</Text>
+            <TouchableOpacity
+              onPress={() => setShowUserManagement(false)}
+              style={styles.modalCloseButton}
+            >
+              <Ionicons name="close" size={24} color="#8B4513" />
+            </TouchableOpacity>
+          </View>
+          <UserManagementBox onUserUpdated={handleUserManagementUpdate} />
+        </View>
+      )}
     </ScreenWrapper>
   );
 }
@@ -284,32 +254,19 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: 10,
   },
-  pendingActionButton: {
-    backgroundColor: "#007BFF",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    marginBottom: 25,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 25,
+    flexWrap: "wrap",
   },
   statCard: {
     flex: 1,
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 15,
-    marginHorizontal: 5,
+    marginHorizontal: 2,
+    marginVertical: 5,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -317,82 +274,41 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    minWidth: "22%",
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "700",
     color: "#8B4513",
     marginBottom: 5,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 10,
     color: "#666",
     textAlign: "center",
   },
-  sectionContainer: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+  pendingAlert: {
+    backgroundColor: "#FFF3E0",
+    borderLeftWidth: 4,
+    borderLeftColor: "#FF6B35",
     padding: 15,
-    marginBottom: 25,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  pendingAlertText: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 14,
+    color: "#E65100",
+    fontWeight: "500",
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
     color: "#333",
     marginBottom: 15,
-  },
-  userItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEEEEE",
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-  userEmail: {
-    fontSize: 14,
-    color: "#666",
-  },
-  userMeta: {
-    alignItems: "flex-end",
-  },
-  userRole: {
-    fontSize: 14,
-    color: "#8B4513",
-    fontWeight: "500",
-  },
-  userDate: {
-    fontSize: 12,
-    color: "#999",
-  },
-  emptyText: {
-    textAlign: "center",
-    color: "#999",
-    padding: 10,
-  },
-  viewAllButton: {
-    alignSelf: "center",
-    marginTop: 15,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    backgroundColor: "#8B4513",
-    borderRadius: 20,
-  },
-  viewAllText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
   },
   gridContainer: {
     flexDirection: "row",
@@ -408,7 +324,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     alignItems: "center",
     justifyContent: "center",
-    // Shadow styles (similar to partner dashboard)
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -421,5 +336,34 @@ const styles = StyleSheet.create({
     marginTop: 15,
     color: "#444",
     textAlign: "center",
+  },
+  userManagementModal: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#FFFFFF",
+    zIndex: 1000,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    paddingTop: 60,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+    backgroundColor: "#FFFFFF",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  modalCloseButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: "#F5F5F5",
   },
 });
