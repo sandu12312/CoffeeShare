@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { SubscriptionService } from "./subscriptionService";
+import cartService from "./cartService";
 import * as Crypto from "expo-crypto";
 
 export interface QRToken {
@@ -27,6 +28,8 @@ export interface QRToken {
   isActive: boolean;
   usageCount: number;
   maxUsage: number;
+  cafeId?: string; // Add cafe-specific token
+  type?: "instant" | "checkout"; // Type of QR code
 }
 
 export interface QRValidationResult {
@@ -413,6 +416,255 @@ export class QRService {
       return {
         canGenerate: false,
         reason: "Error checking subscription status",
+      };
+    }
+  }
+
+  /**
+   * Generate a checkout QR token for cart payment
+   */
+  static async generateCheckoutQRToken(
+    userId: string,
+    cafeId: string
+  ): Promise<QRToken | null> {
+    try {
+      // Get user's cart
+      const cart = await cartService.getUserCart(userId);
+
+      if (!cart || cart.items.length === 0) {
+        throw new Error("Cart is empty");
+      }
+
+      // Verify cart is for this cafe
+      if (cart.cafeId !== cafeId) {
+        throw new Error("Cart items are from a different cafe");
+      }
+
+      // Verify user has enough beans
+      const subscription = await SubscriptionService.getUserActiveSubscription(
+        userId
+      );
+
+      if (!subscription || subscription.status !== "active") {
+        throw new Error("No active subscription found");
+      }
+
+      if (subscription.creditsLeft < cart.totalBeans) {
+        throw new Error(
+          `Insufficient beans. You need ${cart.totalBeans} beans but only have ${subscription.creditsLeft}`
+        );
+      }
+
+      // Invalidate any existing checkout tokens
+      await this.invalidateUserCheckoutTokens(userId);
+
+      // Generate unique token with cafe ID
+      const timestamp = Date.now().toString();
+      const random = Math.random().toString(36).substring(2);
+      const tokenString = `${userId}_${cafeId}_${timestamp}_${random}`;
+      const hashedToken = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        tokenString
+      );
+
+      const now = Timestamp.now();
+      const expiresAt = Timestamp.fromDate(
+        new Date(Date.now() + this.TOKEN_EXPIRY_MINUTES * 60 * 1000)
+      );
+
+      const qrToken: QRToken = {
+        userId,
+        token: hashedToken,
+        createdAt: now,
+        expiresAt,
+        isActive: true,
+        usageCount: 0,
+        maxUsage: this.MAX_USAGE_COUNT,
+        cafeId,
+        type: "checkout",
+      };
+
+      // Save to Firestore
+      const docRef = await addDoc(
+        collection(db, this.COLLECTION_NAME),
+        qrToken
+      );
+      qrToken.id = docRef.id;
+
+      return qrToken;
+    } catch (error) {
+      console.error("Error generating checkout QR token:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Invalidate all active checkout tokens for a user
+   */
+  static async invalidateUserCheckoutTokens(userId: string): Promise<void> {
+    try {
+      const q = query(
+        collection(db, this.COLLECTION_NAME),
+        where("userId", "==", userId),
+        where("isActive", "==", true),
+        where("type", "==", "checkout")
+      );
+
+      const snapshot = await getDocs(q);
+      const batch = writeBatch(db);
+
+      snapshot.docs.forEach((doc) => {
+        batch.update(doc.ref, { isActive: false });
+      });
+
+      await batch.commit();
+    } catch (error) {
+      console.error("Error invalidating user checkout tokens:", error);
+    }
+  }
+
+  /**
+   * Process checkout with cart
+   */
+  static async processCheckout(
+    token: string,
+    scanningCafeId: string
+  ): Promise<QRValidationResult> {
+    try {
+      // Find the token
+      const q = query(
+        collection(db, this.COLLECTION_NAME),
+        where("token", "==", token),
+        where("isActive", "==", true),
+        where("type", "==", "checkout"),
+        where("expiresAt", ">", Timestamp.now()),
+        limit(1)
+      );
+
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        return {
+          success: false,
+          message: "Invalid or expired checkout QR code",
+        };
+      }
+
+      const tokenDoc = snapshot.docs[0];
+      const qrToken = tokenDoc.data() as QRToken;
+
+      // Verify cafe match
+      if (qrToken.cafeId !== scanningCafeId) {
+        return {
+          success: false,
+          message: "This QR code is for a different cafe",
+        };
+      }
+
+      // Get user's cart
+      const cart = await cartService.getUserCart(qrToken.userId);
+
+      if (!cart || cart.items.length === 0) {
+        return {
+          success: false,
+          message: "Cart is empty",
+        };
+      }
+
+      // Verify cart is for this cafe
+      if (cart.cafeId !== scanningCafeId) {
+        return {
+          success: false,
+          message: "Cart items are from a different cafe",
+        };
+      }
+
+      // Get user subscription
+      const subscription = await SubscriptionService.getUserActiveSubscription(
+        qrToken.userId
+      );
+
+      if (!subscription || subscription.status !== "active") {
+        return {
+          success: false,
+          message: "No active subscription found",
+        };
+      }
+
+      if (subscription.creditsLeft < cart.totalBeans) {
+        return {
+          success: false,
+          message: `Insufficient beans. Need ${cart.totalBeans} but only have ${subscription.creditsLeft}`,
+        };
+      }
+
+      // Process transaction
+      const result = await runTransaction(db, async (transaction) => {
+        // Re-check token
+        const tokenRef = doc(db, this.COLLECTION_NAME, tokenDoc.id);
+        const currentTokenDoc = await transaction.get(tokenRef);
+
+        if (!currentTokenDoc.exists() || !currentTokenDoc.data()?.isActive) {
+          throw new Error("Token is no longer valid");
+        }
+
+        // Deactivate token
+        transaction.update(tokenRef, {
+          usageCount: 1,
+          isActive: false,
+        });
+
+        // Update user credits
+        const subRef = doc(db, "userSubscriptions", subscription.id!);
+        transaction.update(subRef, {
+          creditsLeft: subscription.creditsLeft - cart.totalBeans,
+          lastUpdated: serverTimestamp(),
+        });
+
+        // Create order record
+        const orderRef = doc(collection(db, "orders"));
+        transaction.set(orderRef, {
+          userId: qrToken.userId,
+          cafeId: scanningCafeId,
+          cafeName: cart.cafeName,
+          items: cart.items,
+          totalBeans: cart.totalBeans,
+          status: "completed",
+          createdAt: serverTimestamp(),
+          qrTokenId: tokenDoc.id,
+        });
+
+        return {
+          success: true,
+          message: "Checkout successful",
+          userInfo: {
+            userId: qrToken.userId,
+            beansLeft: subscription.creditsLeft - cart.totalBeans,
+          },
+        };
+      });
+
+      // Clear the cart after successful transaction
+      await cartService.clearCart(qrToken.userId);
+
+      // Log the activity
+      await SubscriptionService.logUserActivity(
+        qrToken.userId,
+        "CHECKOUT_COMPLETED",
+        {
+          cafeId: scanningCafeId,
+          totalBeans: cart.totalBeans,
+          itemCount: cart.items.length,
+          timestamp: Timestamp.now(),
+        }
+      );
+
+      return result;
+    } catch (error) {
+      console.error("Error processing checkout:", error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : "Checkout failed",
       };
     }
   }

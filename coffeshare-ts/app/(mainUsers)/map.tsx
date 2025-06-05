@@ -13,6 +13,8 @@ import {
   Dimensions,
   Animated,
   Modal,
+  ScrollView,
+  FlatList,
 } from "react-native";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,6 +24,13 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import BottomTabBar from "../../components/BottomTabBar";
 import { useLanguage } from "../../context/LanguageContext";
+import coffeePartnerService, {
+  Product,
+} from "../../services/coffeePartnerService";
+import cartService from "../../services/cartService";
+import { useFirebase } from "../../context/FirebaseContext";
+import Toast from "react-native-toast-message";
+import * as Animatable from "react-native-animatable";
 
 const DEFAULT_REGION: Region = {
   latitude: 45.7579, // Timisoara Latitude
@@ -96,6 +105,7 @@ const FIVE_TO_GO_LOCATIONS: Cafe[] = [
 
 export default function MapScreen() {
   const { t } = useLanguage();
+  const { user } = useFirebase();
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -109,9 +119,14 @@ export default function MapScreen() {
   const [mapRegion, setMapRegion] = useState<Region>(DEFAULT_REGION);
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [cartItemCount, setCartItemCount] = useState(0);
+  const [bottomSheetExpanded, setBottomSheetExpanded] = useState(false);
 
   // Animation value for sliding in bottom sheet
   const slideAnim = useRef(new Animated.Value(-200)).current;
+  const { height: screenHeight } = Dimensions.get("window");
 
   const fetchCafes = async () => {
     setFetchError(null);
@@ -184,6 +199,38 @@ export default function MapScreen() {
     loadMapData();
   }, []);
 
+  // Load cart item count
+  useEffect(() => {
+    const loadCartCount = async () => {
+      if (user?.uid) {
+        const count = await cartService.getCartItemCount(user.uid);
+        setCartItemCount(count);
+      }
+    };
+    loadCartCount();
+  }, [user]);
+
+  // Load products when cafe is selected
+  const loadCafeProducts = async (cafeId: string) => {
+    try {
+      setLoadingProducts(true);
+      console.log(`Loading products for cafe: ${cafeId}`);
+      const cafeProducts = await coffeePartnerService.getProductsForCafe(
+        cafeId
+      );
+      console.log(
+        `Loaded ${cafeProducts.length} products for cafe ${cafeId}:`,
+        cafeProducts
+      );
+      setProducts(cafeProducts);
+    } catch (error) {
+      console.error("Error loading products:", error);
+      setProducts([]);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
   // Refresh handler
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -195,9 +242,14 @@ export default function MapScreen() {
   }, []);
 
   // Handle marker press
-  const handleMarkerPress = (cafe: Cafe) => {
+  const handleMarkerPress = async (cafe: Cafe) => {
     setSelectedCafe(cafe);
     setBottomSheetVisible(true);
+    setBottomSheetExpanded(false);
+    setProducts([]);
+
+    // Load products for this cafe
+    await loadCafeProducts(cafe.id);
 
     // Animate the bottom sheet sliding up
     Animated.timing(slideAnim, {
@@ -205,6 +257,56 @@ export default function MapScreen() {
       duration: 300,
       useNativeDriver: true,
     }).start();
+  };
+
+  // Toggle bottom sheet expansion
+  const toggleBottomSheet = () => {
+    const newExpanded = !bottomSheetExpanded;
+    setBottomSheetExpanded(newExpanded);
+
+    Animated.timing(slideAnim, {
+      toValue: newExpanded ? -screenHeight * 0.6 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  // Add product to cart
+  const handleAddToCart = async (product: Product) => {
+    if (!user?.uid || !selectedCafe) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Please login to add items to cart",
+      });
+      return;
+    }
+
+    const result = await cartService.addToCart(
+      user.uid,
+      product,
+      selectedCafe.id,
+      selectedCafe.businessName,
+      1
+    );
+
+    if (result.success) {
+      Toast.show({
+        type: "success",
+        text1: "Success",
+        text2: `${product.name} added to cart`,
+      });
+
+      // Update cart count
+      const count = await cartService.getCartItemCount(user.uid);
+      setCartItemCount(count);
+    } else {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: result.message,
+      });
+    }
   };
 
   // Navigate to cafe details screen
@@ -288,40 +390,214 @@ export default function MapScreen() {
         <Animated.View
           style={[
             styles.bottomSheet,
-            { transform: [{ translateY: slideAnim }] },
+            {
+              transform: [{ translateY: slideAnim }],
+              height: bottomSheetExpanded ? screenHeight * 0.7 : "auto",
+            },
           ]}
         >
-          <View style={styles.bottomSheetHandle} />
+          <TouchableOpacity onPress={toggleBottomSheet} activeOpacity={0.8}>
+            <View style={styles.bottomSheetHandle} />
+          </TouchableOpacity>
 
           {selectedCafe && (
-            <TouchableOpacity
-              style={styles.cafeCardContainer}
-              onPress={navigateToCafeDetails}
-              activeOpacity={0.9}
-            >
-              <Image
-                source={{ uri: selectedCafe.imageUrl || defaultCafeImage }}
-                style={styles.cafeCardImage}
-                resizeMode="cover"
-              />
-              <View style={styles.cafeCardInfo}>
-                <Text style={styles.cafeCardName}>
-                  {selectedCafe.businessName}
-                </Text>
-                <View style={styles.addressContainer}>
-                  <Ionicons name="location" size={16} color="#8B4513" />
-                  <Text style={styles.cafeCardAddress}>
-                    {selectedCafe.address}
+            <>
+              <TouchableOpacity
+                style={styles.cafeCardContainer}
+                onPress={navigateToCafeDetails}
+                activeOpacity={0.9}
+              >
+                <Image
+                  source={{ uri: selectedCafe.imageUrl || defaultCafeImage }}
+                  style={styles.cafeCardImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.cafeCardInfo}>
+                  <Text style={styles.cafeCardName}>
+                    {selectedCafe.businessName}
                   </Text>
+                  <View style={styles.addressContainer}>
+                    <Ionicons name="location" size={16} color="#8B4513" />
+                    <Text style={styles.cafeCardAddress}>
+                      {selectedCafe.address}
+                    </Text>
+                  </View>
+                  <View style={styles.viewDetailsContainer}>
+                    <Text style={styles.viewDetailsText}>
+                      {t("map.viewDetails")}
+                    </Text>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color="#8B4513"
+                    />
+                  </View>
                 </View>
-                <View style={styles.viewDetailsContainer}>
-                  <Text style={styles.viewDetailsText}>
-                    {t("map.viewDetails")}
-                  </Text>
-                  <Ionicons name="chevron-forward" size={16} color="#8B4513" />
-                </View>
+              </TouchableOpacity>
+
+              {/* Quick Actions */}
+              <View style={styles.quickActionsContainer}>
+                <TouchableOpacity
+                  style={styles.quickActionButton}
+                  onPress={() => {
+                    router.push({
+                      pathname: "/(mainUsers)/fullMenu",
+                      params: {
+                        cafeId: selectedCafe.id,
+                        cafeName: selectedCafe.businessName,
+                      },
+                    });
+                  }}
+                >
+                  <Ionicons name="cafe" size={20} color="#8B4513" />
+                  <Text style={styles.quickActionText}>Menu</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.quickActionButton}
+                  onPress={() => router.push("/(mainUsers)/qr")}
+                >
+                  <Ionicons name="qr-code" size={20} color="#8B4513" />
+                  <Text style={styles.quickActionText}>Pay</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.quickActionButton}
+                  onPress={navigateToCafeDetails}
+                >
+                  <Ionicons
+                    name="information-circle"
+                    size={20}
+                    color="#8B4513"
+                  />
+                  <Text style={styles.quickActionText}>Info</Text>
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
+
+              {/* Quick Product Selection - Always visible */}
+              {!bottomSheetExpanded && (
+                <View style={styles.quickProductsContainer}>
+                  <Text style={styles.quickProductsTitle}>Quick Order</Text>
+                  {loadingProducts ? (
+                    <ActivityIndicator size="small" color="#8B4513" />
+                  ) : products.length > 0 ? (
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.quickProductsList}
+                    >
+                      {products.slice(0, 5).map((product) => (
+                        <TouchableOpacity
+                          key={product.id}
+                          style={styles.quickProductItem}
+                          onPress={() => handleAddToCart(product)}
+                        >
+                          <Image
+                            source={{ uri: product.imageUrl }}
+                            style={styles.quickProductImage}
+                            resizeMode="cover"
+                          />
+                          <Text
+                            style={styles.quickProductName}
+                            numberOfLines={1}
+                          >
+                            {product.name}
+                          </Text>
+                          <View style={styles.quickProductPriceContainer}>
+                            <Ionicons
+                              name="ellipse"
+                              size={12}
+                              color="#8B4513"
+                            />
+                            <Text style={styles.quickProductPrice}>
+                              {product.beansValue}
+                            </Text>
+                          </View>
+                          <Ionicons
+                            name="add-circle"
+                            size={24}
+                            color="#8B4513"
+                            style={styles.quickAddIcon}
+                          />
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  ) : (
+                    <Text style={styles.noQuickProductsText}>
+                      No products available
+                    </Text>
+                  )}
+                </View>
+              )}
+
+              {/* Products List */}
+              {bottomSheetExpanded && (
+                <View style={styles.productsContainer}>
+                  <View style={styles.menuHeader}>
+                    <Text style={styles.productsTitle}>Menu</Text>
+                    <TouchableOpacity
+                      style={styles.refreshMenuButton}
+                      onPress={() =>
+                        selectedCafe && loadCafeProducts(selectedCafe.id)
+                      }
+                    >
+                      <Ionicons name="refresh" size={20} color="#8B4513" />
+                    </TouchableOpacity>
+                  </View>
+                  {loadingProducts ? (
+                    <ActivityIndicator size="small" color="#8B4513" />
+                  ) : products.length > 0 ? (
+                    <FlatList
+                      data={products}
+                      keyExtractor={(item) => item.id}
+                      renderItem={({ item, index }) => (
+                        <Animatable.View
+                          animation="fadeInUp"
+                          delay={index * 150}
+                          style={styles.productItem}
+                        >
+                          <Image
+                            source={{ uri: item.imageUrl }}
+                            style={styles.productImage}
+                            resizeMode="cover"
+                          />
+                          <View style={styles.productInfo}>
+                            <Text style={styles.productName}>{item.name}</Text>
+                            <View style={styles.productPriceContainer}>
+                              <View style={styles.beansContainer}>
+                                <Ionicons
+                                  name="ellipse"
+                                  size={16}
+                                  color="#8B4513"
+                                />
+                                <Text style={styles.productPrice}>
+                                  {item.beansValue} beans
+                                </Text>
+                              </View>
+                              <Text style={styles.productPriceLei}>
+                                {item.priceLei} RON
+                              </Text>
+                            </View>
+                          </View>
+                          <TouchableOpacity
+                            style={styles.addToCartButton}
+                            onPress={() => handleAddToCart(item)}
+                          >
+                            <Ionicons name="add" size={24} color="#FFFFFF" />
+                          </TouchableOpacity>
+                        </Animatable.View>
+                      )}
+                      contentContainerStyle={styles.productsList}
+                      showsVerticalScrollIndicator={false}
+                    />
+                  ) : (
+                    <Text style={styles.noProductsText}>
+                      No products available
+                    </Text>
+                  )}
+                </View>
+              )}
+            </>
           )}
 
           <TouchableOpacity
@@ -535,16 +811,18 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 10,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    shadowColor: "#8B4513",
+    shadowOffset: { width: 0, height: -5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 15,
     zIndex: 6,
+    borderWidth: 1,
+    borderColor: "#F5E6D3",
   },
   bottomSheetHandle: {
     width: 40,
@@ -604,5 +882,195 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#8B4513",
     marginRight: 4,
+  },
+  // Quick actions styles
+  quickActionsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingVertical: 15,
+    borderTopWidth: 1,
+    borderTopColor: "#E0D6C7",
+    marginTop: 10,
+  },
+  quickActionButton: {
+    alignItems: "center",
+    padding: 10,
+  },
+  quickActionText: {
+    fontSize: 12,
+    color: "#8B4513",
+    marginTop: 5,
+    fontWeight: "500",
+  },
+  // Products styles
+  productsContainer: {
+    flex: 1,
+    paddingTop: 15,
+  },
+  menuHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+    paddingHorizontal: 10,
+  },
+  productsTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#321E0E",
+  },
+  refreshMenuButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: "#FFF8F3",
+    borderWidth: 1,
+    borderColor: "#E0D6C7",
+  },
+  productsList: {
+    paddingBottom: 30,
+    paddingHorizontal: 5,
+  },
+  productItem: {
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    alignItems: "center",
+    shadowColor: "#8B4513",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "#F5E6D3",
+  },
+  productImage: {
+    width: 75,
+    height: 75,
+    borderRadius: 12,
+    marginRight: 15,
+    borderWidth: 2,
+    borderColor: "#F5E6D3",
+  },
+  productInfo: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  productName: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#321E0E",
+    marginBottom: 6,
+    lineHeight: 22,
+  },
+  productPriceContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
+  beansContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF8F3",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E0D6C7",
+  },
+  productPrice: {
+    fontSize: 14,
+    color: "#8B4513",
+    marginLeft: 6,
+    fontWeight: "600",
+  },
+  productPriceLei: {
+    fontSize: 13,
+    color: "#6A4028",
+    fontWeight: "500",
+  },
+  addToCartButton: {
+    backgroundColor: "#8B4513",
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  noProductsText: {
+    textAlign: "center",
+    color: "#8B4513",
+    fontSize: 16,
+    marginTop: 30,
+    fontStyle: "italic",
+  },
+  // Quick products styles
+  quickProductsContainer: {
+    paddingVertical: 15,
+    borderTopWidth: 1,
+    borderTopColor: "#F5E6D3",
+  },
+  quickProductsTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#321E0E",
+    marginBottom: 12,
+    paddingHorizontal: 10,
+  },
+  quickProductsList: {
+    paddingHorizontal: 10,
+  },
+  quickProductItem: {
+    backgroundColor: "#FFF8F3",
+    borderRadius: 12,
+    padding: 10,
+    marginRight: 12,
+    width: 100,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E0D6C7",
+    shadowColor: "#8B4513",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  quickProductImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  quickProductName: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#321E0E",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  quickProductPriceContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  quickProductPrice: {
+    fontSize: 11,
+    color: "#8B4513",
+    marginLeft: 2,
+    fontWeight: "600",
+  },
+  quickAddIcon: {
+    marginTop: 2,
+  },
+  noQuickProductsText: {
+    textAlign: "center",
+    color: "#8B4513",
+    fontSize: 14,
+    fontStyle: "italic",
+    paddingVertical: 20,
   },
 });

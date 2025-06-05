@@ -40,9 +40,16 @@ service cloud.firestore {
     
     // Helper function to check if user has partner role (cafe owner)
     function isPartner() {
-      return isMigrationSuperUser() || (isAuth() && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "partner");
+      return isMigrationSuperUser() || (isAuth() && (
+        // Check in legacy users collection
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "partner") ||
+        // Check in new coffeePartners collection by email
+        (request.auth.token.email != null &&
+         exists(/databases/$(database)/documents/coffeePartners/$(request.auth.token.email))) ||
+        // Check in new coffeePartners collection by uid
+        exists(/databases/$(database)/documents/coffeePartners/$(request.auth.uid))
+      ));
     }
     
     // User profiles - MODIFIED: less restrictive update rules for self-updates
@@ -355,6 +362,41 @@ service cloud.firestore {
       
       // Only admins can delete activities
       allow delete: if isAdmin();
+    }
+    
+    // User Carts - for shopping cart functionality
+    match /userCarts/{userId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
+      // Users can read/write their own cart
+      allow read, write: if isAuth() && request.auth.uid == userId;
+      
+      // Admins can read all carts
+      allow read: if isAdmin();
+    }
+    
+    // Orders - completed checkout transactions
+    match /orders/{orderId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
+      // Users can read their own orders
+      allow read: if isAuth() && (
+        resource.data.userId == request.auth.uid || 
+        isAdmin()
+      );
+      
+      // Partners can read orders for their cafes
+      allow read: if isAuth() && isPartner() && 
+        resource.data.cafeId in 
+        get(/databases/$(database)/documents/cafes/$(resource.data.cafeId)).data.ownerEmail == request.auth.token.email;
+      
+      // System can create orders (via QR validation)
+      allow create: if isAuth();
+      
+      // Only admins can update/delete orders
+      allow update, delete: if isAdmin();
     }
   }
 } 

@@ -274,19 +274,10 @@ class CoffeePartnerService {
   }
 
   /**
-   * Get products for a specific cafe (only if owned by current user)
+   * Get products for a specific cafe (public method for displaying products)
    */
   async getProductsForCafe(cafeId: string): Promise<Product[]> {
-    const user = auth.currentUser;
-    if (!user) throw new Error("No authenticated user found");
-
     try {
-      // Verify ownership first
-      const cafe = await this.getCafeById(cafeId);
-      if (!cafe) {
-        throw new Error("Cafe not found or access denied");
-      }
-
       const q = query(
         collection(db, "products"),
         where("cafeId", "==", cafeId)
@@ -316,9 +307,31 @@ class CoffeePartnerService {
         return bTime - aTime; // desc order
       });
 
+      console.log(`Loaded ${products.length} products for cafe ${cafeId}`);
       return products;
     } catch (error) {
       console.error("Error fetching products for cafe:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get products for a specific cafe that I own (owner-only access)
+   */
+  async getMyProductsForCafe(cafeId: string): Promise<Product[]> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("No authenticated user found");
+
+    try {
+      // Verify ownership first
+      const cafe = await this.getCafeById(cafeId);
+      if (!cafe) {
+        throw new Error("Cafe not found or access denied");
+      }
+
+      return this.getProductsForCafe(cafeId);
+    } catch (error) {
+      console.error("Error fetching my products for cafe:", error);
       throw error;
     }
   }

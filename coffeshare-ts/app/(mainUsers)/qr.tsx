@@ -19,10 +19,15 @@ import {
   UserSubscription,
 } from "../../services/subscriptionService";
 import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import cartService from "../../services/cartService";
+import Toast from "react-native-toast-message";
 
 export default function QRScreen() {
   const { t } = useLanguage();
   const { user } = useFirebase();
+  const router = useRouter();
+  const params = useLocalSearchParams();
   const [currentToken, setCurrentToken] = useState<QRToken | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +40,14 @@ export default function QRScreen() {
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const appState = useRef(AppState.currentState);
+
+  // Check if we're in checkout mode
+  const isCheckoutMode = params.checkoutMode === "true";
+  const checkoutCafeId = params.cafeId as string;
+  const checkoutCafeName = params.cafeName as string;
+  const checkoutTotalBeans = params.totalBeans
+    ? parseInt(params.totalBeans as string)
+    : 0;
 
   // Calculate time left for current token
   const calculateTimeLeft = useCallback((token: QRToken | null) => {
@@ -72,13 +85,33 @@ export default function QRScreen() {
 
   // Generate new QR token
   const generateNewToken = useCallback(async () => {
-    if (!user?.uid || !canGenerate) return;
+    if (!user?.uid) return;
+
+    if (isCheckoutMode) {
+      if (!checkoutCafeId) {
+        setError("Invalid checkout data");
+        return;
+      }
+    } else if (!canGenerate) {
+      return;
+    }
 
     setGeneratingNew(true);
     setError(null);
 
     try {
-      const newToken = await QRService.generateQRToken(user.uid);
+      let newToken: QRToken | null = null;
+
+      if (isCheckoutMode) {
+        // Generate checkout token
+        newToken = await QRService.generateCheckoutQRToken(
+          user.uid,
+          checkoutCafeId
+        );
+      } else {
+        // Generate regular token
+        newToken = await QRService.generateQRToken(user.uid);
+      }
 
       if (newToken) {
         setCurrentToken(newToken);
@@ -92,7 +125,13 @@ export default function QRScreen() {
     } finally {
       setGeneratingNew(false);
     }
-  }, [user?.uid, canGenerate, calculateTimeLeft]);
+  }, [
+    user?.uid,
+    canGenerate,
+    calculateTimeLeft,
+    isCheckoutMode,
+    checkoutCafeId,
+  ]);
 
   // Setup QR token monitoring
   const setupTokenMonitoring = useCallback(() => {
@@ -213,21 +252,49 @@ export default function QRScreen() {
     <ScreenWrapper>
       <View style={styles.container}>
         <View style={styles.content}>
-          <Text style={styles.title}>{t("scanQRCode")}</Text>
+          <Text style={styles.title}>
+            {isCheckoutMode ? "Checkout QR Code" : t("scanQRCode")}
+          </Text>
           <Text style={styles.subtitle}>
-            Show this QR code to the barista to redeem your coffee
+            {isCheckoutMode
+              ? `Show this QR code at ${checkoutCafeName} to complete your order`
+              : "Show this QR code to the barista to redeem your coffee"}
           </Text>
 
-          {/* Subscription Info */}
-          {subscription && (
-            <View style={styles.subscriptionInfo}>
-              <Text style={styles.subscriptionText}>
-                {subscription.subscriptionName}
-              </Text>
-              <Text style={styles.beansText}>
-                {subscription.creditsLeft} beans remaining
-              </Text>
+          {/* Info Section */}
+          {isCheckoutMode ? (
+            <View style={styles.checkoutInfo}>
+              <View style={styles.checkoutRow}>
+                <Ionicons name="storefront" size={20} color="#8B4513" />
+                <Text style={styles.checkoutText}>{checkoutCafeName}</Text>
+              </View>
+              <View style={styles.checkoutRow}>
+                <Ionicons name="cafe" size={20} color="#8B4513" />
+                <Text style={styles.checkoutText}>
+                  {checkoutTotalBeans} beans total
+                </Text>
+              </View>
+              {subscription && (
+                <View style={styles.checkoutRow}>
+                  <Ionicons name="wallet" size={20} color="#8B4513" />
+                  <Text style={styles.checkoutText}>
+                    {subscription.creditsLeft - checkoutTotalBeans} beans will
+                    remain
+                  </Text>
+                </View>
+              )}
             </View>
+          ) : (
+            subscription && (
+              <View style={styles.subscriptionInfo}>
+                <Text style={styles.subscriptionText}>
+                  {subscription.subscriptionName}
+                </Text>
+                <Text style={styles.beansText}>
+                  {subscription.creditsLeft} beans remaining
+                </Text>
+              </View>
+            )
           )}
 
           <View style={styles.qrContainer}>
@@ -438,5 +505,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#FFFFFF",
+  },
+  checkoutInfo: {
+    backgroundColor: "#FFF8F3",
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 20,
+    width: "100%",
+  },
+  checkoutRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  checkoutText: {
+    fontSize: 16,
+    color: "#4A4A4A",
+    marginLeft: 10,
+    flex: 1,
   },
 });

@@ -92,7 +92,7 @@ export default function ManageProductsScreen() {
     }
 
     try {
-      const cafeProducts = await coffeePartnerService.getProductsForCafe(
+      const cafeProducts = await coffeePartnerService.getMyProductsForCafe(
         cafeId
       );
       setProducts(cafeProducts);
