@@ -184,9 +184,10 @@ service cloud.firestore {
       // Allow creation of new cafes (needed for transferring partnership requests and admin registration)
       allow create: if isAuth();
       
-      // Allow cafe owners to update their own cafes
+      // Allow cafe owners to update their own cafes (check both ownerId and ownerEmail)
       allow update: if isAuth() && (
         resource.data.ownerId == request.auth.uid || 
+        resource.data.ownerEmail == request.auth.token.email ||
         isAdmin()
       );
       

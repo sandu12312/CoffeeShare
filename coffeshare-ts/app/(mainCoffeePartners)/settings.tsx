@@ -20,6 +20,13 @@ import { useFirebase } from "../../context/FirebaseContext";
 import * as Animatable from "react-native-animatable";
 import { LinearGradient } from "expo-linear-gradient";
 import Toast from "react-native-toast-message";
+import coffeePartnerService, {
+  CafeDetails,
+} from "../../services/coffeePartnerService";
+import {
+  SubscriptionService,
+  SubscriptionPlan,
+} from "../../services/subscriptionService";
 
 interface CafeSettings {
   cafeName: string;
@@ -27,9 +34,7 @@ interface CafeSettings {
   description: string;
   contactEmail: string;
   contactPhone: string;
-  acceptsStudentPack: boolean;
-  acceptsElite: boolean;
-  acceptsPremium: boolean;
+  acceptedSubscriptions: { [key: string]: boolean };
 }
 
 export default function CafeSettingsScreen() {
@@ -43,53 +48,87 @@ export default function CafeSettingsScreen() {
     description: "",
     contactEmail: "",
     contactPhone: "",
-    acceptsStudentPack: true,
-    acceptsElite: true,
-    acceptsPremium: false,
+    acceptedSubscriptions: {},
   });
 
+  const [cafes, setCafes] = useState<CafeDetails[]>([]);
+  const [selectedCafe, setSelectedCafe] = useState<string>("");
+  const [subscriptionPlans, setSubscriptionPlans] = useState<
+    SubscriptionPlan[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
-    loadCafeSettings();
+    loadCafesAndSubscriptions();
   }, [user]);
 
-  const loadCafeSettings = async () => {
+  const loadCafesAndSubscriptions = async () => {
     if (!user) return;
 
     try {
       setLoading(true);
 
-      // First get the partner document to find associated cafe
-      const partnerDoc = await getDoc(doc(db, "partners", user.uid));
-      if (!partnerDoc.exists()) {
-        console.error("Partner document not found");
-        return;
-      }
+      // Load cafes owned by current user
+      const userCafes = await coffeePartnerService.getMyCafes();
+      setCafes(userCafes);
+      console.log("Loaded cafes:", userCafes);
 
-      const partnerData = partnerDoc.data();
-      const cafeId = partnerData.associatedCafeId;
+      // Load subscription plans
+      const unsubscribe = SubscriptionService.subscribeToActivePlans(
+        (plans) => {
+          console.log("Loaded subscription plans:", plans);
+          setSubscriptionPlans(plans);
 
-      if (!cafeId) {
-        console.error("No associated cafe found");
-        return;
-      }
+          // Load cafe settings after plans are loaded
+          if (userCafes.length > 0 && !selectedCafe) {
+            const firstCafe = userCafes[0];
+            setSelectedCafe(firstCafe.id);
+            // Small delay to ensure state updates
+            setTimeout(() => {
+              loadCafeSettings(firstCafe.id);
+            }, 100);
+          }
+        }
+      );
 
-      // Get cafe data
-      const cafeDoc = await getDoc(doc(db, "cafes", cafeId));
-      if (cafeDoc.exists()) {
-        const cafeData = cafeDoc.data();
+      return unsubscribe;
+    } catch (error) {
+      console.error("Error loading cafes and subscriptions:", error);
+      Toast.show({
+        type: "error",
+        text1: "Eroare",
+        text2: "Nu s-au putut încărca datele",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCafeSettings = async (cafeId: string) => {
+    try {
+      const cafe = await coffeePartnerService.getCafeById(cafeId);
+      if (cafe) {
+        console.log("Loaded cafe data:", cafe);
+
+        // Build accepted subscriptions object from subscription plans
+        const acceptedSubscriptions: { [key: string]: boolean } = {};
+        subscriptionPlans.forEach((plan) => {
+          const planId = plan.id || plan.name;
+          const fieldName = `accepts${plan.name.replace(/\s+/g, "")}`;
+          acceptedSubscriptions[planId] = cafe[fieldName] ?? false;
+        });
+
+        console.log("Built accepted subscriptions:", acceptedSubscriptions);
+
         setSettings({
-          cafeName: cafeData.businessName || cafeData.name || "",
-          address: cafeData.address || "",
-          description: cafeData.description || "",
-          contactEmail: cafeData.email || user.email || "",
-          contactPhone: cafeData.phone || "",
-          acceptsStudentPack: cafeData.acceptsStudentPack ?? true,
-          acceptsElite: cafeData.acceptsElite ?? true,
-          acceptsPremium: cafeData.acceptsPremium ?? false,
+          cafeName: cafe.businessName || "",
+          address: cafe.address || "",
+          description: cafe.description || "",
+          contactEmail: cafe.email || cafe.phoneNumber || user?.email || "",
+          contactPhone: cafe.phone || cafe.phoneNumber || "",
+          acceptedSubscriptions,
         });
       }
     } catch (error) {
@@ -97,57 +136,88 @@ export default function CafeSettingsScreen() {
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: "Failed to load settings",
+        text2: "Failed to load cafe settings",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
+  const handleCafeChange = (cafeId: string) => {
+    setSelectedCafe(cafeId);
+    // Small delay to ensure state updates, then load settings
+    setTimeout(() => {
+      loadCafeSettings(cafeId);
+    }, 100);
+    setHasChanges(false); // Reset changes when switching cafes
+  };
+
   const handleSave = async () => {
-    if (!user) return;
+    if (!user || !selectedCafe) {
+      console.log("Cannot save: missing user or selected cafe", {
+        user: !!user,
+        selectedCafe,
+      });
+      return;
+    }
+
+    console.log("Starting save process with settings:", settings);
 
     setSaving(true);
     try {
-      // Get partner's cafe ID
-      const partnerDoc = await getDoc(doc(db, "partners", user.uid));
-      if (!partnerDoc.exists()) {
-        throw new Error("Partner document not found");
-      }
+      // Prepare subscription updates
+      const subscriptionUpdates: { [key: string]: boolean } = {};
+      Object.entries(settings.acceptedSubscriptions).forEach(
+        ([planId, accepted]) => {
+          const plan = subscriptionPlans.find(
+            (p) => (p.id || p.name) === planId
+          );
+          if (plan) {
+            const fieldName = `accepts${plan.name.replace(/\s+/g, "")}`;
+            subscriptionUpdates[fieldName] = accepted;
+            console.log(
+              `Mapping subscription: ${planId} -> ${fieldName} = ${accepted}`
+            );
+          }
+        }
+      );
 
-      const cafeId = partnerDoc.data().associatedCafeId;
-      if (!cafeId) {
-        throw new Error("No associated cafe found");
-      }
+      console.log("Subscription updates:", subscriptionUpdates);
 
-      // Update cafe document
-      await updateDoc(doc(db, "cafes", cafeId), {
-        businessName: settings.cafeName,
-        name: settings.cafeName, // Keep both for compatibility
-        address: settings.address,
-        description: settings.description,
-        email: settings.contactEmail,
-        phone: settings.contactPhone,
-        acceptsStudentPack: settings.acceptsStudentPack,
-        acceptsElite: settings.acceptsElite,
-        acceptsPremium: settings.acceptsPremium,
-        updatedAt: new Date(),
-      });
+      // Prepare complete update object
+      const updateData = {
+        businessName: settings.cafeName.trim(),
+        address: settings.address.trim(),
+        description: settings.description.trim(),
+        email: settings.contactEmail.trim(),
+        phone: settings.contactPhone.trim(),
+        ...subscriptionUpdates,
+      };
+
+      console.log("Complete update data:", updateData);
+
+      // Update cafe using the service
+      await coffeePartnerService.updateCafe(selectedCafe, updateData);
 
       Toast.show({
         type: "success",
-        text1: "Success",
-        text2: "Settings saved successfully",
+        text1: "Succes",
+        text2: "Setările au fost salvate cu succes",
       });
 
       setHasChanges(false);
-      router.back();
+
+      // Reload the settings to confirm they were saved
+      setTimeout(() => {
+        loadCafeSettings(selectedCafe);
+      }, 1000);
     } catch (error) {
       console.error("Error saving settings:", error);
       Toast.show({
         type: "error",
-        text1: "Error",
-        text2: "Failed to save settings",
+        text1: "Eroare",
+        text2:
+          error instanceof Error
+            ? error.message
+            : "Nu s-au putut salva setările",
       });
     } finally {
       setSaving(false);
@@ -157,6 +227,18 @@ export default function CafeSettingsScreen() {
   // Helper function to update settings state
   const updateSetting = (key: keyof CafeSettings, value: string | boolean) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
+    setHasChanges(true);
+  };
+
+  // Helper function to update subscription acceptance
+  const updateSubscriptionSetting = (planId: string, value: boolean) => {
+    setSettings((prev) => ({
+      ...prev,
+      acceptedSubscriptions: {
+        ...prev.acceptedSubscriptions,
+        [planId]: value,
+      },
+    }));
     setHasChanges(true);
   };
 
@@ -205,6 +287,40 @@ export default function CafeSettingsScreen() {
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Cafe Selection */}
+        {cafes.length > 1 && (
+          <Animatable.View animation="fadeInDown" duration={400}>
+            <View style={styles.cafeSelectionContainer}>
+              <Text style={styles.cafeSelectionLabel}>
+                Selectează Cafeneaua
+              </Text>
+              <TouchableOpacity
+                style={styles.cafeDropdown}
+                onPress={() => {
+                  // Simple dropdown - could be enhanced with a modal
+                  Alert.alert(
+                    "Selectează Cafeneaua",
+                    "Alege cafeneaua pe care vrei să o editezi:",
+                    [
+                      ...cafes.map((cafe) => ({
+                        text: cafe.businessName,
+                        onPress: () => handleCafeChange(cafe.id),
+                      })),
+                      { text: "Anulează", style: "cancel" },
+                    ]
+                  );
+                }}
+              >
+                <Text style={styles.cafeDropdownText}>
+                  {cafes.find((c) => c.id === selectedCafe)?.businessName ||
+                    "Selectează cafeneaua"}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color="#8B4513" />
+              </TouchableOpacity>
+            </View>
+          </Animatable.View>
+        )}
+
         {/* Profile Section */}
         <Animatable.View animation="fadeInDown" duration={600}>
           <LinearGradient
@@ -335,66 +451,47 @@ export default function CafeSettingsScreen() {
           delay={1000}
           style={styles.sectionContent}
         >
-          <View style={styles.switchContainer}>
-            <LinearGradient
-              colors={["#FFFFFF", "#FFF8F3"]}
-              style={styles.switchGradient}
-            >
-              <View style={styles.switchLeft}>
-                <Ionicons name="school-outline" size={20} color="#8B4513" />
-                <Text style={styles.switchLabel}>Student Pack</Text>
-              </View>
-              <Switch
-                trackColor={{ false: "#D7CCC8", true: "#D2691E" }}
-                thumbColor={settings.acceptsStudentPack ? "#8B4513" : "#f4f3f4"}
-                ios_backgroundColor="#D7CCC8"
-                onValueChange={(value) =>
-                  updateSetting("acceptsStudentPack", value)
-                }
-                value={settings.acceptsStudentPack}
-              />
-            </LinearGradient>
-          </View>
+          {subscriptionPlans.map((plan) => {
+            const planId = plan.id || plan.name;
+            const isAccepted = settings.acceptedSubscriptions[planId] || false;
 
-          <View style={styles.switchContainer}>
-            <LinearGradient
-              colors={["#FFFFFF", "#FFF8F3"]}
-              style={styles.switchGradient}
-            >
-              <View style={styles.switchLeft}>
-                <Ionicons name="star-outline" size={20} color="#8B4513" />
-                <Text style={styles.switchLabel}>Elite</Text>
-              </View>
-              <Switch
-                trackColor={{ false: "#D7CCC8", true: "#D2691E" }}
-                thumbColor={settings.acceptsElite ? "#8B4513" : "#f4f3f4"}
-                ios_backgroundColor="#D7CCC8"
-                onValueChange={(value) => updateSetting("acceptsElite", value)}
-                value={settings.acceptsElite}
-              />
-            </LinearGradient>
-          </View>
+            // Get icon based on plan name
+            const getIcon = (name: string) => {
+              if (name.toLowerCase().includes("student"))
+                return "school-outline";
+              if (name.toLowerCase().includes("elite")) return "star-outline";
+              if (name.toLowerCase().includes("premium"))
+                return "diamond-outline";
+              return "card-outline";
+            };
 
-          <View style={styles.switchContainer}>
-            <LinearGradient
-              colors={["#FFFFFF", "#FFF8F3"]}
-              style={styles.switchGradient}
-            >
-              <View style={styles.switchLeft}>
-                <Ionicons name="diamond-outline" size={20} color="#8B4513" />
-                <Text style={styles.switchLabel}>Premium</Text>
+            return (
+              <View key={planId} style={styles.switchContainer}>
+                <LinearGradient
+                  colors={["#FFFFFF", "#FFF8F3"]}
+                  style={styles.switchGradient}
+                >
+                  <View style={styles.switchLeft}>
+                    <Ionicons
+                      name={getIcon(plan.name) as any}
+                      size={20}
+                      color="#8B4513"
+                    />
+                    <Text style={styles.switchLabel}>{plan.name}</Text>
+                  </View>
+                  <Switch
+                    trackColor={{ false: "#D7CCC8", true: "#D2691E" }}
+                    thumbColor={isAccepted ? "#8B4513" : "#f4f3f4"}
+                    ios_backgroundColor="#D7CCC8"
+                    onValueChange={(value) =>
+                      updateSubscriptionSetting(planId, value)
+                    }
+                    value={isAccepted}
+                  />
+                </LinearGradient>
               </View>
-              <Switch
-                trackColor={{ false: "#D7CCC8", true: "#D2691E" }}
-                thumbColor={settings.acceptsPremium ? "#8B4513" : "#f4f3f4"}
-                ios_backgroundColor="#D7CCC8"
-                onValueChange={(value) =>
-                  updateSetting("acceptsPremium", value)
-                }
-                value={settings.acceptsPremium}
-              />
-            </LinearGradient>
-          </View>
+            );
+          })}
         </Animatable.View>
       </ScrollView>
     </ScreenWrapper>
@@ -519,5 +616,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#3C2415",
     fontWeight: "500",
+  },
+  cafeSelectionContainer: {
+    marginHorizontal: 20,
+    marginBottom: 15,
+  },
+  cafeSelectionLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#3C2415",
+    marginBottom: 10,
+  },
+  cafeDropdown: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 15,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#D7CCC8",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cafeDropdownText: {
+    fontSize: 16,
+    color: "#3C2415",
+    fontWeight: "500",
+    flex: 1,
   },
 });

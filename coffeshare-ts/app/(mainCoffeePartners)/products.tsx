@@ -17,9 +17,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { getAuth } from "firebase/auth";
-import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "../../config/firebase";
+import { storage } from "../../config/firebase";
+import coffeePartnerService, {
+  CafeDetails,
+} from "../../services/coffeePartnerService";
 import Toast from "react-native-toast-message";
 import * as Animatable from "react-native-animatable";
 import { LinearGradient } from "expo-linear-gradient";
@@ -39,6 +41,8 @@ export default function ManageProductsScreen() {
   const auth = getAuth();
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [cafes, setCafes] = useState<CafeDetails[]>([]);
+  const [selectedCafe, setSelectedCafe] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
@@ -49,31 +53,55 @@ export default function ManageProductsScreen() {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    fetchProducts();
+    loadCafesAndProducts();
   }, []);
 
-  const fetchProducts = async () => {
+  const loadCafesAndProducts = async () => {
     if (!auth.currentUser) return;
 
     try {
-      const q = query(
-        collection(db, "products"),
-        where("cafeId", "==", auth.currentUser.uid)
-      );
+      setLoading(true);
 
-      const querySnapshot = await getDocs(q);
-      const productsData = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Product[];
+      // Load user's cafes
+      const myCafes = await coffeePartnerService.getMyCafes();
+      setCafes(myCafes);
 
-      setProducts(productsData);
+      // Set first active cafe as selected by default
+      const activeCafe = myCafes.find((cafe) => cafe.status === "active");
+      if (activeCafe) {
+        setSelectedCafe(activeCafe.id);
+        // Load products for the selected cafe
+        await loadProductsForCafe(activeCafe.id);
+      }
     } catch (error) {
-      console.error("Error fetching products:", error);
+      console.error("Error loading cafes and products:", error);
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: "Could not load products",
+        text2: "Could not load data",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadProductsForCafe = async (cafeId: string) => {
+    if (!cafeId) {
+      setProducts([]);
+      return;
+    }
+
+    try {
+      const cafeProducts = await coffeePartnerService.getProductsForCafe(
+        cafeId
+      );
+      setProducts(cafeProducts);
+    } catch (error) {
+      console.error("Error loading products for cafe:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Could not load products for this cafe",
       });
     }
   };
@@ -117,11 +145,11 @@ export default function ManageProductsScreen() {
       return;
     }
 
-    if (!productName || !priceLei || !image) {
+    if (!productName || !priceLei || !image || !selectedCafe) {
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: "Please fill all fields",
+        text2: "Please fill all fields and select a cafe",
       });
       return;
     }
@@ -132,13 +160,12 @@ export default function ManageProductsScreen() {
       const priceNumber = parseFloat(priceLei);
       const beansValue = calculateBeans(priceNumber);
 
-      await addDoc(collection(db, "products"), {
-        cafeId: auth.currentUser.uid,
+      await coffeePartnerService.addProduct({
+        cafeId: selectedCafe,
         name: productName,
         priceLei: priceNumber,
         beansValue: beansValue,
         imageUrl: imageUrl,
-        createdAt: new Date(),
       });
 
       Toast.show({
@@ -153,8 +180,8 @@ export default function ManageProductsScreen() {
       setImage(null);
       setShowForm(false);
 
-      // Refresh products list
-      fetchProducts();
+      // Refresh products list for selected cafe
+      await loadProductsForCafe(selectedCafe);
     } catch (error) {
       console.error("Error adding product:", error);
       Toast.show({
@@ -220,15 +247,77 @@ export default function ManageProductsScreen() {
           <View style={{ width: 24 }} />
         </View>
 
+        {/* Cafe Selection */}
+        <Animatable.View animation="fadeInDown" duration={600}>
+          <View style={styles.cafeSelectionContainer}>
+            <Text style={styles.cafeSelectionLabel}>Selectează Cafeneaua:</Text>
+            <TouchableOpacity
+              style={styles.cafeDropdown}
+              onPress={() => {
+                if (cafes.length === 0) {
+                  Toast.show({
+                    type: "info",
+                    text1: "Info",
+                    text2: "Nu aveți cafenele active",
+                  });
+                  return;
+                }
+                Alert.alert(
+                  "Selectează Cafeneaua",
+                  "Alege pentru care cafenea vrei să gestionezi produsele:",
+                  [
+                    ...cafes
+                      .filter((cafe) => cafe.status === "active")
+                      .map((cafe) => ({
+                        text: cafe.businessName,
+                        onPress: () => {
+                          setSelectedCafe(cafe.id);
+                          loadProductsForCafe(cafe.id);
+                        },
+                      })),
+                    { text: "Anulează", style: "cancel" },
+                  ]
+                );
+              }}
+            >
+              <Text style={styles.cafeDropdownText}>
+                {selectedCafe
+                  ? cafes.find((c) => c.id === selectedCafe)?.businessName ||
+                    "Selectează cafeneaua"
+                  : "Selectează cafeneaua"}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color="#8B4513" />
+            </TouchableOpacity>
+          </View>
+        </Animatable.View>
+
         <Animatable.View animation="fadeInDown" duration={600}>
           <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => setShowForm(!showForm)}
+            style={[
+              styles.addButton,
+              !selectedCafe && styles.addButtonDisabled,
+            ]}
+            onPress={() => {
+              if (!selectedCafe) {
+                Toast.show({
+                  type: "info",
+                  text1: "Info",
+                  text2: "Selectează o cafenea mai întâi",
+                });
+                return;
+              }
+              setShowForm(!showForm);
+            }}
             activeOpacity={0.8}
+            disabled={!selectedCafe}
           >
             <LinearGradient
               colors={
-                showForm ? ["#D32F2F", "#F44336"] : ["#8B4513", "#A0522D"]
+                !selectedCafe
+                  ? ["#D7CCC8", "#BCAAA4"]
+                  : showForm
+                  ? ["#D32F2F", "#F44336"]
+                  : ["#8B4513", "#A0522D"]
               }
               style={styles.addButtonGradient}
             >
@@ -608,5 +697,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#A0522D",
     marginTop: 8,
+  },
+  cafeSelectionContainer: {
+    marginHorizontal: 20,
+    marginTop: 10,
+    marginBottom: 15,
+  },
+  cafeSelectionLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#3C2415",
+    marginBottom: 10,
+  },
+  cafeDropdown: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 15,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#D7CCC8",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cafeDropdownText: {
+    fontSize: 16,
+    color: "#3C2415",
+    fontWeight: "500",
+    flex: 1,
+  },
+  addButtonDisabled: {
+    opacity: 0.6,
   },
 });

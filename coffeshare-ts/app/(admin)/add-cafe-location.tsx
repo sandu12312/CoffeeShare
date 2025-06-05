@@ -21,6 +21,7 @@ import { db } from "../../config/firebase";
 import { useLanguage } from "../../context/LanguageContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
 import CoffeePartnerHeader from "../../components/CoffeePartnerHeader";
+import adminService from "../../services/adminService";
 
 const DEFAULT_REGION: Region = {
   latitude: 45.7579, // Timisoara Latitude
@@ -46,8 +47,13 @@ export default function AddCafeLocationScreen() {
     website: "",
     description: "",
     openingHours: "",
+    ownerEmail: "", // Email of the coffee partner
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [coffeePartners, setCoffeePartners] = useState<
+    Array<{ email: string; name: string; uid: string }>
+  >([]);
+  const [loadingPartners, setLoadingPartners] = useState(true);
   const mapRef = useRef<MapView>(null);
 
   // Get user's current location
@@ -77,6 +83,23 @@ export default function AddCafeLocationScreen() {
     getUserLocation();
   }, []);
 
+  // Load coffee partners for dropdown
+  useEffect(() => {
+    const loadCoffeePartners = async () => {
+      try {
+        const partners = await adminService.getCoffeePartners();
+        setCoffeePartners(partners);
+      } catch (error) {
+        console.error("Error loading coffee partners:", error);
+        Alert.alert("Error", "Failed to load coffee partners");
+      } finally {
+        setLoadingPartners(false);
+      }
+    };
+
+    loadCoffeePartners();
+  }, []);
+
   const handleMapPress = (event: any) => {
     const { coordinate } = event.nativeEvent;
     setSelectedLocation(coordinate);
@@ -91,6 +114,10 @@ export default function AddCafeLocationScreen() {
 
     if (!formData.address.trim()) {
       newErrors.address = "Address is required";
+    }
+
+    if (!formData.ownerEmail.trim()) {
+      newErrors.ownerEmail = "Coffee partner selection is required";
     }
 
     if (!selectedLocation) {
@@ -110,6 +137,11 @@ export default function AddCafeLocationScreen() {
 
     setLoading(true);
     try {
+      // Find the selected partner to get their email
+      const selectedPartner = coffeePartners.find(
+        (p) => p.email === formData.ownerEmail
+      );
+
       // Create a new cafe document in Firestore
       const cafeData = {
         businessName: formData.businessName,
@@ -118,12 +150,22 @@ export default function AddCafeLocationScreen() {
         website: formData.website || null,
         description: formData.description || null,
         openingHours: formData.openingHours || null,
+        ownerEmail: formData.ownerEmail, // Connect cafe to coffee partner
         location: {
           latitude: selectedLocation?.latitude,
           longitude: selectedLocation?.longitude,
         },
         status: "active",
         createdAt: new Date(),
+        updatedAt: new Date(),
+        // Add contact info fields for compatibility with settings
+        email: selectedPartner?.email || formData.ownerEmail,
+        phone: formData.phoneNumber || null,
+        // Initialize subscription acceptance fields (defaults to false)
+        acceptsStudentSubscription: false,
+        acceptsEliteSubscription: false,
+        acceptsPremiumSubscription: false,
+        acceptsBasicSubscription: false,
       };
 
       await addDoc(collection(db, "cafes"), cafeData);
@@ -140,6 +182,7 @@ export default function AddCafeLocationScreen() {
               website: "",
               description: "",
               openingHours: "",
+              ownerEmail: "",
             });
             setSelectedLocation(null);
           },
@@ -239,6 +282,59 @@ export default function AddCafeLocationScreen() {
             />
             {errors.address ? (
               <Text style={styles.errorText}>{errors.address}</Text>
+            ) : null}
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Coffee Partner *</Text>
+            {loadingPartners ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#8B4513" />
+                <Text style={styles.loadingText}>Loading partners...</Text>
+              </View>
+            ) : (
+              <View style={styles.dropdownContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.dropdown,
+                    errors.ownerEmail ? styles.inputError : null,
+                  ]}
+                  onPress={() => {
+                    Alert.alert(
+                      "Select Coffee Partner",
+                      "Choose who will manage this cafe:",
+                      [
+                        ...coffeePartners.map((partner) => ({
+                          text: `${partner.name} (${partner.email})`,
+                          onPress: () =>
+                            setFormData({
+                              ...formData,
+                              ownerEmail: partner.email,
+                            }),
+                        })),
+                        { text: "Cancel", style: "cancel" },
+                      ]
+                    );
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.dropdownText,
+                      !formData.ownerEmail && styles.placeholderText,
+                    ]}
+                  >
+                    {formData.ownerEmail
+                      ? coffeePartners.find(
+                          (p) => p.email === formData.ownerEmail
+                        )?.name || formData.ownerEmail
+                      : "Select a coffee partner"}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color="#666" />
+                </TouchableOpacity>
+              </View>
+            )}
+            {errors.ownerEmail ? (
+              <Text style={styles.errorText}>{errors.ownerEmail}</Text>
             ) : null}
           </View>
 
@@ -411,5 +507,36 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
     marginLeft: 8,
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 15,
+    backgroundColor: "#FFF",
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 8,
+  },
+  dropdownContainer: {
+    position: "relative",
+  },
+  dropdown: {
+    backgroundColor: "#FFF",
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  dropdownText: {
+    fontSize: 16,
+    color: "#333",
+    flex: 1,
+  },
+  placeholderText: {
+    color: "#999",
   },
 });

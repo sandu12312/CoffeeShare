@@ -52,6 +52,7 @@ export interface CafeData {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   partnerUid?: string;
+  ownerEmail?: string; // Email of the coffee partner who owns this cafe
 }
 
 /**
@@ -677,6 +678,66 @@ class AdminService {
       console.log(`Partnership request ${requestId} deleted successfully`);
     } catch (error) {
       console.error("Error deleting partnership request:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all coffee partners for dropdown selection
+   * @returns Array of coffee partners with email and name
+   */
+  async getCoffeePartners(): Promise<
+    Array<{ email: string; name: string; uid: string }>
+  > {
+    try {
+      // First try the coffeePartners collection
+      try {
+        const partnersQuery = query(
+          collection(db, "coffeePartners"),
+          where("status", "==", "active")
+        );
+        const partnersSnapshot = await getDocs(partnersQuery);
+
+        if (!partnersSnapshot.empty) {
+          const partners: Array<{ email: string; name: string; uid: string }> =
+            [];
+          partnersSnapshot.forEach((doc) => {
+            const data = doc.data();
+            partners.push({
+              email: data.email || "",
+              name: data.displayName || data.businessName || data.email || "",
+              uid: doc.id,
+            });
+          });
+          return partners;
+        }
+      } catch (error) {
+        console.warn(
+          "coffeePartners collection not accessible, trying legacy approach"
+        );
+      }
+
+      // Fallback to legacy users collection with role filter
+      const usersQuery = query(
+        collection(db, "users"),
+        where("role", "==", "partner"),
+        where("status", "==", "active")
+      );
+      const usersSnapshot = await getDocs(usersQuery);
+
+      const partners: Array<{ email: string; name: string; uid: string }> = [];
+      usersSnapshot.forEach((doc) => {
+        const data = doc.data();
+        partners.push({
+          email: data.email || "",
+          name: data.displayName || data.email || "",
+          uid: doc.id,
+        });
+      });
+
+      return partners;
+    } catch (error) {
+      console.error("Error fetching coffee partners:", error);
       throw error;
     }
   }
