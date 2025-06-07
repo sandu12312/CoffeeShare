@@ -683,6 +683,182 @@ class AdminService {
   }
 
   /**
+   * Update cafe information
+   * @param cafeId The ID of the cafe to update
+   * @param updateData Data to update
+   */
+  async updateCafe(
+    cafeId: string,
+    updateData: Partial<Omit<CafeData, "id" | "createdAt">>
+  ): Promise<void> {
+    try {
+      const cafeRef = doc(db, "cafes", cafeId);
+      await updateDoc(cafeRef, {
+        ...updateData,
+        updatedAt: serverTimestamp(),
+      });
+      console.log(`Cafe ${cafeId} updated successfully`);
+    } catch (error) {
+      console.error("Error updating cafe:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a cafe completely from the database
+   * @param cafeId The ID of the cafe to delete
+   */
+  async deleteCafe(cafeId: string): Promise<void> {
+    try {
+      const cafeRef = doc(db, "cafes", cafeId);
+      const cafeDoc = await getDoc(cafeRef);
+
+      if (!cafeDoc.exists()) {
+        throw new Error("Cafe not found");
+      }
+
+      await deleteDoc(cafeRef);
+      console.log(`Cafe ${cafeId} deleted successfully`);
+    } catch (error) {
+      console.error("Error deleting cafe:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a single cafe by ID
+   * @param cafeId The ID of the cafe to get
+   */
+  async getCafeById(cafeId: string): Promise<CafeData | null> {
+    try {
+      const cafeRef = doc(db, "cafes", cafeId);
+      const cafeDoc = await getDoc(cafeRef);
+
+      if (!cafeDoc.exists()) {
+        return null;
+      }
+
+      const data = cafeDoc.data();
+      return {
+        id: cafeDoc.id,
+        businessName: data.businessName,
+        contactName: data.contactName,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        status: data.status,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
+        partnerUid: data.partnerUid,
+        ownerEmail: data.ownerEmail,
+      };
+    } catch (error) {
+      console.error("Error getting cafe:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Search cafes by name, address, or email
+   * @param searchQuery Query to search for
+   * @returns Array of matching cafes
+   */
+  async searchCafes(searchQuery: string): Promise<CafeData[]> {
+    try {
+      const cafesQuery = query(collection(db, "cafes"), limit(100));
+      const snapshot = await getDocs(cafesQuery);
+      const cafes: CafeData[] = [];
+
+      const lowerQuery = searchQuery.toLowerCase();
+
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const businessName = data.businessName || "";
+        const email = data.email || "";
+        const address = data.address || "";
+
+        // Check if any field matches the search query
+        if (
+          businessName.toLowerCase().includes(lowerQuery) ||
+          email.toLowerCase().includes(lowerQuery) ||
+          address.toLowerCase().includes(lowerQuery)
+        ) {
+          cafes.push({
+            id: doc.id,
+            businessName: data.businessName,
+            contactName: data.contactName,
+            email: data.email,
+            phone: data.phone,
+            address: data.address,
+            status: data.status,
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt,
+            partnerUid: data.partnerUid,
+            ownerEmail: data.ownerEmail,
+          });
+        }
+      });
+
+      return cafes;
+    } catch (error) {
+      console.error("Error searching cafes:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get cafe statistics
+   * @returns Cafe statistics object
+   */
+  async getCafeStatistics(): Promise<{
+    totalCafes: number;
+    activeCafes: number;
+    pendingCafes: number;
+    inactiveCafes: number;
+    pendingRequests: number;
+  }> {
+    try {
+      const [cafesSnapshot, requestsSnapshot] = await Promise.all([
+        getDocs(collection(db, "cafes")),
+        getDocs(collection(db, "partnership_requests")),
+      ]);
+
+      let totalCafes = 0;
+      let activeCafes = 0;
+      let pendingCafes = 0;
+      let inactiveCafes = 0;
+
+      cafesSnapshot.forEach((doc) => {
+        const data = doc.data();
+        totalCafes++;
+
+        switch (data.status) {
+          case "active":
+            activeCafes++;
+            break;
+          case "pending":
+            pendingCafes++;
+            break;
+          case "inactive":
+            inactiveCafes++;
+            break;
+        }
+      });
+
+      return {
+        totalCafes,
+        activeCafes,
+        pendingCafes,
+        inactiveCafes,
+        pendingRequests: requestsSnapshot.size,
+      };
+    } catch (error) {
+      console.error("Error getting cafe statistics:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Get all coffee partners for dropdown selection
    * @returns Array of coffee partners with email and name
    */
