@@ -389,19 +389,12 @@ class AdminService {
     lastVisible: QueryDocumentSnapshot<any> | null;
   }> {
     try {
-      let cafesQuery;
-      const baseQuery = query(
+      // Use simple query without orderBy to avoid index requirement
+      const cafesQuery = query(
         collection(db, "cafes"),
         where("status", "==", status),
-        orderBy("createdAt", "desc"),
         limit(pageSize)
       );
-
-      if (lastVisible) {
-        cafesQuery = query(baseQuery, startAfter(lastVisible));
-      } else {
-        cafesQuery = baseQuery;
-      }
 
       const snapshot = await getDocs(cafesQuery);
       const cafes: CafeData[] = [];
@@ -409,9 +402,14 @@ class AdminService {
         cafes.push({ id: doc.id, ...(doc.data() as Omit<CafeData, "id">) });
       });
 
-      const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1] || null;
+      // Sort by createdAt on the client side
+      cafes.sort((a, b) => {
+        const dateA = a.createdAt?.toMillis() || 0;
+        const dateB = b.createdAt?.toMillis() || 0;
+        return dateB - dateA; // Descending order (newest first)
+      });
 
-      return { cafes, lastVisible: lastVisibleDoc };
+      return { cafes, lastVisible: null }; // Simplified pagination
     } catch (error) {
       console.error(`Error fetching ${status} cafes:`, error);
       throw error;

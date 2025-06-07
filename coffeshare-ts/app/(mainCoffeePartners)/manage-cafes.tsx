@@ -296,157 +296,59 @@ export default function ManageCafesScreen() {
   const handleApproveRequest = async (request: PartnershipRequest) => {
     setActionInProgressId(request.id);
 
-    let newUserUid = null;
+    Alert.alert(
+      "Approve Partnership",
+      `Are you sure you want to approve the partnership request from ${request.businessName}?`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+          onPress: () => setActionInProgressId(null),
+        },
+        {
+          text: "Approve",
+          style: "default",
+          onPress: async () => {
+            try {
+              // Simply update the request status to approved
+              const requestRef = doc(
+                db,
+                LEGACY_REQUESTS_COLLECTION,
+                request.id
+              );
+              await updateDoc(requestRef, {
+                status: "approved",
+                updatedAt: serverTimestamp(),
+                approvedAt: serverTimestamp(),
+              });
 
-    try {
-      // 1. Generate a secure password
-      const password = generateSecurePassword();
-      console.log(
-        `[ManageCafes] Generated secure password for ${request.email}`
-      );
+              console.log(
+                `[ManageCafes] Partnership request approved for ${request.businessName}`
+              );
 
-      // 2. Create Firebase Auth user account
-      let userCredential;
-      try {
-        userCredential = await createUserWithEmailAndPassword(
-          auth,
-          request.email,
-          password
-        );
+              Alert.alert(
+                "Partnership Approved",
+                `The partnership request from ${request.businessName} has been approved.`
+              );
 
-        newUserUid = userCredential.user.uid;
-        console.log(
-          `[ManageCafes] Auth user created for partner ${request.email} with UID: ${newUserUid}`
-        );
-      } catch (authError: any) {
-        if (authError.code === "auth/email-already-in-use") {
-          Alert.alert(
-            "Account Already Exists",
-            `An account with email ${request.email} already exists. Please contact the user directly.`
-          );
-        } else {
-          Alert.alert(
-            "Authentication Error",
-            `Could not create account: ${authError.message}`
-          );
-        }
-        setActionInProgressId(null);
-        return;
-      }
-
-      // 3. Create cafe document
-      try {
-        const cafeRef = doc(db, CAFES_COLLECTION, newUserUid);
-        await setDoc(cafeRef, {
-          businessName: request.businessName,
-          contactName: request.contactName,
-          email: request.email,
-          phone: request.phone || "",
-          address: request.address || "",
-          status: "active",
-          createdAt: request.createdAt,
-          updatedAt: serverTimestamp(),
-          partnerUid: newUserUid,
-          ownerId: newUserUid,
-          approvedAt: serverTimestamp(),
-        });
-        console.log(
-          `[ManageCafes] Cafe document created successfully for ${request.businessName}`
-        );
-      } catch (cafeError) {
-        console.error("[ManageCafes] Error creating cafe document:", cafeError);
-        Alert.alert(
-          "Warning",
-          "Account created but cafe details could not be saved. The partner may have limited functionality."
-        );
-      }
-
-      // 4. Create user profile in 'users' collection
-      try {
-        const userProfileRef = doc(db, USERS_COLLECTION, newUserUid);
-        await setDoc(userProfileRef, {
-          uid: newUserUid,
-          email: request.email,
-          displayName: request.contactName,
-          role: "partner",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          preferences: {
-            notificationsEnabled: true,
+              // Refresh the data
+              loadData();
+            } catch (error: any) {
+              console.error(
+                "[ManageCafes] Error approving partnership request:",
+                error
+              );
+              Alert.alert(
+                "Error",
+                `Failed to approve partnership request: ${error.message}`
+              );
+            } finally {
+              setActionInProgressId(null);
+            }
           },
-          status: "active",
-        });
-        console.log(
-          `[ManageCafes] User profile created successfully for ${request.email}`
-        );
-      } catch (profileError) {
-        console.error(
-          "[ManageCafes] Error creating user profile:",
-          profileError
-        );
-        Alert.alert(
-          "Warning",
-          "Account created but user profile could not be saved completely. Some functions may be limited."
-        );
-      }
-
-      // 5. Delete the partnership request
-      try {
-        await deleteDoc(doc(db, LEGACY_REQUESTS_COLLECTION, request.id));
-        console.log(
-          `[ManageCafes] Partnership request deleted from cafesPending`
-        );
-      } catch (deleteError) {
-        console.error(
-          "[ManageCafes] Error deleting partnership request:",
-          deleteError
-        );
-      }
-
-      // 6. Send password reset email to allow partner to set their own password
-      try {
-        await sendPasswordResetEmail(auth, request.email);
-        console.log(
-          `[ManageCafes] Password reset email sent to ${request.email}`
-        );
-      } catch (emailError) {
-        console.error(
-          "[ManageCafes] Error sending password reset email:",
-          emailError
-        );
-        Alert.alert(
-          "Warning",
-          "Partnership approved, but password reset email could not be sent. Please provide the credentials manually."
-        );
-      }
-
-      // 7. Show success message
-      Alert.alert(
-        "Partnership Approved",
-        `Partnership with ${request.businessName} has been approved!
-
-Login credentials have been created:
-Email: ${request.email}
-Temporary Password: ${password}
-
-A password reset email has been sent to the partner.`,
-        [{ text: "OK" }]
-      );
-
-      // 8. Refresh the data
-      loadData();
-    } catch (error: any) {
-      console.error(
-        "[ManageCafes] Error approving partnership request:",
-        error
-      );
-      Alert.alert(
-        "Error",
-        `Failed to approve partnership request: ${error.message}`
-      );
-    } finally {
-      setActionInProgressId(null);
-    }
+        },
+      ]
+    );
   };
 
   /**

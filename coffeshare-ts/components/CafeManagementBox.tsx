@@ -373,32 +373,33 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
   const handleApproveRequest = async (request: CafeWithRequests) => {
     if (request._type !== "request") return;
 
-    try {
-      await adminService.transferPartnershipRequestToCafe(request.id);
+    Alert.alert(
+      "Approve Partnership",
+      `Are you sure you want to approve the partnership request from ${request.businessName}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Approve",
+          style: "default",
+          onPress: async () => {
+            try {
+              // Transfer the partnership request to cafes collection
+              await adminService.transferPartnershipRequestToCafe(request.id);
 
-      // Create partner account
-      const password =
-        Math.random().toString(36).slice(-12) +
-        Math.random().toString(36).toUpperCase().slice(-4) +
-        Math.random().toString(36).slice(-8) +
-        "!@#$%^&*".charAt(Math.floor(Math.random() * 8));
+              Alert.alert(
+                "Partnership Approved",
+                `The partnership request from ${request.businessName} has been approved and is now active.`
+              );
 
-      await adminService.activateCafePartner(
-        request.id,
-        request.email,
-        password
-      );
-
-      Alert.alert(
-        "Partner Account Created",
-        `Please securely share these credentials with the partner:\n\nEmail: ${request.email}\nPassword: ${password}\n\nMake sure they change their password on first login.`
-      );
-
-      refreshData();
-    } catch (error) {
-      console.error("Error approving request:", error);
-      Alert.alert("Error", "Failed to approve request");
-    }
+              refreshData();
+            } catch (error) {
+              console.error("Error approving request:", error);
+              Alert.alert("Error", "Failed to approve request");
+            }
+          },
+        },
+      ]
+    );
   };
 
   const getStatusColor = (status: string): string => {
