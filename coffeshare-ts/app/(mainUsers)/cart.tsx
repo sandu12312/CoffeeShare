@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { useLanguage } from "../../context/LanguageContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
@@ -20,11 +19,14 @@ import { QRService } from "../../services/qrService";
 import Toast from "react-native-toast-message";
 import * as Animatable from "react-native-animatable";
 import { useSubscriptionStatus } from "../../hooks/useSubscriptionStatus";
+import { ErrorModal } from "../../components/ErrorComponents";
+import { useErrorHandler } from "../../hooks/useErrorHandler";
 
 export default function CartScreen() {
   const { t } = useLanguage();
   const router = useRouter();
   const { user } = useFirebase();
+  const { errorState, showConfirmModal, hideModal } = useErrorHandler();
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -150,69 +152,59 @@ export default function CartScreen() {
   const handleRemoveItem = async (productId: string) => {
     if (!user?.uid || !cart) return;
 
-    Alert.alert(
+    showConfirmModal(
       "Remove Item",
       "Are you sure you want to remove this item from your cart?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            // Find the item to remove for optimistic update
-            const itemToRemove = cart.items.find(
-              (item) => item.product.id === productId
-            );
-            if (!itemToRemove) return;
+      async () => {
+        // Find the item to remove for optimistic update
+        const itemToRemove = cart.items.find(
+          (item) => item.product.id === productId
+        );
+        if (!itemToRemove) return;
 
-            // Optimistic UI update - immediately remove the item
-            const updatedCart = { ...cart };
-            updatedCart.items = updatedCart.items.filter(
-              (item) => item.product.id !== productId
-            );
-            updatedCart.totalBeans -=
-              itemToRemove.product.beansValue * itemToRemove.quantity;
+        // Optimistic UI update - immediately remove the item
+        const updatedCart = { ...cart };
+        updatedCart.items = updatedCart.items.filter(
+          (item) => item.product.id !== productId
+        );
+        updatedCart.totalBeans -=
+          itemToRemove.product.beansValue * itemToRemove.quantity;
 
-            // If cart becomes empty, set to null
-            if (updatedCart.items.length === 0) {
-              setCart(null);
-            } else {
-              setCart(updatedCart);
-            }
+        // If cart becomes empty, set to null
+        if (updatedCart.items.length === 0) {
+          setCart(null);
+        } else {
+          setCart(updatedCart);
+        }
 
-            try {
-              const result = await cartService.removeFromCart(
-                user.uid,
-                productId
-              );
+        try {
+          const result = await cartService.removeFromCart(user.uid, productId);
 
-              if (result.success) {
-                Toast.show({
-                  type: "success",
-                  text1: "Removed!",
-                  text2: "Item removed from cart",
-                });
-              } else {
-                // Revert optimistic update on failure
-                setCart(cart);
-                Toast.show({
-                  type: "error",
-                  text1: "Error",
-                  text2: result.message,
-                });
-              }
-            } catch (error) {
-              // Revert optimistic update on error
-              setCart(cart);
-              Toast.show({
-                type: "error",
-                text1: "Error",
-                text2: "Failed to remove item",
-              });
-            }
-          },
-        },
-      ]
+          if (result.success) {
+            Toast.show({
+              type: "success",
+              text1: "Removed!",
+              text2: "Item removed from cart",
+            });
+          } else {
+            // Revert optimistic update on failure
+            setCart(cart);
+            Toast.show({
+              type: "error",
+              text1: "Error",
+              text2: result.message,
+            });
+          }
+        } catch (error) {
+          // Revert optimistic update on error
+          setCart(cart);
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: "Failed to remove item",
+          });
+        }
+      }
     );
   };
 
@@ -448,6 +440,17 @@ export default function CartScreen() {
         </View>
       </View>
       <BottomTabBar />
+
+      {/* Error Components */}
+      <ErrorModal
+        visible={errorState.modal.visible}
+        title={errorState.modal.title}
+        message={errorState.modal.message}
+        type={errorState.modal.type}
+        onDismiss={hideModal}
+        primaryAction={errorState.modal.primaryAction}
+        secondaryAction={errorState.modal.secondaryAction}
+      />
     </ScreenWrapper>
   );
 }

@@ -12,7 +12,6 @@ import {
   StatusBar,
   Animated,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -32,6 +31,8 @@ import {
 import { useSubscriptionStatus } from "../../hooks/useSubscriptionStatus";
 import cartService from "../../services/cartService";
 import notificationService from "../../services/notificationService";
+import { ErrorModal, Toast } from "../../components/ErrorComponents";
+import { useErrorHandler } from "../../hooks/useErrorHandler";
 
 const HEADER_HEIGHT = 80;
 
@@ -74,6 +75,8 @@ const formatActivityForDisplay = (activity: any, t: Function) => {
 export default function Dashboard() {
   const { t } = useLanguage();
   const { user, userProfile, logout, getActivityLogs } = useFirebase();
+  const { errorState, showError, showInfo, hideToast, hideModal } =
+    useErrorHandler();
   const scrollOffsetY = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
@@ -124,11 +127,7 @@ export default function Dashboard() {
         error.message &&
         error.message.includes("index is currently building")
       ) {
-        Alert.alert(
-          t("cafe.indexBuildingTitle"),
-          t("cafe.indexBuildingMessage"),
-          [{ text: t("common.ok") }]
-        );
+        showInfo(t("cafe.indexBuildingMessage"));
       }
     }
   };
@@ -175,7 +174,7 @@ export default function Dashboard() {
       router.replace("/(auth)/login");
     } catch (error) {
       console.error("Logout error:", error);
-      Alert.alert(t("common.error"), t("dashboard.logoutError"));
+      showError(t("dashboard.logoutError"));
     }
   };
 
@@ -430,6 +429,25 @@ export default function Dashboard() {
 
         {/* Bottom Navigation Bar */}
         <BottomTabBar />
+
+        {/* Error Components */}
+        <Toast
+          visible={errorState.toast.visible}
+          message={errorState.toast.message}
+          type={errorState.toast.type}
+          onHide={hideToast}
+          action={errorState.toast.action}
+        />
+
+        <ErrorModal
+          visible={errorState.modal.visible}
+          title={errorState.modal.title}
+          message={errorState.modal.message}
+          type={errorState.modal.type}
+          onDismiss={hideModal}
+          primaryAction={errorState.modal.primaryAction}
+          secondaryAction={errorState.modal.secondaryAction}
+        />
       </SafeAreaView>
     </ImageBackground>
   );

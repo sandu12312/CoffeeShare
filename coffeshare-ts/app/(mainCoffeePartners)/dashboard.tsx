@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Dimensions,
   ActivityIndicator,
-  Alert,
   RefreshControl,
   Platform,
   ImageBackground,
@@ -24,6 +23,8 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import * as Animatable from "react-native-animatable";
 import { LinearGradient } from "expo-linear-gradient";
+import { ErrorModal, Toast } from "../../components/ErrorComponents";
+import { useErrorHandler } from "../../hooks/useErrorHandler";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width / 2 - 30;
@@ -32,6 +33,8 @@ export default function CoffeePartnerDashboard() {
   const { t } = useLanguage();
   const router = useRouter();
   const { user } = useFirebase();
+  const { errorState, showErrorModal, showError, hideModal, hideToast } =
+    useErrorHandler();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -114,20 +117,18 @@ export default function CoffeePartnerDashboard() {
               "No associated cafe found and no business info in legacy partner document. Available fields:",
               Object.keys(partnerData)
             );
-            Alert.alert(
+            showErrorModal(
               "Setup Required",
               "Your partner account needs business information. Please complete your business profile setup.",
-              [
-                {
-                  text: "Continue Anyway",
-                  onPress: () => {
-                    // Allow dashboard to load with a default setup
-                    setCafeId("default");
-                    setCafeName("Setup Required");
-                    setPartnerId(user.uid);
-                  },
+              {
+                label: "Continue Anyway",
+                onPress: () => {
+                  // Allow dashboard to load with a default setup
+                  setCafeId("default");
+                  setCafeName("Setup Required");
+                  setPartnerId(user.uid);
                 },
-              ]
+              }
             );
             return;
           }
@@ -219,20 +220,18 @@ export default function CoffeePartnerDashboard() {
             "No associated cafe found and no business info in partner document. Available fields:",
             Object.keys(partnerData)
           );
-          Alert.alert(
+          showErrorModal(
             "Setup Required",
             "Your partner account needs business information. Please complete your business profile setup.",
-            [
-              {
-                text: "Continue Anyway",
-                onPress: () => {
-                  // Allow dashboard to load with a default setup
-                  setCafeId("default");
-                  setCafeName("Setup Required");
-                  setPartnerId(user.uid);
-                },
+            {
+              label: "Continue Anyway",
+              onPress: () => {
+                // Allow dashboard to load with a default setup
+                setCafeId("default");
+                setCafeName("Setup Required");
+                setPartnerId(user.uid);
               },
-            ]
+            }
           );
           return;
         }
@@ -277,7 +276,7 @@ export default function CoffeePartnerDashboard() {
       setDashboardStats(stats);
     } catch (error) {
       console.error("Error loading partner data:", error);
-      Alert.alert("Error", "Failed to load dashboard data");
+      showError("Failed to load dashboard data");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -473,6 +472,25 @@ export default function CoffeePartnerDashboard() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Error Components */}
+      <Toast
+        visible={errorState.toast.visible}
+        message={errorState.toast.message}
+        type={errorState.toast.type}
+        onHide={hideToast}
+        action={errorState.toast.action}
+      />
+
+      <ErrorModal
+        visible={errorState.modal.visible}
+        title={errorState.modal.title}
+        message={errorState.modal.message}
+        type={errorState.modal.type}
+        onDismiss={hideModal}
+        primaryAction={errorState.modal.primaryAction}
+        secondaryAction={errorState.modal.secondaryAction}
+      />
     </ImageBackground>
   );
 }

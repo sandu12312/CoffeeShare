@@ -10,7 +10,6 @@ import {
   Modal,
   Dimensions,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,11 +23,14 @@ import {
   UserSubscription,
 } from "../../services/subscriptionService";
 import Toast from "react-native-toast-message";
+import { Toast as ErrorToast } from "../../components/ErrorComponents";
+import { useErrorHandler } from "../../hooks/useErrorHandler";
 
 const { width } = Dimensions.get("window");
 
 export default function SubscriptionsScreen() {
   const { t } = useLanguage();
+  const { errorState, showError, hideToast } = useErrorHandler();
   const [howItWorksVisible, setHowItWorksVisible] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMonthly, setIsMonthly] = useState(true);
@@ -112,7 +114,7 @@ export default function SubscriptionsScreen() {
   // Subscribe to a plan
   const subscribeToPlan = async () => {
     if (!currentUser) {
-      Alert.alert("Error", "You must be logged in to subscribe to a plan");
+      showError("You must be logged in to subscribe to a plan");
       return;
     }
 
@@ -369,6 +371,14 @@ export default function SubscriptionsScreen() {
       </Modal>
 
       <BottomTabBar />
+
+      {/* Error Components */}
+      <ErrorToast
+        visible={errorState.toast.visible}
+        message={errorState.toast.message}
+        type={errorState.toast.type}
+        onHide={hideToast}
+      />
     </SafeAreaView>
   );
 }

@@ -7,13 +7,14 @@ import {
   TouchableOpacity,
   TextInput,
   Switch,
-  Alert,
 } from "react-native";
 import { useLanguage } from "../../context/LanguageContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import CoffeePartnerHeader from "../../components/CoffeePartnerHeader";
+import { Toast } from "../../components/ErrorComponents";
+import { useErrorHandler } from "../../hooks/useErrorHandler";
 
 // --- Dummy Data ---
 const initialAppSettings = {
@@ -29,15 +30,13 @@ const initialAppSettings = {
 export default function AppSettingsScreen() {
   const { t } = useLanguage();
   const router = useRouter();
+  const { errorState, showSuccess, hideToast } = useErrorHandler();
   const [settings, setSettings] = useState(initialAppSettings);
 
   const handleSave = () => {
     // TODO: Implement saving logic (e.g., update global config in Firestore/backend)
     console.log("Saving app settings:", settings);
-    Alert.alert(
-      "Setări Aplicație Salvate",
-      "Modificările au fost salvate (simulat)!"
-    );
+    showSuccess("Modificările au fost salvate cu succes!");
     // Optionally navigate back or show success message
   };
 
@@ -148,6 +147,15 @@ export default function AppSettingsScreen() {
 
         {/* Add more settings sections as needed (Notifications, etc.) */}
       </ScrollView>
+
+      {/* Error Components */}
+      <Toast
+        visible={errorState.toast.visible}
+        message={errorState.toast.message}
+        type={errorState.toast.type}
+        onHide={hideToast}
+        action={errorState.toast.action}
+      />
     </ScreenWrapper>
   );
 }

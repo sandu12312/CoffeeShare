@@ -7,7 +7,6 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   RefreshControl,
 } from "react-native";
 import { Stack } from "expo-router";
@@ -18,11 +17,14 @@ import { useSubscriptionStatus } from "../../../hooks/useSubscriptionStatus";
 import notificationService, {
   NotificationItem,
 } from "../../../services/notificationService";
+import { ErrorModal } from "../../../components/ErrorComponents";
+import { useErrorHandler } from "../../../hooks/useErrorHandler";
 
 export default function NotificationsScreen() {
   const { t } = useLanguage();
   const { user } = useFirebase();
   const subscriptionStatus = useSubscriptionStatus(user?.uid);
+  const { errorState, showConfirmModal, hideModal } = useErrorHandler();
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,35 +90,23 @@ export default function NotificationsScreen() {
 
       // Handle different notification types
       if (notification.type === "subscription_expiry") {
-        Alert.alert(
+        showConfirmModal(
           notification.title,
           notification.message +
             "\n\nWould you like to renew your subscription?",
-          [
-            { text: "Later", style: "cancel" },
-            {
-              text: "Renew Now",
-              onPress: () => {
-                // Navigate to subscriptions screen
-                // router.push("/(mainUsers)/subscriptions");
-              },
-            },
-          ]
+          () => {
+            // Navigate to subscriptions screen
+            // router.push("/(mainUsers)/subscriptions");
+          }
         );
       } else if (notification.type === "daily_update") {
-        Alert.alert(
+        showConfirmModal(
           notification.title,
           notification.message + "\n\nWould you like to view available plans?",
-          [
-            { text: "Close", style: "cancel" },
-            {
-              text: "View Plans",
-              onPress: () => {
-                // Navigate to subscriptions screen
-                // router.push("/(mainUsers)/subscriptions");
-              },
-            },
-          ]
+          () => {
+            // Navigate to subscriptions screen
+            // router.push("/(mainUsers)/subscriptions");
+          }
         );
       }
     } catch (error) {
@@ -138,24 +128,17 @@ export default function NotificationsScreen() {
   const handleClearAll = () => {
     if (!user?.uid) return;
 
-    Alert.alert(
+    showConfirmModal(
       "Clear All Notifications",
       "Are you sure you want to clear all notifications? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Clear All",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await notificationService.clearAllNotifications(user.uid!);
-              await loadNotifications();
-            } catch (error) {
-              console.error("Error clearing notifications:", error);
-            }
-          },
-        },
-      ]
+      async () => {
+        try {
+          await notificationService.clearAllNotifications(user.uid!);
+          await loadNotifications();
+        } catch (error) {
+          console.error("Error clearing notifications:", error);
+        }
+      }
     );
   };
 
@@ -372,6 +355,17 @@ export default function NotificationsScreen() {
           )}
         </ScrollView>
       )}
+
+      {/* Error Components */}
+      <ErrorModal
+        visible={errorState.modal.visible}
+        title={errorState.modal.title}
+        message={errorState.modal.message}
+        type={errorState.modal.type}
+        onDismiss={hideModal}
+        primaryAction={errorState.modal.primaryAction}
+        secondaryAction={errorState.modal.secondaryAction}
+      />
     </SafeAreaView>
   );
 }

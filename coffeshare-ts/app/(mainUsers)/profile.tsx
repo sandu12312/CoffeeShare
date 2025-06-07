@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
-  Alert,
   RefreshControl,
 } from "react-native";
 import { Stack, router, Link } from "expo-router";
@@ -18,6 +17,8 @@ import { useLanguage, TranslationKey } from "../../context/LanguageContext";
 import { useFirebase } from "../../context/FirebaseContext";
 import { ActivityType } from "../../types";
 import { useSubscriptionStatus } from "../../hooks/useSubscriptionStatus";
+import { Toast } from "../../components/ErrorComponents";
+import { useErrorHandler } from "../../hooks/useErrorHandler";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -30,6 +31,7 @@ interface MenuItem {
 export default function ProfileScreen() {
   const { t } = useLanguage();
   const { user, userProfile, logout, getActivityLogs } = useFirebase();
+  const { errorState, showError, hideToast } = useErrorHandler();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
@@ -77,7 +79,7 @@ export default function ProfileScreen() {
       router.replace("/(auth)/login");
     } catch (error) {
       console.error("Logout error:", error);
-      Alert.alert(t("common.error"), t("dashboard.logoutError"));
+      showError(t("dashboard.logoutError"));
     } finally {
       setLoading(false);
     }
@@ -366,6 +368,14 @@ export default function ProfileScreen() {
       </ScrollView>
 
       <BottomTabBar />
+
+      {/* Error Components */}
+      <Toast
+        visible={errorState.toast.visible}
+        message={errorState.toast.message}
+        type={errorState.toast.type}
+        onHide={hideToast}
+      />
     </SafeAreaView>
   );
 }

@@ -8,7 +8,6 @@ import {
   TextInput,
   ActivityIndicator,
   Platform,
-  Alert,
   Image,
   Dimensions,
   Animated,
@@ -32,6 +31,8 @@ import { useFirebase } from "../../context/FirebaseContext";
 import { useCart } from "../../context/CartContext";
 import Toast from "react-native-toast-message";
 import * as Animatable from "react-native-animatable";
+import { Toast as ErrorToast } from "../../components/ErrorComponents";
+import { useErrorHandler } from "../../hooks/useErrorHandler";
 
 const DEFAULT_REGION: Region = {
   latitude: 45.7579, // Timisoara Latitude
@@ -55,6 +56,7 @@ export default function MapScreen() {
   const { t } = useLanguage();
   const { user } = useFirebase();
   const { cartItemCount, incrementCartCount } = useCart();
+  const { errorState, showInfo, hideToast } = useErrorHandler();
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -335,9 +337,7 @@ export default function MapScreen() {
         />
         <TouchableOpacity
           style={styles.filterButton}
-          onPress={() =>
-            Alert.alert(t("map.filterAlertTitle"), t("map.filterAlertMessage"))
-          }
+          onPress={() => showInfo(t("map.filterAlertMessage"))}
         >
           <Ionicons name="options-outline" size={24} color="#8B4513" />
         </TouchableOpacity>
@@ -647,6 +647,14 @@ export default function MapScreen() {
 
       {/* Bottom Navigation Bar */}
       <BottomTabBar />
+
+      {/* Error Components */}
+      <ErrorToast
+        visible={errorState.toast.visible}
+        message={errorState.toast.message}
+        type={errorState.toast.type}
+        onHide={hideToast}
+      />
     </SafeAreaView>
   );
 }

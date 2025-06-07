@@ -6,7 +6,6 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
-  Alert,
   Keyboard,
   ActivityIndicator,
   ImageBackground,
@@ -39,6 +38,8 @@ import {
 import { db, auth } from "../../config/firebase";
 import * as Animatable from "react-native-animatable";
 import { LinearGradient } from "expo-linear-gradient";
+import { ErrorModal, Toast, Snackbar } from "../../components/ErrorComponents";
+import { useErrorHandler } from "../../hooks/useErrorHandler";
 
 // Type definition for partnership requests
 interface PartnershipRequest {
@@ -64,6 +65,17 @@ const USERS_COLLECTION = "users";
 export default function ManageCafesScreen() {
   const { t } = useLanguage();
   const router = useRouter();
+  const {
+    errorState,
+    showError,
+    showSuccess,
+    showConfirmModal,
+    showErrorModal,
+    hideToast,
+    hideModal,
+    hideSnackbar,
+    showUndoSnackbar,
+  } = useErrorHandler();
   const [requests, setRequests] = useState<PartnershipRequest[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -274,8 +286,7 @@ export default function ManageCafesScreen() {
       setRequests(requestsList);
     } catch (error: any) {
       console.error("[ManageCafes] Error loading partnership requests:", error);
-      Alert.alert(
-        "Error",
+      showError(
         "An error occurred while loading partnership requests. Please try again later."
       );
     } finally {
@@ -296,58 +307,40 @@ export default function ManageCafesScreen() {
   const handleApproveRequest = async (request: PartnershipRequest) => {
     setActionInProgressId(request.id);
 
-    Alert.alert(
+    showConfirmModal(
       "Approve Partnership",
       `Are you sure you want to approve the partnership request from ${request.businessName}?`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-          onPress: () => setActionInProgressId(null),
-        },
-        {
-          text: "Approve",
-          style: "default",
-          onPress: async () => {
-            try {
-              // Simply update the request status to approved
-              const requestRef = doc(
-                db,
-                LEGACY_REQUESTS_COLLECTION,
-                request.id
-              );
-              await updateDoc(requestRef, {
-                status: "approved",
-                updatedAt: serverTimestamp(),
-                approvedAt: serverTimestamp(),
-              });
+      async () => {
+        try {
+          // Simply update the request status to approved
+          const requestRef = doc(db, LEGACY_REQUESTS_COLLECTION, request.id);
+          await updateDoc(requestRef, {
+            status: "approved",
+            updatedAt: serverTimestamp(),
+            approvedAt: serverTimestamp(),
+          });
 
-              console.log(
-                `[ManageCafes] Partnership request approved for ${request.businessName}`
-              );
+          console.log(
+            `[ManageCafes] Partnership request approved for ${request.businessName}`
+          );
 
-              Alert.alert(
-                "Partnership Approved",
-                `The partnership request from ${request.businessName} has been approved.`
-              );
+          showSuccess(
+            `The partnership request from ${request.businessName} has been approved.`
+          );
 
-              // Refresh the data
-              loadData();
-            } catch (error: any) {
-              console.error(
-                "[ManageCafes] Error approving partnership request:",
-                error
-              );
-              Alert.alert(
-                "Error",
-                `Failed to approve partnership request: ${error.message}`
-              );
-            } finally {
-              setActionInProgressId(null);
-            }
-          },
-        },
-      ]
+          // Refresh the data
+          loadData();
+        } catch (error: any) {
+          console.error(
+            "[ManageCafes] Error approving partnership request:",
+            error
+          );
+          showError(`Failed to approve partnership request: ${error.message}`);
+        } finally {
+          setActionInProgressId(null);
+        }
+      },
+      () => setActionInProgressId(null)
     );
   };
 
@@ -357,49 +350,38 @@ export default function ManageCafesScreen() {
   const handleRejectRequest = async (request: PartnershipRequest) => {
     setActionInProgressId(request.id);
 
-    Alert.alert(
+    showConfirmModal(
       "Confirm Rejection",
       `Are you sure you want to reject the partnership request from ${request.businessName}?`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-          onPress: () => setActionInProgressId(null),
-        },
-        {
-          text: "Reject",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              // Simply delete the partnership request from cafesPending
-              await deleteDoc(doc(db, LEGACY_REQUESTS_COLLECTION, request.id));
-              console.log(
-                `[ManageCafes] Rejected and deleted partnership request from ${request.businessName}`
-              );
+      async () => {
+        try {
+          // Simply delete the partnership request from cafesPending
+          await deleteDoc(doc(db, LEGACY_REQUESTS_COLLECTION, request.id));
+          console.log(
+            `[ManageCafes] Rejected and deleted partnership request from ${request.businessName}`
+          );
 
-              // Show success message
-              Alert.alert(
-                "Request Rejected",
-                `The partnership request from ${request.businessName} has been rejected.`
-              );
-
-              // Refresh the data
-              loadData();
-            } catch (error: any) {
-              console.error(
-                "[ManageCafes] Error rejecting partnership request:",
-                error
-              );
-              Alert.alert(
-                "Error",
-                `Failed to reject partnership request: ${error.message}`
-              );
-              setActionInProgressId(null);
+          // Show success message with undo option
+          showUndoSnackbar(
+            `Partnership request from ${request.businessName} has been rejected.`,
+            () => {
+              // TODO: Implement undo functionality if needed
+              console.log("Undo rejection requested");
             }
-          },
-        },
-      ],
-      { cancelable: false }
+          );
+
+          // Refresh the data
+          loadData();
+        } catch (error: any) {
+          console.error(
+            "[ManageCafes] Error rejecting partnership request:",
+            error
+          );
+          showError(`Failed to reject partnership request: ${error.message}`);
+          setActionInProgressId(null);
+        }
+      },
+      () => setActionInProgressId(null)
     );
   };
 
@@ -631,6 +613,32 @@ export default function ManageCafesScreen() {
           </View>
         )}
       </ImageBackground>
+
+      {/* Error Components */}
+      <Toast
+        visible={errorState.toast.visible}
+        message={errorState.toast.message}
+        type={errorState.toast.type}
+        onHide={hideToast}
+        action={errorState.toast.action}
+      />
+
+      <ErrorModal
+        visible={errorState.modal.visible}
+        title={errorState.modal.title}
+        message={errorState.modal.message}
+        type={errorState.modal.type}
+        onDismiss={hideModal}
+        primaryAction={errorState.modal.primaryAction}
+        secondaryAction={errorState.modal.secondaryAction}
+      />
+
+      <Snackbar
+        visible={errorState.snackbar.visible}
+        message={errorState.snackbar.message}
+        action={errorState.snackbar.action}
+        onDismiss={hideSnackbar}
+      />
     </ScreenWrapper>
   );
 }

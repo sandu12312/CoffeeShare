@@ -7,7 +7,6 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   RefreshControl,
   ImageBackground,
 } from "react-native";
@@ -20,11 +19,15 @@ import notificationService, {
   NotificationItem,
 } from "../../services/notificationService";
 import BottomTabBar from "../../components/BottomTabBar";
+import { ErrorModal, Toast } from "../../components/ErrorComponents";
+import { useErrorHandler } from "../../hooks/useErrorHandler";
 
 export default function NotificationsScreen() {
   const { t } = useLanguage();
   const { user } = useFirebase();
   const subscriptionStatus = useSubscriptionStatus(user?.uid);
+  const { errorState, showErrorModal, showConfirmModal, hideModal, hideToast } =
+    useErrorHandler();
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,93 +93,54 @@ export default function NotificationsScreen() {
 
       // Handle different notification types
       if (notification.type === "subscription_expiry") {
-        Alert.alert(
+        showConfirmModal(
           notification.title,
           notification.message +
             "\n\nWould you like to renew your subscription?",
-          [
-            { text: "Later", style: "cancel" },
-            {
-              text: "Renew Now",
-              onPress: () => {
-                router.push("/(mainUsers)/subscriptions");
-              },
-            },
-          ]
+          () => router.push("/(mainUsers)/subscriptions")
         );
       } else if (notification.type === "daily_update") {
-        Alert.alert(
+        showConfirmModal(
           notification.title,
           notification.message + "\n\nWould you like to view available plans?",
-          [
-            { text: "Close", style: "cancel" },
-            {
-              text: "View Plans",
-              onPress: () => {
-                router.push("/(mainUsers)/subscriptions");
-              },
-            },
-          ]
+          () => router.push("/(mainUsers)/subscriptions")
         );
       } else if (notification.type === "special_offer") {
-        Alert.alert(
+        showConfirmModal(
           notification.title,
           notification.message + "\n\nDon't miss out on this great deal!",
-          [
-            { text: "Maybe Later", style: "cancel" },
-            {
-              text: "Explore Offers",
-              onPress: () => {
-                router.push("/(mainUsers)/subscriptions");
-              },
-            },
-          ]
+          () => router.push("/(mainUsers)/subscriptions")
         );
       } else if (notification.type === "achievement") {
-        Alert.alert(
+        showErrorModal(
           notification.title,
           notification.message + "\n\nKeep up the great work! ☕",
-          [{ text: "Awesome!", style: "default" }]
+          { label: "Awesome!", onPress: hideModal }
         );
       } else if (notification.type === "coffee_tip") {
-        Alert.alert(
+        showErrorModal(
           notification.title,
           notification.message + "\n\nHappy brewing! ☕",
-          [{ text: "Thanks!", style: "default" }]
+          { label: "Thanks!", onPress: hideModal }
         );
       } else if (notification.type === "recommendation") {
-        Alert.alert(
+        showConfirmModal(
           notification.title,
           notification.message + "\n\nWould you like to explore more cafes?",
-          [
-            { text: "Not Now", style: "cancel" },
-            {
-              text: "Explore Cafes",
-              onPress: () => {
-                router.push("/(mainUsers)/home");
-              },
-            },
-          ]
+          () => router.push("/(mainUsers)/home")
         );
       } else if (notification.type === "welcome") {
-        Alert.alert(
+        showConfirmModal(
           notification.title,
           notification.message + "\n\nLet's get you started!",
-          [
-            { text: "Explore Later", style: "cancel" },
-            {
-              text: "Get Started",
-              onPress: () => {
-                router.push("/(mainUsers)/subscriptions");
-              },
-            },
-          ]
+          () => router.push("/(mainUsers)/subscriptions")
         );
       } else {
         // Generic notification handling
-        Alert.alert(notification.title, notification.message, [
-          { text: "OK", style: "default" },
-        ]);
+        showErrorModal(notification.title, notification.message, {
+          label: "OK",
+          onPress: hideModal,
+        });
       }
     } catch (error) {
       console.error("Error handling notification press:", error);
@@ -197,24 +161,17 @@ export default function NotificationsScreen() {
   const handleClearAll = () => {
     if (!user?.uid) return;
 
-    Alert.alert(
+    showConfirmModal(
       "Clear All Notifications",
       "Are you sure you want to clear all notifications? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Clear All",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await notificationService.clearAllNotifications(user.uid!);
-              await loadNotifications();
-            } catch (error) {
-              console.error("Error clearing notifications:", error);
-            }
-          },
-        },
-      ]
+      async () => {
+        try {
+          await notificationService.clearAllNotifications(user.uid!);
+          await loadNotifications();
+        } catch (error) {
+          console.error("Error clearing notifications:", error);
+        }
+      }
     );
   };
 
@@ -444,6 +401,24 @@ export default function NotificationsScreen() {
         )}
 
         <BottomTabBar />
+
+        {/* Error Components */}
+        <Toast
+          visible={errorState.toast.visible}
+          message={errorState.toast.message}
+          type={errorState.toast.type}
+          onHide={hideToast}
+        />
+
+        <ErrorModal
+          visible={errorState.modal.visible}
+          title={errorState.modal.title}
+          message={errorState.modal.message}
+          type={errorState.modal.type}
+          onDismiss={hideModal}
+          primaryAction={errorState.modal.primaryAction}
+          secondaryAction={errorState.modal.secondaryAction}
+        />
       </SafeAreaView>
     </ImageBackground>
   );

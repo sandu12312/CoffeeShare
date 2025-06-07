@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Alert,
   Switch,
   ActivityIndicator,
   RefreshControl,
@@ -21,10 +20,13 @@ import {
   SubscriptionPlan,
 } from "../../services/subscriptionService";
 import Toast from "react-native-toast-message";
+import { ErrorModal } from "../../components/ErrorComponents";
+import { useErrorHandler } from "../../hooks/useErrorHandler";
 
 export default function ManageSubscriptionsScreen() {
   const { t } = useLanguage();
   const router = useRouter();
+  const { errorState, showConfirmModal, hideModal } = useErrorHandler();
   const [subscriptions, setSubscriptions] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -107,37 +109,30 @@ export default function ManageSubscriptionsScreen() {
 
   // Handle delete subscription
   const handleDeleteSubscription = (plan: SubscriptionPlan) => {
-    Alert.alert(
+    showConfirmModal(
       "Delete Subscription Plan",
       `Are you sure you want to delete "${plan.name}"? This action cannot be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await SubscriptionService.deleteSubscriptionPlan(plan.id!);
+      async () => {
+        try {
+          await SubscriptionService.deleteSubscriptionPlan(plan.id!);
 
-              Toast.show({
-                type: "success",
-                text1: "Plan Deleted",
-                text2: `${plan.name} has been deleted`,
-              });
+          Toast.show({
+            type: "success",
+            text1: "Plan Deleted",
+            text2: `${plan.name} has been deleted`,
+          });
 
-              // Reload subscriptions
-              loadSubscriptions();
-            } catch (error) {
-              console.error("Error deleting plan:", error);
-              Toast.show({
-                type: "error",
-                text1: "Error",
-                text2: "Failed to delete plan",
-              });
-            }
-          },
-        },
-      ]
+          // Reload subscriptions
+          loadSubscriptions();
+        } catch (error) {
+          console.error("Error deleting plan:", error);
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: "Failed to delete plan",
+          });
+        }
+      }
     );
   };
 
@@ -266,6 +261,17 @@ export default function ManageSubscriptionsScreen() {
         }}
         onSuccess={handleModalSuccess}
         editPlan={editingPlan}
+      />
+
+      {/* Error Components */}
+      <ErrorModal
+        visible={errorState.modal.visible}
+        title={errorState.modal.title}
+        message={errorState.modal.message}
+        type={errorState.modal.type}
+        onDismiss={hideModal}
+        primaryAction={errorState.modal.primaryAction}
+        secondaryAction={errorState.modal.secondaryAction}
       />
     </ScreenWrapper>
   );

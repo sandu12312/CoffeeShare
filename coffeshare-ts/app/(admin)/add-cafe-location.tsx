@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  Alert,
   Platform,
   KeyboardAvoidingView,
   Keyboard,
@@ -26,6 +25,8 @@ import { useLanguage } from "../../context/LanguageContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
 import CoffeePartnerHeader from "../../components/CoffeePartnerHeader";
 import adminService from "../../services/adminService";
+import { Toast, ErrorModal, Snackbar } from "../../components/ErrorComponents";
+import { useErrorHandler } from "../../hooks/useErrorHandler";
 
 const DEFAULT_REGION: Region = {
   latitude: 45.7579, // Timisoara Latitude
@@ -37,6 +38,16 @@ const DEFAULT_REGION: Region = {
 export default function AddCafeLocationScreen() {
   const { t } = useLanguage();
   const router = useRouter();
+  const {
+    errorState,
+    showError,
+    showSuccess,
+    showConfirmModal,
+    showErrorModal,
+    hideToast,
+    hideModal,
+    showWarning,
+  } = useErrorHandler();
   const [mapRegion, setMapRegion] = useState<Region>(DEFAULT_REGION);
   const [selectedLocation, setSelectedLocation] = useState<{
     latitude: number;
@@ -63,6 +74,7 @@ export default function AddCafeLocationScreen() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showHoursDropdown, setShowHoursDropdown] = useState(false);
+  const [showPartnersDropdown, setShowPartnersDropdown] = useState(false);
   const mapRef = useRef<MapView>(null);
 
   // Predefined opening hours options
@@ -114,7 +126,7 @@ export default function AddCafeLocationScreen() {
         setCoffeePartners(partners);
       } catch (error) {
         console.error("Error loading coffee partners:", error);
-        Alert.alert("Error", "Failed to load coffee partners");
+        showError("Failed to load coffee partners");
       } finally {
         setLoadingPartners(false);
       }
@@ -132,7 +144,7 @@ export default function AddCafeLocationScreen() {
   const requestPermissions = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
+      showErrorModal(
         "Permission needed",
         "Please grant camera roll permissions to upload images."
       );
@@ -161,7 +173,7 @@ export default function AddCafeLocationScreen() {
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
+      showErrorModal(
         "Permission needed",
         "Please grant camera permissions to take photos."
       );
@@ -222,6 +234,12 @@ export default function AddCafeLocationScreen() {
     setShowHoursDropdown(false);
   };
 
+  // Coffee partner selection handler
+  const handlePartnerSelect = (partnerEmail: string) => {
+    setFormData({ ...formData, ownerEmail: partnerEmail });
+    setShowPartnersDropdown(false);
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -262,8 +280,7 @@ export default function AddCafeLocationScreen() {
           imageUrl = await uploadImageToStorage(selectedImage);
         } catch (error) {
           console.error("Error uploading image:", error);
-          Alert.alert(
-            "Warning",
+          showWarning(
             "Failed to upload image, but cafe will be created without photo."
           );
         } finally {
@@ -306,29 +323,23 @@ export default function AddCafeLocationScreen() {
 
       await addDoc(collection(db, "cafes"), cafeData);
 
-      Alert.alert("Success", "Cafe has been added successfully", [
-        {
-          text: "OK",
-          onPress: () => {
-            // Reset the form
-            setFormData({
-              businessName: "",
-              address: "",
-              phoneNumber: "",
-              website: "",
-              description: "",
-              openingHours: "",
-              ownerEmail: "",
-            });
-            setSelectedLocation(null);
-            setSelectedImage(null);
-            setSelectedCategories([]);
-          },
-        },
-      ]);
+      showSuccess("Cafe has been added successfully");
+      // Reset the form
+      setFormData({
+        businessName: "",
+        address: "",
+        phoneNumber: "",
+        website: "",
+        description: "",
+        openingHours: "",
+        ownerEmail: "",
+      });
+      setSelectedLocation(null);
+      setSelectedImage(null);
+      setSelectedCategories([]);
     } catch (error) {
       console.error("Error adding cafe:", error);
-      Alert.alert("Error", "Failed to add cafe. Please try again.");
+      showError("Failed to add cafe. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -437,23 +448,7 @@ export default function AddCafeLocationScreen() {
                     styles.dropdown,
                     errors.ownerEmail ? styles.inputError : null,
                   ]}
-                  onPress={() => {
-                    Alert.alert(
-                      "Select Coffee Partner",
-                      "Choose who will manage this cafe:",
-                      [
-                        ...coffeePartners.map((partner) => ({
-                          text: `${partner.name} (${partner.email})`,
-                          onPress: () =>
-                            setFormData({
-                              ...formData,
-                              ownerEmail: partner.email,
-                            }),
-                        })),
-                        { text: "Cancel", style: "cancel" },
-                      ]
-                    );
-                  }}
+                  onPress={() => setShowPartnersDropdown(true)}
                 >
                   <Text
                     style={[
@@ -691,6 +686,47 @@ export default function AddCafeLocationScreen() {
         </View>
       </Modal>
 
+      {/* Coffee Partners Dropdown Modal */}
+      <Modal
+        visible={showPartnersDropdown}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowPartnersDropdown(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.dropdownModal}>
+            <View style={styles.dropdownHeader}>
+              <Text style={styles.dropdownTitle}>Select Coffee Partner</Text>
+              <TouchableOpacity onPress={() => setShowPartnersDropdown(false)}>
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.dropdownList}>
+              {coffeePartners.map((partner, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.dropdownOption,
+                    formData.ownerEmail === partner.email &&
+                      styles.selectedOption,
+                  ]}
+                  onPress={() => handlePartnerSelect(partner.email)}
+                >
+                  <View style={styles.partnerOptionContent}>
+                    <Text style={styles.partnerName}>{partner.name}</Text>
+                    <Text style={styles.partnerEmail}>{partner.email}</Text>
+                  </View>
+                  {formData.ownerEmail === partner.email && (
+                    <Ionicons name="checkmark" size={20} color="#8B4513" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       {/* Opening Hours Dropdown Modal */}
       <Modal
         visible={showHoursDropdown}
@@ -721,6 +757,25 @@ export default function AddCafeLocationScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Error Components */}
+      <Toast
+        visible={errorState.toast.visible}
+        message={errorState.toast.message}
+        type={errorState.toast.type}
+        onHide={hideToast}
+        action={errorState.toast.action}
+      />
+
+      <ErrorModal
+        visible={errorState.modal.visible}
+        title={errorState.modal.title}
+        message={errorState.modal.message}
+        type={errorState.modal.type}
+        onDismiss={hideModal}
+        primaryAction={errorState.modal.primaryAction}
+        secondaryAction={errorState.modal.secondaryAction}
+      />
     </ScreenWrapper>
   );
 }
@@ -998,9 +1053,32 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#F8F8F8",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   dropdownOptionText: {
     fontSize: 16,
     color: "#333",
+  },
+
+  // Coffee Partner Selection Styles
+  selectedOption: {
+    backgroundColor: "#F5F5F5",
+    borderLeftWidth: 3,
+    borderLeftColor: "#8B4513",
+  },
+  partnerOptionContent: {
+    flex: 1,
+  },
+  partnerName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 2,
+  },
+  partnerEmail: {
+    fontSize: 14,
+    color: "#666",
   },
 });

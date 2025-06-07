@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   RefreshControl,
   Dimensions,
   ImageBackground,
@@ -23,6 +22,8 @@ import partnerAnalyticsService, {
 import reportExportService from "../../services/reportExportService";
 import * as Animatable from "react-native-animatable";
 import { LinearGradient } from "expo-linear-gradient";
+import { ErrorModal, Toast } from "../../components/ErrorComponents";
+import { useErrorHandler } from "../../hooks/useErrorHandler";
 
 // Placeholder for a chart library
 // import { LineChart } from 'react-native-chart-kit';
@@ -33,6 +34,8 @@ export default function ReportsScreen() {
   const { t } = useLanguage();
   const router = useRouter();
   const { user } = useFirebase();
+  const { errorState, showError, showErrorModal, hideToast, hideModal } =
+    useErrorHandler();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -99,7 +102,7 @@ export default function ReportsScreen() {
       setReportData(reportsData);
     } catch (error) {
       console.error("Error loading report data:", error);
-      Alert.alert(t("common.error"), "Failed to load report data");
+      showError("Failed to load report data");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -231,26 +234,16 @@ export default function ReportsScreen() {
 
   const handleExportData = () => {
     if (!reportData || !user) {
-      Alert.alert("Error", "No data available to export");
+      showError("No data available to export");
       return;
     }
 
-    const options = [
-      {
-        text: "Export PDF Report",
-        onPress: () => exportPDFReport(),
-      },
-      {
-        text: "Export CSV Data",
-        onPress: () => exportCSVData(),
-      },
-      {
-        text: "Cancel",
-        style: "cancel" as const,
-      },
-    ];
-
-    Alert.alert("Export Data", "Choose export format:", options);
+    showErrorModal(
+      "Export Data",
+      "Choose export format:",
+      { label: "Export PDF Report", onPress: () => exportPDFReport() },
+      { label: "Export CSV Data", onPress: () => exportCSVData() }
+    );
   };
 
   const exportPDFReport = async () => {
@@ -599,6 +592,25 @@ export default function ReportsScreen() {
           </Animatable.View>
         </ScrollView>
       </ImageBackground>
+
+      {/* Error Components */}
+      <Toast
+        visible={errorState.toast.visible}
+        message={errorState.toast.message}
+        type={errorState.toast.type}
+        onHide={hideToast}
+        action={errorState.toast.action}
+      />
+
+      <ErrorModal
+        visible={errorState.modal.visible}
+        title={errorState.modal.title}
+        message={errorState.modal.message}
+        type={errorState.modal.type}
+        onDismiss={hideModal}
+        primaryAction={errorState.modal.primaryAction}
+        secondaryAction={errorState.modal.secondaryAction}
+      />
     </ScreenWrapper>
   );
 }
