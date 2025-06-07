@@ -33,6 +33,7 @@ interface Product {
   beansValue: number;
   imageUrl: string;
   cafeId: string;
+  category: "Coffee" | "Tea" | "Pastries" | "Snacks";
 }
 
 export default function ManageProductsScreen() {
@@ -51,6 +52,13 @@ export default function ManageProductsScreen() {
   const [priceLei, setPriceLei] = useState("");
   const [image, setImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<
+    "Coffee" | "Tea" | "Pastries" | "Snacks"
+  >("Coffee");
+
+  // Edit state
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     loadCafesAndProducts();
@@ -135,6 +143,110 @@ export default function ManageProductsScreen() {
     return await getDownloadURL(storageRef);
   };
 
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setIsEditing(true);
+    setProductName(product.name);
+    setPriceLei(product.priceLei.toString());
+    setSelectedCategory(product.category);
+    setImage(product.imageUrl);
+    setShowForm(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingProduct(null);
+    setIsEditing(false);
+    setProductName("");
+    setPriceLei("");
+    setSelectedCategory("Coffee");
+    setImage(null);
+    setShowForm(false);
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      await coffeePartnerService.deleteProduct(productId);
+
+      Toast.show({
+        type: "success",
+        text1: "Success",
+        text2: "Product deleted successfully",
+      });
+
+      // Refresh products list for selected cafe
+      await loadProductsForCafe(selectedCafe);
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to delete product",
+      });
+    }
+  };
+
+  const handleUpdateProduct = async () => {
+    if (!auth.currentUser || !editingProduct) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Authentication or product data missing",
+      });
+      return;
+    }
+
+    if (!productName || !priceLei || !image) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Please fill all fields",
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      let imageUrl = image;
+
+      // Only upload new image if it's different from the current one
+      if (image !== editingProduct.imageUrl) {
+        imageUrl = await uploadImage(image);
+      }
+
+      const priceNumber = parseFloat(priceLei);
+      const beansValue = calculateBeans(priceNumber);
+
+      await coffeePartnerService.updateProduct(editingProduct.id, {
+        name: productName,
+        priceLei: priceNumber,
+        beansValue: beansValue,
+        imageUrl: imageUrl,
+        category: selectedCategory,
+      });
+
+      Toast.show({
+        type: "success",
+        text1: "Success",
+        text2: "Product updated successfully",
+      });
+
+      // Reset form and edit state
+      handleCancelEdit();
+
+      // Refresh products list for selected cafe
+      await loadProductsForCafe(selectedCafe);
+    } catch (error) {
+      console.error("Error updating product:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to update product",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleAddProduct = async () => {
     if (!auth.currentUser) {
       Toast.show({
@@ -166,6 +278,7 @@ export default function ManageProductsScreen() {
         priceLei: priceNumber,
         beansValue: beansValue,
         imageUrl: imageUrl,
+        category: selectedCategory,
       });
 
       Toast.show({
@@ -178,7 +291,10 @@ export default function ManageProductsScreen() {
       setProductName("");
       setPriceLei("");
       setImage(null);
+      setSelectedCategory("Coffee");
       setShowForm(false);
+      setIsEditing(false);
+      setEditingProduct(null);
 
       // Refresh products list for selected cafe
       await loadProductsForCafe(selectedCafe);
@@ -221,14 +337,46 @@ export default function ManageProductsScreen() {
             </View>
           </View>
         </View>
-        <TouchableOpacity style={styles.editButton}>
-          <LinearGradient
-            colors={["#8B4513", "#A0522D"]}
-            style={styles.editButtonGradient}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => handleEditProduct(item)}
+            activeOpacity={0.8}
           >
-            <Ionicons name="pencil-outline" size={18} color="#FFFFFF" />
-          </LinearGradient>
-        </TouchableOpacity>
+            <LinearGradient
+              colors={["#8B4513", "#A0522D"]}
+              style={styles.editButtonGradient}
+            >
+              <Ionicons name="pencil-outline" size={18} color="#FFFFFF" />
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => {
+              Alert.alert(
+                "Șterge Produs",
+                `Ești sigur că vrei să ștergi "${item.name}"?`,
+                [
+                  { text: "Anulează", style: "cancel" },
+                  {
+                    text: "Șterge",
+                    style: "destructive",
+                    onPress: () => handleDeleteProduct(item.id),
+                  },
+                ]
+              );
+            }}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={["#F44336", "#D32F2F"]}
+              style={styles.deleteButtonGradient}
+            >
+              <Ionicons name="trash-outline" size={18} color="#FFFFFF" />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
     </Animatable.View>
   );
@@ -306,7 +454,11 @@ export default function ManageProductsScreen() {
                 });
                 return;
               }
-              setShowForm(!showForm);
+              if (isEditing) {
+                handleCancelEdit();
+              } else {
+                setShowForm(!showForm);
+              }
             }}
             activeOpacity={0.8}
             disabled={!selectedCafe}
@@ -322,12 +474,22 @@ export default function ManageProductsScreen() {
               style={styles.addButtonGradient}
             >
               <Ionicons
-                name={showForm ? "close-circle" : "add-circle"}
+                name={
+                  showForm
+                    ? "close-circle"
+                    : isEditing
+                    ? "pencil"
+                    : "add-circle"
+                }
                 size={24}
                 color="#FFFFFF"
               />
               <Text style={styles.addButtonText}>
-                {showForm ? "Anulează" : "Adaugă Produs Nou"}
+                {showForm
+                  ? "Anulează"
+                  : isEditing
+                  ? "Editează Produs"
+                  : "Adaugă Produs Nou"}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -343,7 +505,9 @@ export default function ManageProductsScreen() {
               colors={["#FFFFFF", "#FFF8F3"]}
               style={styles.formGradient}
             >
-              <Text style={styles.formTitle}>Produs Nou</Text>
+              <Text style={styles.formTitle}>
+                {isEditing ? "Editează Produs" : "Produs Nou"}
+              </Text>
 
               <View style={styles.inputContainer}>
                 <Ionicons
@@ -359,6 +523,55 @@ export default function ManageProductsScreen() {
                   value={productName}
                   onChangeText={setProductName}
                 />
+              </View>
+
+              {/* Category Selection */}
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Categorie Produs</Text>
+                <View style={styles.categoriesContainer}>
+                  {(["Coffee", "Tea", "Pastries", "Snacks"] as const).map(
+                    (category) => (
+                      <TouchableOpacity
+                        key={category}
+                        style={[
+                          styles.categoryChip,
+                          selectedCategory === category &&
+                            styles.categoryChipSelected,
+                        ]}
+                        onPress={() => setSelectedCategory(category)}
+                      >
+                        <Ionicons
+                          name={
+                            selectedCategory === category
+                              ? "checkmark-circle"
+                              : "ellipse-outline"
+                          }
+                          size={18}
+                          color={
+                            selectedCategory === category
+                              ? "#FFFFFF"
+                              : "#8B4513"
+                          }
+                        />
+                        <Text
+                          style={[
+                            styles.categoryChipText,
+                            selectedCategory === category &&
+                              styles.categoryChipTextSelected,
+                          ]}
+                        >
+                          {category === "Coffee"
+                            ? "Cafea"
+                            : category === "Tea"
+                            ? "Ceai"
+                            : category === "Pastries"
+                            ? "Prăjituri"
+                            : "Gustări"}
+                        </Text>
+                      </TouchableOpacity>
+                    )
+                  )}
+                </View>
               </View>
 
               <View style={styles.inputContainer}>
@@ -421,7 +634,7 @@ export default function ManageProductsScreen() {
                   (!productName || !priceLei || !image) &&
                     styles.submitButtonDisabled,
                 ]}
-                onPress={handleAddProduct}
+                onPress={isEditing ? handleUpdateProduct : handleAddProduct}
                 disabled={!productName || !priceLei || !image || uploading}
                 activeOpacity={0.8}
               >
@@ -429,6 +642,8 @@ export default function ManageProductsScreen() {
                   colors={
                     !productName || !priceLei || !image
                       ? ["#D7CCC8", "#BCAAA4"]
+                      : isEditing
+                      ? ["#FF9800", "#F57C00"]
                       : ["#4CAF50", "#66BB6A"]
                   }
                   style={styles.submitButtonGradient}
@@ -438,11 +653,13 @@ export default function ManageProductsScreen() {
                   ) : (
                     <>
                       <Ionicons
-                        name="checkmark-circle"
+                        name={isEditing ? "save" : "checkmark-circle"}
                         size={20}
                         color="#FFF"
                       />
-                      <Text style={styles.submitButtonText}>Adaugă Produs</Text>
+                      <Text style={styles.submitButtonText}>
+                        {isEditing ? "Actualizează Produs" : "Adaugă Produs"}
+                      </Text>
                     </>
                   )}
                 </LinearGradient>
@@ -732,5 +949,54 @@ const styles = StyleSheet.create({
   },
   addButtonDisabled: {
     opacity: 0.6,
+  },
+  // Category Selection Styles
+  formGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#3C2415",
+    marginBottom: 12,
+  },
+  categoriesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  categoryChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF",
+    borderWidth: 2,
+    borderColor: "#8B4513",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  categoryChipSelected: {
+    backgroundColor: "#8B4513",
+  },
+  categoryChipText: {
+    fontSize: 14,
+    color: "#8B4513",
+    fontWeight: "600",
+  },
+  categoryChipTextSelected: {
+    color: "#FFFFFF",
+  },
+  // Action buttons styles
+  actionButtons: {
+    flexDirection: "column",
+    gap: 8,
+  },
+  deleteButton: {
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  deleteButtonGradient: {
+    padding: 10,
   },
 });

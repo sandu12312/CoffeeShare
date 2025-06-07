@@ -123,8 +123,9 @@ export default function FullMenu() {
     const matchesSearch = product.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
-    // Category filtering can be added later when Product interface includes category
-    return matchesSearch;
+    const matchesCategory =
+      selectedCategory === "All" || product.category === selectedCategory;
+    return matchesSearch && matchesCategory;
   });
 
   const renderProduct = ({ item, index }: { item: Product; index: number }) => (
@@ -142,8 +143,14 @@ export default function FullMenu() {
         <Text style={styles.productName} numberOfLines={1}>
           {item.name}
         </Text>
-        <Text style={styles.productDescription} numberOfLines={2}>
-          Fresh and delicious coffee item
+        <Text style={styles.productCategory} numberOfLines={1}>
+          {item.category === "Coffee"
+            ? "Cafea"
+            : item.category === "Tea"
+            ? "Ceai"
+            : item.category === "Pastries"
+            ? "Prăjituri"
+            : "Gustări"}
         </Text>
         <View style={styles.priceRow}>
           <Text style={styles.priceText}>{item.beansValue}</Text>
@@ -391,11 +398,17 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 4,
   },
-  productDescription: {
-    fontSize: 14,
-    color: "#666",
+  productCategory: {
+    fontSize: 12,
+    color: "#8B4513",
     marginBottom: 8,
-    lineHeight: 18,
+    fontWeight: "500",
+    backgroundColor: "#FFF8F3",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    overflow: "hidden",
+    alignSelf: "flex-start",
   },
   priceRow: {
     flexDirection: "row",

@@ -54,6 +54,7 @@ export interface Product {
   beansValue: number;
   imageUrl: string;
   cafeId: string;
+  category: "Coffee" | "Tea" | "Pastries" | "Snacks";
   createdAt: Timestamp;
 }
 
@@ -258,6 +259,7 @@ class CoffeePartnerService {
             beansValue: data.beansValue,
             imageUrl: data.imageUrl,
             cafeId: data.cafeId,
+            category: data.category || "Coffee", // Default to Coffee if not set
             createdAt: data.createdAt,
           });
         });
@@ -296,6 +298,7 @@ class CoffeePartnerService {
           beansValue: data.beansValue,
           imageUrl: data.imageUrl,
           cafeId: data.cafeId,
+          category: data.category || "Coffee", // Default to Coffee if not set
           createdAt: data.createdAt,
         });
       });
@@ -345,6 +348,7 @@ class CoffeePartnerService {
     beansValue: number;
     imageUrl: string;
     cafeId: string;
+    category: "Coffee" | "Tea" | "Pastries" | "Snacks";
   }): Promise<string> {
     const user = auth.currentUser;
     if (!user) throw new Error("No authenticated user found");
