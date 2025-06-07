@@ -24,6 +24,8 @@ import {
 } from "expo-camera";
 import { useFirebase } from "../../context/FirebaseContext";
 import { QRService, QRValidationResult } from "../../services/qrService";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../config/firebase";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const SCAN_AREA_SIZE = SCREEN_WIDTH * 0.7;
@@ -138,12 +140,52 @@ const QrScannerScreen = () => {
         return;
       }
 
-      // Get cafe ID from user context (coffee partner should have cafeId)
-      const cafeId = "default_cafe"; // TODO: Implement proper cafe identification system
+      // Get partner and cafe information
+      if (!user?.uid) {
+        setScanError("Partner not authenticated");
+        setProcessing(false);
+        setTimeout(() => {
+          setScanned(false);
+          setScanError(null);
+        }, 2000);
+        return;
+      }
 
-      // Use the original unified validation method which now handles cart totals properly
-      console.log("🔍 Processing QR token with cart total support...");
-      const result = await QRService.validateAndRedeemQRToken(token, cafeId);
+      // Get partner's cafe information
+      let cafeId = "default_cafe";
+      let cafeName = "Partner Cafe";
+
+      try {
+        // Try to get cafe from user's profile or associated cafes
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          // If partner has associated cafe info
+          if (userData.associatedCafeId) {
+            cafeId = userData.associatedCafeId;
+
+            // Get cafe details
+            const cafeDoc = await getDoc(doc(db, "cafes", cafeId));
+            if (cafeDoc.exists()) {
+              cafeName = cafeDoc.data().businessName || cafeName;
+            }
+          }
+        }
+      } catch (cafeError) {
+        console.warn("Could not fetch cafe info, using defaults:", cafeError);
+      }
+
+      console.log("🔍 Processing QR token with partner analytics...");
+
+      // Use the new method with partner analytics
+      const result = await QRService.validateAndRedeemQRTokenWithPartner(
+        token,
+        user.uid,
+        user.email || "",
+        user.displayName || "Partner",
+        cafeId,
+        cafeName
+      );
 
       if (result.success) {
         setLastRedemption(result);

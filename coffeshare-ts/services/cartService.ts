@@ -39,7 +39,7 @@ class CartService {
       const cartDoc = await getDoc(doc(db, this.COLLECTION_NAME, userId));
 
       if (!cartDoc.exists()) {
-        console.log(`Cart not found for user ${userId}`);
+        // Silently return null for non-existent carts (this is normal)
         return null;
       }
 

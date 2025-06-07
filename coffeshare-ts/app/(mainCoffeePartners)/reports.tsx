@@ -15,8 +15,10 @@ import { useFirebase } from "../../context/FirebaseContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import partnerAnalyticsService from "../../services/partnerAnalyticsService";
-import { DocumentData } from "firebase/firestore";
+import partnerAnalyticsService, {
+  ReportsData,
+  PartnerDailyReport,
+} from "../../services/partnerAnalyticsService";
 import * as Animatable from "react-native-animatable";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -33,98 +35,39 @@ export default function ReportsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [partnerId, setPartnerId] = useState<string>(user?.uid || "");
-  const [cafeId, setCafeId] = useState<string>("");
-  const [reportData, setReportData] = useState({
-    totalScans: 0,
-    uniqueCustomers: 0,
-    peakHour: "",
-    averageScansPerDay: 0,
-  });
-  const [analyticsData, setAnalyticsData] = useState<DocumentData[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [reportData, setReportData] = useState<ReportsData | null>(null);
+  const [selectedDateRange, setSelectedDateRange] = useState<number>(7);
 
   useEffect(() => {
     if (user) {
       loadReportData();
     }
-  }, [user]);
+  }, [user, selectedDateRange]);
 
   const loadReportData = async () => {
     try {
       setLoading(true);
 
-      // Get the partner's associated cafe
-      const partnerData = await partnerAnalyticsService.getPartnerDetails(
-        user?.uid || ""
+      if (!user?.uid) {
+        throw new Error("No user found");
+      }
+
+      setPartnerId(user.uid);
+
+      // Initialize partner analytics profile
+      await partnerAnalyticsService.initializePartnerProfile(
+        user.uid,
+        user.email || "",
+        user.displayName || "Partner"
       );
-      if (!partnerData) {
-        throw new Error("Partner data not found");
-      }
 
-      setPartnerId(user?.uid || "");
-      setCafeId(partnerData.associatedCafeId || "");
+      // Get reports data for the selected date range
+      const reportsData = await partnerAnalyticsService.getPartnerReportsData(
+        user.uid,
+        selectedDateRange
+      );
 
-      try {
-        // Get last 7 days of analytics
-        const recentAnalytics =
-          await partnerAnalyticsService.getRecentAnalytics(user?.uid || "", 7);
-        setAnalyticsData(recentAnalytics);
-
-        if (recentAnalytics.length > 0) {
-          // Get the most recent date
-          const sortedDates = recentAnalytics
-            .map((item) => item.date)
-            .sort((a, b) => b.localeCompare(a));
-
-          const mostRecentDate = sortedDates[0];
-          setSelectedDate(mostRecentDate);
-
-          // Calculate totals and averages
-          let totalScans = 0;
-          let totalCustomers = new Set();
-
-          recentAnalytics.forEach((item) => {
-            totalScans += item.coffeesServed || 0;
-
-            // Add unique customers
-            if (Array.isArray(item.uniqueCustomers)) {
-              item.uniqueCustomers.forEach((customerId: string) => {
-                totalCustomers.add(customerId);
-              });
-            }
-          });
-
-          // Get peak hour
-          const peakHour = await partnerAnalyticsService.getPeakHour(
-            user?.uid || "",
-            mostRecentDate
-          );
-
-          // Set report data
-          setReportData({
-            totalScans,
-            uniqueCustomers: totalCustomers.size,
-            peakHour: peakHour || "14:00 - 15:00",
-            averageScansPerDay: Math.round(
-              totalScans / (recentAnalytics.length || 1)
-            ),
-          });
-        }
-      } catch (error: any) {
-        // Check if error is due to index building
-        if (
-          error.message &&
-          error.message.includes("index is currently building")
-        ) {
-          Alert.alert(
-            t("cafe.indexBuildingTitle"),
-            t("cafe.indexBuildingMessage"),
-            [{ text: t("common.ok") }]
-          );
-        } else {
-          throw error; // Re-throw other errors
-        }
-      }
+      setReportData(reportsData);
     } catch (error) {
       console.error("Error loading report data:", error);
       Alert.alert(t("common.error"), "Failed to load report data");
@@ -141,8 +84,15 @@ export default function ReportsScreen() {
 
   // Prepare chart data from the analytics
   const prepareChartData = () => {
+    if (!reportData?.dailyReports) {
+      return {
+        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        datasets: [{ data: [0, 0, 0, 0, 0, 0, 0] }],
+      };
+    }
+
     // Sort data by date
-    const sortedData = [...analyticsData].sort((a, b) => {
+    const sortedData = [...reportData.dailyReports].sort((a, b) => {
       return a.date.localeCompare(b.date);
     });
 
@@ -158,19 +108,13 @@ export default function ReportsScreen() {
       }),
       datasets: [
         {
-          data: last7Days.map((item) => item.coffeesServed || 0),
+          data: last7Days.map((item) => item.scansCount || 0),
         },
       ],
     };
   };
 
-  const chartData =
-    analyticsData.length > 0
-      ? prepareChartData()
-      : {
-          labels: ["Lun", "Mar", "Mie", "Joi", "Vin", "Sam", "Dum"],
-          datasets: [{ data: [0, 0, 0, 0, 0, 0, 0] }],
-        };
+  const chartData = prepareChartData();
 
   const handleExportData = () => {
     // TODO: Implement data export functionality
@@ -220,7 +164,7 @@ export default function ReportsScreen() {
           >
             <Ionicons name="calendar-outline" size={20} color="#F5E6D3" />
             <Text style={styles.dateRangeText}>
-              {t("cafe.periodLastDays", { days: analyticsData.length })}
+              {`Last ${selectedDateRange} days`}
             </Text>
           </LinearGradient>
         </Animatable.View>
@@ -239,8 +183,10 @@ export default function ReportsScreen() {
               <View style={styles.metricIconContainer}>
                 <Ionicons name="scan-outline" size={28} color="#8B4513" />
               </View>
-              <Text style={styles.metricValue}>{reportData.totalScans}</Text>
-              <Text style={styles.metricLabel}>{t("cafe.totalScans")}</Text>
+              <Text style={styles.metricValue}>
+                {reportData?.totalScans || 0}
+              </Text>
+              <Text style={styles.metricLabel}>{"Total Scans"}</Text>
             </LinearGradient>
           </Animatable.View>
 
@@ -257,11 +203,9 @@ export default function ReportsScreen() {
                 <Ionicons name="people-outline" size={28} color="#2196F3" />
               </View>
               <Text style={[styles.metricValue, styles.blueText]}>
-                {reportData.uniqueCustomers}
+                {reportData?.uniqueCustomers || 0}
               </Text>
-              <Text style={styles.metricLabel}>
-                {t("cafe.uniqueCustomers")}
-              </Text>
+              <Text style={styles.metricLabel}>{"Unique Customers"}</Text>
             </LinearGradient>
           </Animatable.View>
 
@@ -278,9 +222,9 @@ export default function ReportsScreen() {
                 <Ionicons name="time-outline" size={28} color="#FF9800" />
               </View>
               <Text style={[styles.metricValue, styles.orangeText]}>
-                {reportData.peakHour}
+                {reportData?.peakHour || "N/A"}
               </Text>
-              <Text style={styles.metricLabel}>{t("cafe.peakHour")}</Text>
+              <Text style={styles.metricLabel}>{"Peak Hour"}</Text>
             </LinearGradient>
           </Animatable.View>
 
@@ -301,9 +245,9 @@ export default function ReportsScreen() {
                 />
               </View>
               <Text style={[styles.metricValue, styles.greenText]}>
-                {reportData.averageScansPerDay}
+                {(reportData?.totalEarnings || 0).toFixed(2)} RON
               </Text>
-              <Text style={styles.metricLabel}>{t("cafe.avgScansPerDay")}</Text>
+              <Text style={styles.metricLabel}>{"Total Earnings"}</Text>
             </LinearGradient>
           </Animatable.View>
         </View>
@@ -364,8 +308,8 @@ export default function ReportsScreen() {
 
             <View style={styles.chartFooter}>
               <Text style={styles.chartFooterText}>
-                Total: {reportData.totalScans}{" "}
-                {reportData.totalScans === 1 ? "coffee" : "coffees"}
+                Total: {reportData?.totalScans || 0} scans |{" "}
+                {(reportData?.totalEarnings || 0).toFixed(2)} RON earned
               </Text>
             </View>
           </LinearGradient>

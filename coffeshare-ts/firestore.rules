@@ -417,5 +417,58 @@ service cloud.firestore {
       // Only admins can update/delete orders
       allow update, delete: if isAdmin();
     }
+
+    // Partner Reports - daily aggregated analytics
+    match /partnerReports/{reportId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
+      // Coffee partners can read/write/create their own reports
+      allow read, write, create: if isAuth() && isPartner();
+      
+      // Additional check for existing documents - partners can only access their own
+      allow read, write: if isAuth() && isPartner() && 
+        resource.data.partnerId == request.auth.uid;
+      
+      // Admins can read all reports
+      allow read: if isAdmin();
+      
+      // Only admins can delete reports
+      allow delete: if isAdmin();
+    }
+
+    // Transactions - individual scan records for traceability
+    match /transactions/{transactionId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
+      // Coffee partners can read/create transactions
+      allow read, create: if isAuth() && isPartner();
+      
+      // Additional check for existing documents - partners can only read their own
+      allow read: if isAuth() && isPartner() && 
+        resource.data.partnerId == request.auth.uid;
+      
+      // Admins can read all transactions
+      allow read: if isAdmin();
+      
+      // Only admins can update/delete transactions
+      allow update, delete: if isAdmin();
+    }
+
+    // Partner Analytics Profiles - partner aggregate statistics
+    match /partnerAnalyticsProfiles/{partnerId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
+      // Coffee partners can read/write their own profile (using document ID)
+      allow read, write, create: if isAuth() && isPartner() && partnerId == request.auth.uid;
+      
+      // Admins can read all profiles
+      allow read: if isAdmin();
+      
+      // Only admins can delete profiles
+      allow delete: if isAdmin();
+    }
   }
 } 

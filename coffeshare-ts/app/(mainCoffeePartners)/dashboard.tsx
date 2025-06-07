@@ -17,7 +17,7 @@ import ScreenWrapper from "../../components/ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import partnerAnalyticsService, {
-  DailyStats,
+  DashboardStats,
 } from "../../services/partnerAnalyticsService";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
@@ -37,7 +37,9 @@ export default function CoffeePartnerDashboard() {
   const [cafeName, setCafeName] = useState<string>("");
   const [cafeId, setCafeId] = useState<string>("");
   const [partnerId, setPartnerId] = useState<string>(user?.uid || "");
-  const [dailyStats, setDailyStats] = useState<DailyStats | null>(null);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(
+    null
+  );
 
   useEffect(() => {
     loadPartnerData();
@@ -72,18 +74,20 @@ export default function CoffeePartnerDashboard() {
       if (cafeDoc.exists()) {
         const cafeData = cafeDoc.data();
         setCafeName(cafeData.name || "Your Cafe");
-
-        // Use last daily stats if available
-        if (cafeData.lastDailyStats) {
-          setDailyStats(cafeData.lastDailyStats);
-        } else {
-          // Fallback - get latest stats
-          const stats = await partnerAnalyticsService.getLatestDailyStats(
-            associatedCafeId
-          );
-          setDailyStats(stats);
-        }
       }
+
+      // Initialize partner analytics profile
+      await partnerAnalyticsService.initializePartnerProfile(
+        user.uid,
+        user.email || "",
+        user.displayName || "Partner"
+      );
+
+      // Load dashboard stats
+      const stats = await partnerAnalyticsService.getPartnerDashboardStats(
+        user.uid
+      );
+      setDashboardStats(stats);
     } catch (error) {
       console.error("Error loading partner data:", error);
       Alert.alert("Error", "Failed to load dashboard data");
@@ -155,42 +159,31 @@ export default function CoffeePartnerDashboard() {
           </LinearGradient>
         </View>
 
-        {/* Quick Stats Section */}
+        {/* Today's Key Metrics */}
         <View style={styles.statsContainer}>
           <View style={[styles.statCard, styles.statCardElevated]}>
             <Ionicons name="cafe-outline" size={30} color="#8B4513" />
             <Text style={styles.statValue}>
-              {dailyStats?.coffeesServed || 0}
+              {dashboardStats?.todayScans || 0}
             </Text>
-            <Text style={styles.statLabel}>{t("cafe.coffeesServedToday")}</Text>
+            <Text style={styles.statLabel}>{"Today's Scans"}</Text>
           </View>
 
           <View style={[styles.statCard, styles.statCardElevated]}>
             <Ionicons name="cash-outline" size={30} color="#4CAF50" />
             <Text style={[styles.statValue, styles.revenueText]}>
-              ${(dailyStats?.revenue || 0).toFixed(2)}
+              {(dashboardStats?.todayEarnings || 0).toFixed(2)} RON
             </Text>
-            <Text style={styles.statLabel}>{t("cafe.estimatedRevenue")}</Text>
+            <Text style={styles.statLabel}>{"Today's Earnings"}</Text>
           </View>
 
           <View style={[styles.statCard, styles.statCardElevated]}>
             <Ionicons name="person-add-outline" size={30} color="#2196F3" />
             <Text style={[styles.statValue, styles.customersText]}>
-              {dailyStats?.newCustomers || 0}
+              {dashboardStats?.todayUniqueCustomers || 0}
             </Text>
-            <Text style={styles.statLabel}>{t("cafe.newCustomersToday")}</Text>
+            <Text style={styles.statLabel}>{"Unique Customers"}</Text>
           </View>
-        </View>
-
-        {/* Stats Date Info */}
-        <View style={styles.dateInfoContainer}>
-          <Text style={styles.dateInfoText}>
-            {dailyStats?.date
-              ? `${t("cafe.statsForDate")}: ${dailyStats.date}`
-              : `${t("cafe.statsForDate")}: ${today} (${t(
-                  "cafe.realTimeData"
-                )})`}
-          </Text>
         </View>
 
         {/* Quick Actions Section */}

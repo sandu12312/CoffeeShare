@@ -17,6 +17,7 @@ import {
 import { db } from "../config/firebase";
 import { SubscriptionService } from "./subscriptionService";
 import cartService from "./cartService";
+import partnerAnalyticsService from "./partnerAnalyticsService";
 import * as Crypto from "expo-crypto";
 
 export interface QRToken {
@@ -201,11 +202,15 @@ export class QRService {
   }
 
   /**
-   * Validate and redeem a QR token
+   * Validate and redeem a QR token with partner analytics
    */
-  static async validateAndRedeemQRToken(
+  static async validateAndRedeemQRTokenWithPartner(
     token: string,
-    cafeId?: string
+    partnerId: string,
+    partnerEmail: string,
+    partnerName: string,
+    cafeId: string,
+    cafeName: string
   ): Promise<QRValidationResult> {
     try {
       // First, find the token outside of transaction
@@ -367,18 +372,31 @@ export class QRService {
         `🎉 Successfully redeemed ${beansToSubtract} beans for user ${qrToken.userId}`
       );
 
-      // Log successful redemption after transaction completes
+      // Log successful redemption and partner analytics after transaction completes
       try {
         await SubscriptionService.logUserActivity(
           qrToken.userId,
           "COFFEE_REDEMPTION",
           {
-            cafeId: cafeId || "unknown",
+            cafeId: cafeId,
             qrTokenId: tokenDoc.id,
             beansUsed: beansToSubtract,
             tokenType: qrToken.type || "instant",
             timestamp: Timestamp.now(),
           }
+        );
+
+        // Log partner analytics
+        await partnerAnalyticsService.logPartnerScan(
+          partnerId,
+          partnerEmail,
+          partnerName,
+          cafeId,
+          cafeName,
+          qrToken.userId,
+          tokenDoc.id,
+          beansToSubtract,
+          qrToken.type || "instant"
         );
       } catch (logError) {
         console.error("Error logging successful redemption:", logError);
@@ -619,13 +637,111 @@ export class QRService {
   }
 
   /**
-   * Process checkout with cart (DEPRECATED - now handled by validateAndRedeemQRToken)
+   * Validate and redeem a QR token (legacy method for backward compatibility)
+   */
+  static async validateAndRedeemQRToken(
+    token: string,
+    cafeId?: string
+  ): Promise<QRValidationResult> {
+    // This is a simplified version without partner analytics
+    // For full analytics, use validateAndRedeemQRTokenWithPartner
+    try {
+      // Find the token
+      const q = query(
+        collection(db, this.COLLECTION_NAME),
+        where("token", "==", token),
+        where("isActive", "==", true),
+        where("expiresAt", ">", Timestamp.now()),
+        limit(1)
+      );
+
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        return {
+          success: false,
+          message: "QR code is invalid or has expired",
+        };
+      }
+
+      const tokenDoc = snapshot.docs[0];
+      const qrToken = tokenDoc.data() as QRToken;
+
+      if (qrToken.usageCount >= qrToken.maxUsage) {
+        return {
+          success: false,
+          message: "QR code has already been used",
+        };
+      }
+
+      let beansToSubtract = 1;
+      if (qrToken.cartTotalBeans && qrToken.cartTotalBeans > 0) {
+        beansToSubtract = qrToken.cartTotalBeans;
+      }
+
+      const subscription = await SubscriptionService.getUserActiveSubscription(
+        qrToken.userId
+      );
+
+      if (
+        !subscription ||
+        subscription.status !== "active" ||
+        subscription.creditsLeft < beansToSubtract
+      ) {
+        return {
+          success: false,
+          message: "User subscription is not valid or insufficient beans",
+        };
+      }
+
+      // Process redemption
+      const result = await runTransaction(db, async (transaction) => {
+        const tokenRef = doc(db, this.COLLECTION_NAME, tokenDoc.id);
+        const currentTokenDoc = await transaction.get(tokenRef);
+
+        if (!currentTokenDoc.exists() || !currentTokenDoc.data()?.isActive) {
+          throw new Error("Token is no longer valid");
+        }
+
+        transaction.update(tokenRef, {
+          usageCount: qrToken.usageCount + 1,
+          isActive: qrToken.usageCount + 1 >= qrToken.maxUsage ? false : true,
+        });
+
+        const subRef = doc(db, "userSubscriptions", subscription.id!);
+        transaction.update(subRef, {
+          creditsLeft: subscription.creditsLeft - beansToSubtract,
+          lastUpdated: serverTimestamp(),
+        });
+
+        return {
+          success: true,
+          message: "QR code successfully redeemed",
+          userInfo: {
+            userId: qrToken.userId,
+            beansLeft: subscription.creditsLeft - beansToSubtract,
+          },
+        };
+      });
+
+      return result;
+    } catch (error) {
+      console.error("Error validating QR token:", error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : "An error occurred",
+      };
+    }
+  }
+
+  /**
+   * Process checkout with cart (DEPRECATED - now handled by validateAndRedeemQRTokenWithPartner)
    */
   static async processCheckout(
     token: string,
     scanningCafeId: string
   ): Promise<QRValidationResult> {
-    // Redirect to the main validation method
+    // Redirect to the legacy validation method
     return this.validateAndRedeemQRToken(token, scanningCafeId);
   }
 
