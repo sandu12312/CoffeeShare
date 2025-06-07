@@ -34,6 +34,7 @@ export default function QRScreen() {
   const [subscription, setSubscription] = useState<UserSubscription | null>(
     null
   );
+  const [cartTotalBeans, setCartTotalBeans] = useState<number>(0);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [canGenerate, setCanGenerate] = useState<boolean>(false);
   const [generatingNew, setGeneratingNew] = useState<boolean>(false);
@@ -191,6 +192,26 @@ export default function QRScreen() {
     };
   }, [currentToken, timeLeft, calculateTimeLeft]);
 
+  // Load cart total beans
+  useEffect(() => {
+    const loadCartTotal = async () => {
+      if (!user?.uid) return;
+
+      try {
+        const cart = await cartService.getUserCart(user.uid);
+        const totalBeans = cart?.totalBeans || 0;
+        setCartTotalBeans(totalBeans);
+        console.log(
+          `QR Screen: Loaded cart total of ${totalBeans} beans for user ${user.uid}`
+        );
+      } catch (error) {
+        console.error("Error loading cart total:", error);
+      }
+    };
+
+    loadCartTotal();
+  }, [user?.uid]);
+
   // Check permissions and setup monitoring
   useEffect(() => {
     checkCanGenerate();
@@ -278,8 +299,11 @@ export default function QRScreen() {
                 <View style={styles.checkoutRow}>
                   <Ionicons name="wallet" size={20} color="#8B4513" />
                   <Text style={styles.checkoutText}>
-                    {subscription.creditsLeft - checkoutTotalBeans} beans will
-                    remain
+                    {subscription.creditsLeft -
+                      (isCheckoutMode
+                        ? checkoutTotalBeans
+                        : cartTotalBeans)}{" "}
+                    beans will remain
                   </Text>
                 </View>
               )}
@@ -293,6 +317,11 @@ export default function QRScreen() {
                 <Text style={styles.beansText}>
                   {subscription.creditsLeft} beans remaining
                 </Text>
+                {cartTotalBeans > 0 && !isCheckoutMode && (
+                  <Text style={styles.cartBeansText}>
+                    Cart total: {cartTotalBeans} beans
+                  </Text>
+                )}
               </View>
             )
           )}
@@ -436,6 +465,12 @@ const styles = StyleSheet.create({
   beansText: {
     fontSize: 16,
     color: "#666666",
+  },
+  cartBeansText: {
+    fontSize: 14,
+    color: "#8B4513",
+    fontWeight: "600",
+    marginTop: 4,
   },
   timerContainer: {
     marginTop: 10,

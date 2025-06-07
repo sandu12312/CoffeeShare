@@ -30,6 +30,7 @@ import {
   UserSubscription,
 } from "../../services/subscriptionService";
 import { useSubscriptionStatus } from "../../hooks/useSubscriptionStatus";
+import cartService from "../../services/cartService";
 
 const HEADER_HEIGHT = 80;
 
@@ -117,13 +118,22 @@ export default function Dashboard() {
 
   // Get subscription data for display
   const getSubscriptionData = () => {
+    const beansLeft = subscriptionStatus.beansLeft || 0;
+    const beansTotal = subscriptionStatus.beansTotal || 0;
+    const subscriptionName =
+      subscriptionStatus.subscriptionName || t("profile.noSubscriptionPlan");
+
+    console.log(
+      `Dashboard: Subscription data - ${subscriptionName}, ${beansLeft}/${beansTotal} beans, active: ${subscriptionStatus.isActive}`
+    );
+
     return {
-      type: subscriptionStatus.subscriptionName,
+      type: subscriptionName,
       expires: subscriptionStatus.expiresAt
         ? formatDate(subscriptionStatus.expiresAt)
         : t("dashboard.subscriptionExpiresN/A"),
-      beansLeft: subscriptionStatus.beansLeft,
-      beansTotal: subscriptionStatus.beansTotal,
+      beansLeft,
+      beansTotal,
       hasActiveSubscription: subscriptionStatus.isActive,
     };
   };

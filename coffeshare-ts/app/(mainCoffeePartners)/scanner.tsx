@@ -141,7 +141,8 @@ const QrScannerScreen = () => {
       // Get cafe ID from user context (coffee partner should have cafeId)
       const cafeId = "default_cafe"; // TODO: Implement proper cafe identification system
 
-      // Validate and redeem the QR token
+      // Use the original unified validation method which now handles cart totals properly
+      console.log("🔍 Processing QR token with cart total support...");
       const result = await QRService.validateAndRedeemQRToken(token, cafeId);
 
       if (result.success) {

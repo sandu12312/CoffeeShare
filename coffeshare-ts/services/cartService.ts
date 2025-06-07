@@ -39,10 +39,15 @@ class CartService {
       const cartDoc = await getDoc(doc(db, this.COLLECTION_NAME, userId));
 
       if (!cartDoc.exists()) {
+        console.log(`Cart not found for user ${userId}`);
         return null;
       }
 
-      return cartDoc.data() as Cart;
+      const cart = cartDoc.data() as Cart;
+      console.log(
+        `Retrieved cart for user ${userId}: ${cart.totalBeans} beans, ${cart.items.length} items`
+      );
+      return cart;
     } catch (error) {
       console.error("Error fetching user cart:", error);
       return null;
@@ -307,6 +312,71 @@ class CartService {
     } catch (error) {
       console.error("Error checking cart cafe:", error);
       return false;
+    }
+  }
+
+  /**
+   * Get cart total beans value
+   */
+  async getCartTotalBeans(userId: string): Promise<number> {
+    try {
+      const cart = await this.getUserCart(userId);
+      return cart?.totalBeans || 0;
+    } catch (error) {
+      console.error("Error getting cart total beans:", error);
+      return 0;
+    }
+  }
+
+  /**
+   * Process cart redemption (subtract beans and clear cart)
+   */
+  async processCartRedemption(
+    userId: string
+  ): Promise<{ success: boolean; beansUsed: number; message: string }> {
+    try {
+      const cart = await this.getUserCart(userId);
+
+      if (!cart || cart.items.length === 0) {
+        return {
+          success: false,
+          beansUsed: 0,
+          message: "Cart is empty",
+        };
+      }
+
+      const beansUsed = cart.totalBeans;
+
+      // Clear the cart after getting the total
+      await this.clearCart(userId);
+
+      return {
+        success: true,
+        beansUsed,
+        message: `Successfully processed ${beansUsed} beans from cart`,
+      };
+    } catch (error) {
+      console.error("Error processing cart redemption:", error);
+      return {
+        success: false,
+        beansUsed: 0,
+        message: "Failed to process cart redemption",
+      };
+    }
+  }
+
+  /**
+   * Clear cart after successful QR redemption
+   */
+  async clearCartAfterRedemption(userId: string): Promise<void> {
+    try {
+      await this.clearCart(userId);
+      console.log(
+        `✅ Cart cleared for user ${userId} after successful QR redemption`
+      );
+    } catch (error) {
+      console.error("❌ Error clearing cart after redemption:", error);
+      // Don't throw error - this is not critical
     }
   }
 }

@@ -19,6 +19,7 @@ import cartService, { Cart, CartItem } from "../../services/cartService";
 import { QRService } from "../../services/qrService";
 import Toast from "react-native-toast-message";
 import * as Animatable from "react-native-animatable";
+import { useSubscriptionStatus } from "../../hooks/useSubscriptionStatus";
 
 export default function CartScreen() {
   const { t } = useLanguage();
@@ -28,6 +29,9 @@ export default function CartScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [processingCheckout, setProcessingCheckout] = useState(false);
+
+  // Get real-time subscription status
+  const subscriptionStatus = useSubscriptionStatus(user?.uid);
 
   useEffect(() => {
     loadCart();
@@ -43,6 +47,12 @@ export default function CartScreen() {
       setLoading(true);
       const userCart = await cartService.getUserCart(user.uid);
       setCart(userCart);
+      console.log(
+        `Loaded cart for user ${user.uid}:`,
+        userCart
+          ? `${userCart.totalBeans} beans, ${userCart.items.length} items`
+          : "empty cart"
+      );
     } catch (error) {
       console.error("Error loading cart:", error);
       Toast.show({
@@ -117,6 +127,16 @@ export default function CartScreen() {
 
   const handleCheckout = async () => {
     if (!user?.uid || !cart || !cart.cafeId) return;
+
+    // Check if user has enough beans
+    if (subscriptionStatus.beansLeft < cart.totalBeans) {
+      Toast.show({
+        type: "error",
+        text1: "Insufficient Beans",
+        text2: `You need ${cart.totalBeans} beans but only have ${subscriptionStatus.beansLeft}`,
+      });
+      return;
+    }
 
     setProcessingCheckout(true);
 
@@ -281,6 +301,23 @@ export default function CartScreen() {
               <Text style={styles.totalValue}>{cart.totalBeans} beans</Text>
             </View>
           </View>
+
+          {subscriptionStatus.isActive && (
+            <View style={styles.beansRemainingContainer}>
+              <Text style={styles.beansRemainingText}>
+                Available: {subscriptionStatus.beansLeft} beans
+              </Text>
+              <Text style={styles.beansAfterPurchaseText}>
+                After purchase: {subscriptionStatus.beansLeft - cart.totalBeans}{" "}
+                beans
+              </Text>
+              {subscriptionStatus.beansLeft < cart.totalBeans && (
+                <Text style={styles.insufficientBeansText}>
+                  ⚠️ Not enough beans for this order
+                </Text>
+              )}
+            </View>
+          )}
 
           <TouchableOpacity
             style={[
@@ -506,5 +543,26 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  beansRemainingContainer: {
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  beansRemainingText: {
+    fontSize: 14,
+    color: "#8B4513",
+    fontWeight: "500",
+  },
+  beansAfterPurchaseText: {
+    fontSize: 14,
+    color: "#666666",
+    fontWeight: "500",
+    marginTop: 2,
+  },
+  insufficientBeansText: {
+    fontSize: 14,
+    color: "#FF6B6B",
+    fontWeight: "600",
+    marginTop: 4,
   },
 });

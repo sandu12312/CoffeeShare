@@ -30,6 +30,7 @@ export interface QRToken {
   maxUsage: number;
   cafeId?: string; // Add cafe-specific token
   type?: "instant" | "checkout"; // Type of QR code
+  cartTotalBeans?: number; // Store cart total in token to avoid permissions issues
 }
 
 export interface QRValidationResult {
@@ -70,6 +71,27 @@ export class QRService {
       // Invalidate any existing active tokens for this user
       await this.invalidateUserTokens(userId);
 
+      // Get cart total to include in token (avoid permissions issues during scanning)
+      let cartTotalBeans = 0;
+      try {
+        const cart = await cartService.getUserCart(userId);
+        cartTotalBeans = cart?.totalBeans || 0;
+        console.log(
+          `🛒 Cart found for QR token generation:`,
+          JSON.stringify({
+            userId,
+            cartExists: !!cart,
+            cartTotalBeans: cart?.totalBeans || 0,
+            willUseBeans: cartTotalBeans,
+          })
+        );
+      } catch (error) {
+        console.log(
+          "❌ Could not fetch cart for QR token, using 0 beans:",
+          error
+        );
+      }
+
       // Generate unique token
       const timestamp = Date.now().toString();
       const random = Math.random().toString(36).substring(2);
@@ -92,6 +114,8 @@ export class QRService {
         isActive: true,
         usageCount: 0,
         maxUsage: this.MAX_USAGE_COUNT,
+        type: "instant",
+        cartTotalBeans,
       };
 
       // Save to Firestore
@@ -213,6 +237,37 @@ export class QRService {
         };
       }
 
+      // Use cart total stored in token (avoids permissions issues)
+      let beansToSubtract = 1; // Default for instant redemption
+
+      console.log(
+        `🔍 QR Token Data:`,
+        JSON.stringify({
+          tokenType: qrToken.type || "instant",
+          cartTotalBeans: qrToken.cartTotalBeans,
+          hasCartTotal: !!(
+            qrToken.cartTotalBeans && qrToken.cartTotalBeans > 0
+          ),
+          userId: qrToken.userId,
+          tokenId: qrToken.id || "unknown",
+        })
+      );
+
+      if (qrToken.cartTotalBeans && qrToken.cartTotalBeans > 0) {
+        beansToSubtract = qrToken.cartTotalBeans;
+        console.log(
+          `✅ Using stored cart total from QR token: ${beansToSubtract} beans`
+        );
+      } else {
+        console.log(
+          `⚠️ No cart total in token (${qrToken.cartTotalBeans}), using default: ${beansToSubtract} bean`
+        );
+      }
+
+      console.log(
+        `🎯 FINAL DECISION: Will subtract ${beansToSubtract} beans from user's subscription`
+      );
+
       // Verify user still has active subscription
       const subscription = await SubscriptionService.getUserActiveSubscription(
         qrToken.userId
@@ -227,6 +282,14 @@ export class QRService {
           success: false,
           message:
             "User subscription is no longer active or has no beans remaining",
+        };
+      }
+
+      // Check if user has enough beans for the cart total
+      if (subscription.creditsLeft < beansToSubtract) {
+        return {
+          success: false,
+          message: `Insufficient beans. You need ${beansToSubtract} beans but only have ${subscription.creditsLeft}`,
         };
       }
 
@@ -259,20 +322,50 @@ export class QRService {
 
         // Update user credits directly in transaction
         const subRef = doc(db, "userSubscriptions", subscription.id!);
+        const newCreditsLeft = subscription.creditsLeft - beansToSubtract;
+
+        console.log(
+          `💰 BEAN CALCULATION:`,
+          JSON.stringify({
+            before: subscription.creditsLeft,
+            subtract: beansToSubtract,
+            after: newCreditsLeft,
+            calculation: `${subscription.creditsLeft} - ${beansToSubtract} = ${newCreditsLeft}`,
+          })
+        );
+
         transaction.update(subRef, {
-          creditsLeft: subscription.creditsLeft - 1,
+          creditsLeft: newCreditsLeft,
           lastUpdated: serverTimestamp(),
         });
+
+        const finalBeansLeft = subscription.creditsLeft - beansToSubtract;
+
+        console.log(
+          `🎉 QR REDEMPTION SUCCESS:`,
+          JSON.stringify({
+            userId: qrToken.userId,
+            beansUsed: beansToSubtract,
+            finalBeansLeft: finalBeansLeft,
+            success: true,
+          })
+        );
 
         return {
           success: true,
           message: "QR code successfully redeemed",
           userInfo: {
             userId: qrToken.userId,
-            beansLeft: subscription.creditsLeft - 1,
+            beansLeft: finalBeansLeft,
           },
         };
       });
+
+      // Note: Cart clearing will be handled by the user's app, not during scanning
+      // to avoid permissions issues with cross-user data access
+      console.log(
+        `🎉 Successfully redeemed ${beansToSubtract} beans for user ${qrToken.userId}`
+      );
 
       // Log successful redemption after transaction completes
       try {
@@ -282,7 +375,8 @@ export class QRService {
           {
             cafeId: cafeId || "unknown",
             qrTokenId: tokenDoc.id,
-            beansUsed: 1,
+            beansUsed: beansToSubtract,
+            tokenType: qrToken.type || "instant",
             timestamp: Timestamp.now(),
           }
         );
@@ -482,6 +576,7 @@ export class QRService {
         maxUsage: this.MAX_USAGE_COUNT,
         cafeId,
         type: "checkout",
+        cartTotalBeans: cart.totalBeans,
       };
 
       // Save to Firestore
@@ -531,13 +626,10 @@ export class QRService {
     scanningCafeId: string
   ): Promise<QRValidationResult> {
     try {
-      // Find the token
+      // Find the token (simplified query to avoid composite index)
       const q = query(
         collection(db, this.COLLECTION_NAME),
         where("token", "==", token),
-        where("isActive", "==", true),
-        where("type", "==", "checkout"),
-        where("expiresAt", ">", Timestamp.now()),
         limit(1)
       );
 
@@ -546,12 +638,34 @@ export class QRService {
       if (snapshot.empty) {
         return {
           success: false,
-          message: "Invalid or expired checkout QR code",
+          message: "Invalid QR code",
         };
       }
 
       const tokenDoc = snapshot.docs[0];
       const qrToken = tokenDoc.data() as QRToken;
+
+      // Validate token properties individually
+      if (!qrToken.isActive) {
+        return {
+          success: false,
+          message: "QR code is no longer active",
+        };
+      }
+
+      if (qrToken.type !== "checkout") {
+        return {
+          success: false,
+          message: "This is not a checkout QR code",
+        };
+      }
+
+      if (qrToken.expiresAt.toDate() < new Date()) {
+        return {
+          success: false,
+          message: "QR code has expired",
+        };
+      }
 
       // Verify cafe match
       if (qrToken.cafeId !== scanningCafeId) {
@@ -646,6 +760,9 @@ export class QRService {
 
       // Clear the cart after successful transaction
       await cartService.clearCart(qrToken.userId);
+      console.log(
+        `Checkout completed: Used ${cart.totalBeans} beans, cleared cart for user ${qrToken.userId}`
+      );
 
       // Log the activity
       await SubscriptionService.logUserActivity(
@@ -653,8 +770,14 @@ export class QRService {
         "CHECKOUT_COMPLETED",
         {
           cafeId: scanningCafeId,
+          cafeName: cart.cafeName,
           totalBeans: cart.totalBeans,
           itemCount: cart.items.length,
+          items: cart.items.map((item) => ({
+            productName: item.product.name,
+            quantity: item.quantity,
+            beansValue: item.product.beansValue,
+          })),
           timestamp: Timestamp.now(),
         }
       );

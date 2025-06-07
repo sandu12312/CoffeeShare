@@ -284,7 +284,7 @@ export class SubscriptionService {
     });
   }
 
-  // Use credits from user subscription
+  // Use credits from user subscription (beans)
   static async useCredits(
     subscriptionId: string,
     creditsToUse: number
@@ -300,16 +300,20 @@ export class SubscriptionService {
       const currentData = subDoc.data() as UserSubscription;
 
       if (currentData.creditsLeft < creditsToUse) {
-        throw new Error("Insufficient credits");
+        throw new Error(
+          `Insufficient beans. You have ${currentData.creditsLeft} beans but need ${creditsToUse}`
+        );
       }
 
+      const newCreditsLeft = currentData.creditsLeft - creditsToUse;
+
       await updateDoc(subRef, {
-        creditsLeft: currentData.creditsLeft - creditsToUse,
+        creditsLeft: newCreditsLeft,
         lastUpdated: serverTimestamp(),
       });
 
       console.log(
-        `Used ${creditsToUse} credits from subscription ${subscriptionId}`
+        `Used ${creditsToUse} beans from subscription ${subscriptionId}. ${newCreditsLeft} beans remaining.`
       );
     } catch (error) {
       console.error("Error using credits:", error);
@@ -410,10 +414,68 @@ export class SubscriptionService {
         timestamp: serverTimestamp(),
       });
 
-      console.log(`Logged activity for user ${userId}: ${activityType}`);
+      console.log(
+        `Logged activity for user ${userId}: ${activityType}`,
+        activityData
+      );
     } catch (error) {
       console.error("Error logging user activity:", error);
       // Don't throw error for logging failures
+    }
+  }
+
+  // Process bean redemption with cart
+  static async processBeansRedemption(
+    userId: string,
+    beansToUse: number,
+    cafeId: string,
+    cafeName?: string
+  ): Promise<{ success: boolean; newBeansLeft: number; message: string }> {
+    try {
+      const subscription = await this.getUserActiveSubscription(userId);
+
+      if (!subscription) {
+        return {
+          success: false,
+          newBeansLeft: 0,
+          message: "No active subscription found",
+        };
+      }
+
+      if (subscription.creditsLeft < beansToUse) {
+        return {
+          success: false,
+          newBeansLeft: subscription.creditsLeft,
+          message: `Insufficient beans. You have ${subscription.creditsLeft} beans but need ${beansToUse}`,
+        };
+      }
+
+      // Use the credits
+      await this.useCredits(subscription.id!, beansToUse);
+
+      const newBeansLeft = subscription.creditsLeft - beansToUse;
+
+      // Log the activity
+      await this.logUserActivity(userId, "BEANS_REDEMPTION", {
+        cafeId,
+        cafeName,
+        beansUsed: beansToUse,
+        beansLeft: newBeansLeft,
+        timestamp: serverTimestamp(),
+      });
+
+      return {
+        success: true,
+        newBeansLeft,
+        message: `Successfully used ${beansToUse} beans`,
+      };
+    } catch (error) {
+      console.error("Error processing beans redemption:", error);
+      return {
+        success: false,
+        newBeansLeft: 0,
+        message: "Failed to process beans redemption",
+      };
     }
   }
 }

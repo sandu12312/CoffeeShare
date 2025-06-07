@@ -17,6 +17,7 @@ import BottomTabBar from "../../components/BottomTabBar";
 import { useLanguage, TranslationKey } from "../../context/LanguageContext";
 import { useFirebase } from "../../context/FirebaseContext";
 import { ActivityType } from "../../types";
+import { useSubscriptionStatus } from "../../hooks/useSubscriptionStatus";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -32,6 +33,9 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
+
+  // Use the subscription status hook to get real-time data
+  const subscriptionStatus = useSubscriptionStatus(user?.uid);
 
   const fetchActivityLogs = async () => {
     try {
@@ -244,56 +248,51 @@ export default function ProfileScreen() {
                 {t("profile.planLabel")}
               </Text>
               <Text style={styles.subscriptionValue}>
-                {userProfile.subscription?.type ||
+                {subscriptionStatus.subscriptionName ||
                   t("profile.noSubscriptionPlan")}
               </Text>
             </View>
 
-            {userProfile.subscription?.type &&
-              userProfile.subscription?.type !==
-                t("profile.noSubscriptionPlan") && (
-                <>
-                  <View style={styles.subscriptionRow}>
-                    <Text style={styles.subscriptionLabel}>
-                      {t("profile.statusLabel")}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.subscriptionValue,
-                        userProfile.subscription?.isActive
-                          ? styles.activeText
-                          : styles.inactiveText,
-                      ]}
-                    >
-                      {userProfile.subscription?.isActive
-                        ? t("profile.statusActive")
-                        : t("profile.statusInactive")}
-                    </Text>
-                  </View>
+            {subscriptionStatus.isActive && (
+              <>
+                <View style={styles.subscriptionRow}>
+                  <Text style={styles.subscriptionLabel}>
+                    {t("profile.statusLabel")}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.subscriptionValue,
+                      subscriptionStatus.isActive
+                        ? styles.activeText
+                        : styles.inactiveText,
+                    ]}
+                  >
+                    {subscriptionStatus.isActive
+                      ? t("profile.statusActive")
+                      : t("profile.statusInactive")}
+                  </Text>
+                </View>
 
+                <View style={styles.subscriptionRow}>
+                  <Text style={styles.subscriptionLabel}>Beans Remaining</Text>
+                  <Text style={[styles.subscriptionValue, styles.beansValue]}>
+                    {subscriptionStatus.beansLeft || 0} /{" "}
+                    {subscriptionStatus.beansTotal || 0} beans
+                  </Text>
+                </View>
+
+                {subscriptionStatus.expiresAt && (
                   <View style={styles.subscriptionRow}>
                     <Text style={styles.subscriptionLabel}>
-                      {t("profile.dailyLimitLabel")}
+                      {t("profile.expiresLabel")}
                     </Text>
                     <Text style={styles.subscriptionValue}>
-                      {t("profile.coffeesCount", {
-                        count: userProfile.subscription?.dailyLimit || 0,
-                      })}
+                      {formatDate(subscriptionStatus.expiresAt)}
                     </Text>
                   </View>
-
-                  {userProfile.subscription?.expiryDate && (
-                    <View style={styles.subscriptionRow}>
-                      <Text style={styles.subscriptionLabel}>
-                        {t("profile.expiresLabel")}
-                      </Text>
-                      <Text style={styles.subscriptionValue}>
-                        {formatDate(userProfile.subscription.expiryDate)}
-                      </Text>
-                    </View>
-                  )}
-                </>
-              )}
+                )}
+              </>
+            )}
           </View>
         </View>
 
@@ -532,6 +531,10 @@ const styles = StyleSheet.create({
   },
   inactiveText: {
     color: "#E74C3C",
+  },
+  beansValue: {
+    fontWeight: "600",
+    color: "#8B4513",
   },
   activityCard: {
     backgroundColor: "#FFFFFF",

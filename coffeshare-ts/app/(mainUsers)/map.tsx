@@ -455,10 +455,10 @@ export default function MapScreen() {
 
                 <TouchableOpacity
                   style={styles.quickActionButton}
-                  onPress={() => router.push("/(mainUsers)/qr")}
+                  onPress={() => router.push("/(mainUsers)/cart")}
                 >
-                  <Ionicons name="qr-code" size={20} color="#8B4513" />
-                  <Text style={styles.quickActionText}>Pay</Text>
+                  <Ionicons name="cart" size={20} color="#8B4513" />
+                  <Text style={styles.quickActionText}>Cart</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
