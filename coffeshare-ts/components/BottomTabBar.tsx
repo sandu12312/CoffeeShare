@@ -156,30 +156,22 @@ export default function BottomTabBar() {
         </Text>
       </TouchableOpacity>
 
-      {/* QR Code / Cart Button */}
+      {/* Cart Button */}
       <TouchableOpacity
         style={styles.qrButton}
         onPress={() => {
-          if (cartItemCount > 0) {
-            router.push("/(mainUsers)/cart");
-          } else {
-            router.push("/(mainUsers)/qr");
-          }
+          router.push("/(mainUsers)/cart");
         }}
         onLongPress={() => {
           loadQuickProducts();
           setShowQuickOrder(true);
         }}
       >
-        {cartItemCount > 0 ? (
-          <>
-            <Ionicons name="cart" size={28} color="#FFFFFF" />
-            <View style={styles.cartBadge}>
-              <Text style={styles.cartBadgeText}>{cartItemCount}</Text>
-            </View>
-          </>
-        ) : (
-          <Ionicons name="qr-code" size={30} color="#FFFFFF" />
+        <Ionicons name="cart" size={28} color="#FFFFFF" />
+        {cartItemCount > 0 && (
+          <View style={styles.cartBadge}>
+            <Text style={styles.cartBadgeText}>{cartItemCount}</Text>
+          </View>
         )}
       </TouchableOpacity>
 

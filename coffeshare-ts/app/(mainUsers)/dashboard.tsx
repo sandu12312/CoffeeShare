@@ -318,15 +318,15 @@ export default function Dashboard() {
             isLoading={loading}
           />
 
-          {/* QR Code Button - Show only if the user has an active subscription with beans */}
+          {/* Cart/QR Code Button - Show only if the user has an active subscription with beans */}
           {subscriptionData.hasActiveSubscription &&
             subscriptionData.beansLeft > 0 && (
               <TouchableOpacity
                 style={styles.qrCodeButton}
-                onPress={() => router.push("/(mainUsers)/qr")}
+                onPress={() => router.push("/(mainUsers)/cart")}
               >
-                <Ionicons name="qr-code-outline" size={24} color="#FFFFFF" />
-                <Text style={styles.qrCodeButtonText}>{t("scanQRCode")}</Text>
+                <Ionicons name="cart-outline" size={24} color="#FFFFFF" />
+                <Text style={styles.qrCodeButtonText}>View Cart</Text>
               </TouchableOpacity>
             )}
 

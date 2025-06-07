@@ -619,13 +619,22 @@ export class QRService {
   }
 
   /**
-   * Process checkout with cart
+   * Process checkout with cart (DEPRECATED - now handled by validateAndRedeemQRToken)
    */
   static async processCheckout(
     token: string,
     scanningCafeId: string
   ): Promise<QRValidationResult> {
-    try {
+    // Redirect to the main validation method
+    return this.validateAndRedeemQRToken(token, scanningCafeId);
+  }
+
+  /* DEPRECATED METHOD - COMMENTED OUT TO AVOID PERMISSIONS ISSUES
+  static async processCheckoutOLD(
+    token: string,
+    scanningCafeId: string
+  ): Promise<QRValidationResult> {
+      try {
       // Find the token (simplified query to avoid composite index)
       const q = query(
         collection(db, this.COLLECTION_NAME),
@@ -675,21 +684,11 @@ export class QRService {
         };
       }
 
-      // Get user's cart
-      const cart = await cartService.getUserCart(qrToken.userId);
-
-      if (!cart || cart.items.length === 0) {
+      // Use cart total stored in token (avoid permissions issues)
+      if (!qrToken.cartTotalBeans || qrToken.cartTotalBeans <= 0) {
         return {
           success: false,
-          message: "Cart is empty",
-        };
-      }
-
-      // Verify cart is for this cafe
-      if (cart.cafeId !== scanningCafeId) {
-        return {
-          success: false,
-          message: "Cart items are from a different cafe",
+          message: "No cart total found in checkout token",
         };
       }
 
@@ -705,10 +704,10 @@ export class QRService {
         };
       }
 
-      if (subscription.creditsLeft < cart.totalBeans) {
+      if (subscription.creditsLeft < qrToken.cartTotalBeans) {
         return {
           success: false,
-          message: `Insufficient beans. Need ${cart.totalBeans} but only have ${subscription.creditsLeft}`,
+          message: `Insufficient beans. Need ${qrToken.cartTotalBeans} but only have ${subscription.creditsLeft}`,
         };
       }
 
@@ -731,7 +730,7 @@ export class QRService {
         // Update user credits
         const subRef = doc(db, "userSubscriptions", subscription.id!);
         transaction.update(subRef, {
-          creditsLeft: subscription.creditsLeft - cart.totalBeans,
+          creditsLeft: subscription.creditsLeft - qrToken.cartTotalBeans,
           lastUpdated: serverTimestamp(),
         });
 
@@ -740,9 +739,7 @@ export class QRService {
         transaction.set(orderRef, {
           userId: qrToken.userId,
           cafeId: scanningCafeId,
-          cafeName: cart.cafeName,
-          items: cart.items,
-          totalBeans: cart.totalBeans,
+          totalBeans: qrToken.cartTotalBeans,
           status: "completed",
           createdAt: serverTimestamp(),
           qrTokenId: tokenDoc.id,
@@ -753,15 +750,14 @@ export class QRService {
           message: "Checkout successful",
           userInfo: {
             userId: qrToken.userId,
-            beansLeft: subscription.creditsLeft - cart.totalBeans,
+            beansLeft: subscription.creditsLeft - qrToken.cartTotalBeans!,
           },
         };
       });
 
-      // Clear the cart after successful transaction
-      await cartService.clearCart(qrToken.userId);
+      // Note: Cart clearing handled by user's app to avoid permissions issues
       console.log(
-        `Checkout completed: Used ${cart.totalBeans} beans, cleared cart for user ${qrToken.userId}`
+        `Checkout completed: Used ${cart.totalBeans} beans for user ${qrToken.userId}`
       );
 
       // Log the activity
@@ -790,5 +786,5 @@ export class QRService {
         message: error instanceof Error ? error.message : "Checkout failed",
       };
     }
-  }
+  */
 }

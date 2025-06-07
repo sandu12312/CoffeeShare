@@ -230,7 +230,7 @@ service cloud.firestore {
     }
     
     // Subscriptions - user can read/write their own, admin can read/write all
-    // MODIFIED: more permissive to allow user subscription management
+    // MODIFIED: more permissive to allow user subscription management and partner updates
     match /subscriptions/{subscriptionId} {
       // Migration super user gets full access
       allow read, write: if isMigrationSuperUser();
@@ -241,8 +241,12 @@ service cloud.firestore {
       // Create: any authenticated user can create a subscription for themselves
       allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
       
-      // Update: authenticated users can update subscriptions
-      allow update: if isAuth();
+      // Update: partners can update subscriptions (for QR redemption), users can update their own
+      allow update: if isAuth() && (
+        isPartner() ||
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
       
       // Delete: only admins can delete subscriptions
       allow delete: if isAdmin();
@@ -317,8 +321,12 @@ service cloud.firestore {
       // Users can create their own subscriptions
       allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
       
-      // Users can update their own subscriptions (e.g., credits usage), admins can update any
-      allow update: if isAuth();
+      // Partners can update subscriptions (for QR redemption), users can update their own
+      allow update: if isAuth() && (
+        isPartner() ||
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
       
       // Only admins can delete subscriptions
       allow delete: if isAdmin();
@@ -329,18 +337,23 @@ service cloud.firestore {
       // Migration super user gets full access
       allow read, write: if isMigrationSuperUser();
       
-      // Users can read their own tokens, authenticated users can read for validation
+      // Any authenticated user can read QR tokens (needed for scanning)
       allow read: if isAuth();
       
       // Users can only create tokens for themselves
       allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
       
-      // Authenticated users can update tokens (for validation and redemption)
-      allow update: if isAuth();
+      // Coffee partners can update tokens (for redemption), users can update their own
+      allow update: if isAuth() && (
+        isPartner() || 
+        resource.data.userId == request.auth.uid || 
+        isAdmin()
+      );
       
-      // Tokens can be deleted by their owner or admins (cleanup)
+      // Tokens can be deleted by their owner, partners (for cleanup), or admins
       allow delete: if isAuth() && (
         resource.data.userId == request.auth.uid || 
+        isPartner() ||
         isAdmin()
       );
     }
@@ -354,11 +367,14 @@ service cloud.firestore {
       // Made more permissive for queries
       allow read: if isAuth();
       
-      // Authenticated users can create activity logs
+      // Authenticated users can create activity logs (including partners for QR redemptions)
       allow create: if isAuth();
       
-      // Only admins can update activities (no user modifications allowed)
-      allow update: if isAdmin();
+      // Partners can update activities (for QR redemption status), admins can update any
+      allow update: if isAuth() && (
+        isPartner() ||
+        isAdmin()
+      );
       
       // Only admins can delete activities
       allow delete: if isAdmin();
@@ -372,8 +388,11 @@ service cloud.firestore {
       // Users can read/write their own cart
       allow read, write: if isAuth() && request.auth.uid == userId;
       
-      // Admins can read all carts
-      allow read: if isAdmin();
+      // Coffee partners can read/write user carts (needed for QR redemption and cart clearing)
+      allow read, write: if isAuth() && isPartner();
+      
+      // Admins can read/write all carts
+      allow read, write: if isAdmin();
     }
     
     // Orders - completed checkout transactions
