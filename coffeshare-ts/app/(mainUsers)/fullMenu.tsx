@@ -15,6 +15,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useFirebase } from "../../context/FirebaseContext";
+import { useLanguage } from "../../context/LanguageContext";
 import coffeePartnerService, {
   Product,
 } from "../../services/coffeePartnerService";
@@ -25,6 +26,7 @@ import * as Animatable from "react-native-animatable";
 const { width } = Dimensions.get("window");
 
 export default function FullMenu() {
+  const { t } = useLanguage();
   const router = useRouter();
   const { user } = useFirebase();
   const params = useLocalSearchParams();
@@ -87,8 +89,8 @@ export default function FullMenu() {
     if (!user?.uid) {
       Toast.show({
         type: "error",
-        text1: "Error",
-        text2: "Please login to add items to cart",
+        text1: t("fullMenu.loginRequired"),
+        text2: t("fullMenu.pleaseLoginToAdd"),
       });
       return;
     }
@@ -104,27 +106,28 @@ export default function FullMenu() {
     if (result.success) {
       Toast.show({
         type: "success",
-        text1: "Success",
-        text2: `${product.name} added to cart`,
+        text1: t("fullMenu.success"),
+        text2: t("fullMenu.addedToCart", { productName: product.name }),
       });
       loadCartCount();
     } else {
       Toast.show({
         type: "error",
-        text1: "Error",
+        text1: t("common.error"),
         text2: result.message,
       });
     }
   };
 
-  const categories = ["All", ...cafeCategories];
+  const categories = [t("fullMenu.allCategories"), ...cafeCategories];
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesCategory =
-      selectedCategory === "All" || product.category === selectedCategory;
+      selectedCategory === t("fullMenu.allCategories") ||
+      product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -145,12 +148,12 @@ export default function FullMenu() {
         </Text>
         <Text style={styles.productCategory} numberOfLines={1}>
           {item.category === "Coffee"
-            ? "Cafea"
+            ? t("fullMenu.coffee")
             : item.category === "Tea"
-            ? "Ceai"
+            ? t("fullMenu.tea")
             : item.category === "Pastries"
-            ? "Prăjituri"
-            : "Gustări"}
+            ? t("fullMenu.pastries")
+            : t("fullMenu.snacks")}
         </Text>
         <View style={styles.priceRow}>
           <Text style={styles.priceText}>{item.beansValue}</Text>
@@ -193,7 +196,7 @@ export default function FullMenu() {
           />
           <TextInput
             style={styles.searchInput}
-            placeholder={`Search in ${cafeName}`}
+            placeholder={t("fullMenu.searchIn", { cafeName })}
             placeholderTextColor="#999"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -245,7 +248,7 @@ export default function FullMenu() {
       {/* Products List */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading menu...</Text>
+          <Text style={styles.loadingText}>{t("common.loading")}</Text>
         </View>
       ) : (
         <FlatList
@@ -257,9 +260,9 @@ export default function FullMenu() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="cafe" size={64} color="#DDD" />
-              <Text style={styles.emptyTitle}>No items available</Text>
+              <Text style={styles.emptyTitle}>{t("fullMenu.emptyMenu")}</Text>
               <Text style={styles.emptySubtitle}>
-                Check back later for updates!
+                {t("fullMenu.noProducts")}
               </Text>
             </View>
           }

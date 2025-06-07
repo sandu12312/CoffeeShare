@@ -114,7 +114,7 @@ export default function SubscriptionsScreen() {
   // Subscribe to a plan
   const subscribeToPlan = async () => {
     if (!currentUser) {
-      showError("You must be logged in to subscribe to a plan");
+      showError(t("subscriptions.loginRequired"));
       return;
     }
 
@@ -138,15 +138,17 @@ export default function SubscriptionsScreen() {
       // Show success message
       Toast.show({
         type: "success",
-        text1: "Subscription Activated!",
-        text2: `🎉 You've received ${selectedPlan.credits} Beans! Enjoy your coffee!`,
+        text1: t("subscriptions.subscriptionActivated"),
+        text2: t("subscriptions.receivedBeans", {
+          credits: selectedPlan.credits,
+        }),
       });
     } catch (error) {
       console.error("Error creating subscription:", error);
       Toast.show({
         type: "error",
-        text1: "Error",
-        text2: "Failed to activate subscription. Please try again.",
+        text1: t("common.error"),
+        text2: t("subscriptions.failedToActivate"),
       });
     } finally {
       setLoading(false);
@@ -159,7 +161,7 @@ export default function SubscriptionsScreen() {
         <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#8B4513" />
-          <Text style={styles.loadingText}>Loading subscription plans...</Text>
+          <Text style={styles.loadingText}>{t("common.loading")}</Text>
         </View>
         <BottomTabBar />
       </SafeAreaView>
@@ -172,7 +174,9 @@ export default function SubscriptionsScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Choose Your Bean Pack ☕</Text>
+        <Text style={styles.headerTitle}>
+          {t("subscriptions.chooseBeanPack")}
+        </Text>
         <TouchableOpacity
           style={styles.infoButton}
           onPress={() => setHowItWorksVisible(true)}
@@ -187,7 +191,7 @@ export default function SubscriptionsScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.pageSubtitle}>
-          Subscribe monthly and pay with Beans at your favorite cafés.
+          {t("subscriptions.beansCurrency")}
         </Text>
 
         {/* Subscription Type Toggle */}
@@ -199,7 +203,7 @@ export default function SubscriptionsScreen() {
             <Text
               style={[styles.toggleText, isMonthly && styles.toggleActiveText]}
             >
-              Monthly Subscription
+              {t("subscriptions.monthlySubscription")}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -209,7 +213,7 @@ export default function SubscriptionsScreen() {
             <Text
               style={[styles.toggleText, !isMonthly && styles.toggleActiveText]}
             >
-              One-Time Purchase
+              {t("subscriptions.oneTimePurchase")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -218,10 +222,12 @@ export default function SubscriptionsScreen() {
         {currentSubscription && (
           <View style={styles.usageTrackerContainer}>
             <Text style={styles.usageTitle}>
-              You've used{" "}
-              {currentSubscription.creditsTotal -
-                currentSubscription.creditsLeft}{" "}
-              of your {currentSubscription.creditsTotal} Beans this month
+              {t("subscriptions.usedBeansThisMonth", {
+                used:
+                  currentSubscription.creditsTotal -
+                  currentSubscription.creditsLeft,
+                total: currentSubscription.creditsTotal,
+              })}
             </Text>
             <View style={styles.progressBarBackground}>
               <View
@@ -239,7 +245,9 @@ export default function SubscriptionsScreen() {
               />
             </View>
             <Text style={styles.remainingText}>
-              {currentSubscription.creditsLeft} beans remaining
+              {t("subscriptions.beansLeft", {
+                beans: currentSubscription.creditsLeft,
+              })}
             </Text>
           </View>
         )}
@@ -267,7 +275,7 @@ export default function SubscriptionsScreen() {
           <View style={styles.noPlansContainer}>
             <Ionicons name="cafe-outline" size={64} color="#CCC" />
             <Text style={styles.noPlansText}>
-              No subscription plans available at the moment.
+              {t("subscriptions.noPlansAvailable")}
             </Text>
           </View>
         )}
@@ -283,7 +291,9 @@ export default function SubscriptionsScreen() {
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <Text style={styles.subscribeButtonText}>
-                {currentSubscription ? "Change Plan" : "Start Sipping"}
+                {currentSubscription
+                  ? t("subscriptions.changePlan")
+                  : t("subscriptions.startSipping")}
               </Text>
             )}
           </TouchableOpacity>
@@ -292,8 +302,10 @@ export default function SubscriptionsScreen() {
         {/* Current Plan Note */}
         {currentSubscription && (
           <Text style={styles.currentPlanNote}>
-            You're currently on the {currentSubscription.subscriptionName} plan
-            with {currentSubscription.creditsLeft} beans remaining
+            {t("subscriptions.currentlyOnPlan", {
+              planName: currentSubscription.subscriptionName,
+              beansLeft: currentSubscription.creditsLeft,
+            })}
           </Text>
         )}
       </ScrollView>
@@ -308,7 +320,9 @@ export default function SubscriptionsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>How Beans Work</Text>
+              <Text style={styles.modalTitle}>
+                {t("subscriptions.howBeansWork")}
+              </Text>
               <TouchableOpacity
                 onPress={() => setHowItWorksVisible(false)}
                 style={styles.modalCloseButton}
@@ -319,44 +333,57 @@ export default function SubscriptionsScreen() {
 
             <ScrollView style={styles.modalScrollContent}>
               <Text style={styles.modalSubtitle}>
-                Beans are your coffee currency! Here's how they work:
+                {t("subscriptions.beansWorkTitle")}
               </Text>
 
               <View style={styles.beanExchange}>
                 <View style={styles.beanExchangeItem}>
                   <Ionicons name="cafe-outline" size={32} color="#8B4513" />
-                  <Text style={styles.beanExchangeTitle}>Espresso</Text>
-                  <Text style={styles.beanExchangeValue}>1 Bean</Text>
+                  <Text style={styles.beanExchangeTitle}>
+                    {t("subscriptions.espresso")}
+                  </Text>
+                  <Text style={styles.beanExchangeValue}>
+                    {t("subscriptions.oneBean")}
+                  </Text>
                 </View>
 
                 <View style={styles.beanExchangeItem}>
                   <Ionicons name="cafe" size={32} color="#8B4513" />
-                  <Text style={styles.beanExchangeTitle}>Cappuccino</Text>
-                  <Text style={styles.beanExchangeValue}>2 Beans</Text>
+                  <Text style={styles.beanExchangeTitle}>
+                    {t("subscriptions.cappuccino")}
+                  </Text>
+                  <Text style={styles.beanExchangeValue}>
+                    {t("subscriptions.twoBeans")}
+                  </Text>
                 </View>
 
                 <View style={styles.beanExchangeItem}>
                   <Ionicons name="wine" size={32} color="#8B4513" />
-                  <Text style={styles.beanExchangeTitle}>Latte</Text>
-                  <Text style={styles.beanExchangeValue}>2 Beans</Text>
+                  <Text style={styles.beanExchangeTitle}>
+                    {t("subscriptions.latte")}
+                  </Text>
+                  <Text style={styles.beanExchangeValue}>
+                    {t("subscriptions.twoBeans")}
+                  </Text>
                 </View>
 
                 <View style={styles.beanExchangeItem}>
                   <Ionicons name="ice-cream" size={32} color="#8B4513" />
-                  <Text style={styles.beanExchangeTitle}>Frappé</Text>
-                  <Text style={styles.beanExchangeValue}>3 Beans</Text>
+                  <Text style={styles.beanExchangeTitle}>
+                    {t("subscriptions.frappe")}
+                  </Text>
+                  <Text style={styles.beanExchangeValue}>
+                    {t("subscriptions.threeBeans")}
+                  </Text>
                 </View>
               </View>
 
               <Text style={styles.modalText}>
-                Subscribe to a monthly bean pack and use your beans at any
-                partner café. Beans refresh with each new billing cycle. Unused
-                beans don't roll over.
+                {t("subscriptions.modalDescription1")}
               </Text>
 
               <Text style={styles.modalText}>
-                Just show your QR code at checkout and your beans will be
-                automatically deducted.
+                {t("subscriptions.modalDescription2")}
               </Text>
             </ScrollView>
 
@@ -364,7 +391,9 @@ export default function SubscriptionsScreen() {
               style={styles.modalButton}
               onPress={() => setHowItWorksVisible(false)}
             >
-              <Text style={styles.modalButtonText}>Got It!</Text>
+              <Text style={styles.modalButtonText}>
+                {t("subscriptions.gotIt")}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

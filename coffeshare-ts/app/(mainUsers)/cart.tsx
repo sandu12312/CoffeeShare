@@ -60,8 +60,8 @@ export default function CartScreen() {
       console.error("Error loading cart:", error);
       Toast.show({
         type: "error",
-        text1: "Error",
-        text2: "Failed to load cart",
+        text1: t("common.error"),
+        text2: t("cart.failedToLoadCart"),
       });
     } finally {
       setLoading(false);
@@ -123,7 +123,7 @@ export default function CartScreen() {
 
         Toast.show({
           type: "error",
-          text1: "Error",
+          text1: t("common.error"),
           text2: result.message,
         });
       }
@@ -136,8 +136,8 @@ export default function CartScreen() {
 
       Toast.show({
         type: "error",
-        text1: "Error",
-        text2: "Failed to update quantity",
+        text1: t("common.error"),
+        text2: t("cart.failedToUpdateQuantity"),
       });
     } finally {
       // Remove from updating set
@@ -153,8 +153,8 @@ export default function CartScreen() {
     if (!user?.uid || !cart) return;
 
     showConfirmModal(
-      "Remove Item",
-      "Are you sure you want to remove this item from your cart?",
+      t("cart.removeItem"),
+      t("cart.removeItemConfirm"),
       async () => {
         // Find the item to remove for optimistic update
         const itemToRemove = cart.items.find(
@@ -183,15 +183,15 @@ export default function CartScreen() {
           if (result.success) {
             Toast.show({
               type: "success",
-              text1: "Removed!",
-              text2: "Item removed from cart",
+              text1: t("cart.removed"),
+              text2: t("cart.itemRemovedFromCart"),
             });
           } else {
             // Revert optimistic update on failure
             setCart(cart);
             Toast.show({
               type: "error",
-              text1: "Error",
+              text1: t("common.error"),
               text2: result.message,
             });
           }
@@ -200,8 +200,8 @@ export default function CartScreen() {
           setCart(cart);
           Toast.show({
             type: "error",
-            text1: "Error",
-            text2: "Failed to remove item",
+            text1: t("common.error"),
+            text2: t("cart.failedToRemoveItem"),
           });
         }
       }
@@ -215,8 +215,11 @@ export default function CartScreen() {
     if (subscriptionStatus.beansLeft < cart.totalBeans) {
       Toast.show({
         type: "error",
-        text1: "Insufficient Beans",
-        text2: `You need ${cart.totalBeans} beans but only have ${subscriptionStatus.beansLeft}`,
+        text1: t("cart.insufficientBeans"),
+        text2: t("cart.needMoreBeans", {
+          needed: cart.totalBeans,
+          available: subscriptionStatus.beansLeft,
+        }),
       });
       return;
     }
@@ -244,16 +247,16 @@ export default function CartScreen() {
       } else {
         Toast.show({
           type: "error",
-          text1: "Error",
-          text2: "Failed to generate checkout QR code",
+          text1: t("common.error"),
+          text2: t("cart.failedToGenerateQR"),
         });
       }
     } catch (error) {
       console.error("Error during checkout:", error);
       Toast.show({
         type: "error",
-        text1: "Error",
-        text2: "Checkout failed. Please try again.",
+        text1: t("cart.checkoutFailed"),
+        text2: t("cart.checkoutFailedMessage"),
       });
     } finally {
       setProcessingCheckout(false);
@@ -280,9 +283,14 @@ export default function CartScreen() {
       <View style={styles.productInfo}>
         <Text style={styles.productName}>{item.product.name}</Text>
         <View style={styles.priceInfo}>
-          <Ionicons name="ellipse" size={16} color="#8B4513" />
+          <Ionicons
+            name="ellipse"
+            size={10}
+            color="#8B4513"
+            style={styles.beansIcon}
+          />
           <Text style={styles.productPrice}>
-            {item.product.beansValue} beans
+            {item.product.beansValue} {t("cart.beans")}
           </Text>
         </View>
       </View>
@@ -301,7 +309,7 @@ export default function CartScreen() {
           {updatingItems.has(item.product.id) ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <Ionicons name="remove" size={18} color="#FFFFFF" />
+            <Ionicons name="remove" size={16} color="#FFFFFF" />
           )}
         </TouchableOpacity>
 
@@ -320,7 +328,7 @@ export default function CartScreen() {
           {updatingItems.has(item.product.id) ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <Ionicons name="add" size={18} color="#FFFFFF" />
+            <Ionicons name="add" size={16} color="#FFFFFF" />
           )}
         </TouchableOpacity>
       </View>
@@ -339,7 +347,7 @@ export default function CartScreen() {
       <ScreenWrapper>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#8B4513" />
-          <Text style={styles.loadingText}>Loading cart...</Text>
+          <Text style={styles.loadingText}>{t("cart.loading")}</Text>
         </View>
         <BottomTabBar />
       </ScreenWrapper>
@@ -351,15 +359,13 @@ export default function CartScreen() {
       <ScreenWrapper>
         <View style={styles.centerContainer}>
           <Ionicons name="cart-outline" size={80} color="#D7CCC8" />
-          <Text style={styles.emptyTitle}>Your cart is empty</Text>
-          <Text style={styles.emptySubtitle}>
-            Add some delicious items from a cafe!
-          </Text>
+          <Text style={styles.emptyTitle}>{t("cart.emptyCart")}</Text>
+          <Text style={styles.emptySubtitle}>{t("cart.emptyCartMessage")}</Text>
           <TouchableOpacity
             style={styles.browseButton}
             onPress={() => router.push("/(mainUsers)/map")}
           >
-            <Text style={styles.browseButtonText}>Browse Cafes</Text>
+            <Text style={styles.browseButtonText}>{t("findCafes")}</Text>
           </TouchableOpacity>
         </View>
         <BottomTabBar />
@@ -377,7 +383,7 @@ export default function CartScreen() {
           >
             <Ionicons name="arrow-back" size={24} color="#3C2415" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>My Cart</Text>
+          <Text style={styles.headerTitle}>{t("cart.title")}</Text>
           <View style={styles.headerRight}>
             <Text style={styles.cafeName}>{cart.cafeName}</Text>
           </View>
@@ -394,25 +400,34 @@ export default function CartScreen() {
 
         <View style={styles.bottomContainer}>
           <View style={styles.totalContainer}>
-            <Text style={styles.totalLabel}>Total:</Text>
+            <Text style={styles.totalLabel}>{t("cart.total")}:</Text>
             <View style={styles.totalValueContainer}>
-              <Ionicons name="ellipse" size={20} color="#8B4513" />
-              <Text style={styles.totalValue}>{cart.totalBeans} beans</Text>
+              <Ionicons
+                name="ellipse"
+                size={16}
+                color="#8B4513"
+                style={styles.totalBeansIcon}
+              />
+              <Text style={styles.totalValue}>
+                {cart.totalBeans} {t("cart.beans")}
+              </Text>
             </View>
           </View>
 
           {subscriptionStatus.isActive && (
             <View style={styles.beansRemainingContainer}>
               <Text style={styles.beansRemainingText}>
-                Available: {subscriptionStatus.beansLeft} beans
+                {t("cart.available")}: {subscriptionStatus.beansLeft}{" "}
+                {t("cart.beans")}
               </Text>
               <Text style={styles.beansAfterPurchaseText}>
-                After purchase: {subscriptionStatus.beansLeft - cart.totalBeans}{" "}
-                beans
+                {t("cart.afterPurchase")}:{" "}
+                {subscriptionStatus.beansLeft - cart.totalBeans}{" "}
+                {t("cart.beans")}
               </Text>
               {subscriptionStatus.beansLeft < cart.totalBeans && (
                 <Text style={styles.insufficientBeansText}>
-                  ⚠️ Not enough beans for this order
+                  ⚠️ {t("cart.insufficientBeans")}
                 </Text>
               )}
             </View>
@@ -432,7 +447,7 @@ export default function CartScreen() {
               <>
                 <Ionicons name="qr-code" size={24} color="#FFFFFF" />
                 <Text style={styles.checkoutButtonText}>
-                  Proceed to Checkout
+                  {t("cart.checkout")}
                 </Text>
               </>
             )}
@@ -522,75 +537,82 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   listContent: {
-    padding: 15,
+    padding: 12,
     paddingBottom: 180,
   },
   cartItem: {
     flexDirection: "row",
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
     alignItems: "center",
     shadowColor: "#8B4513",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
     borderWidth: 1,
     borderColor: "#F5E6D3",
   },
   productImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
-    marginRight: 15,
-    borderWidth: 2,
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    marginRight: 12,
+    borderWidth: 1,
     borderColor: "#F5E6D3",
   },
   productInfo: {
     flex: 1,
+    justifyContent: "center",
+    paddingRight: 8,
   },
   productName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: "#3C2415",
     marginBottom: 4,
+    lineHeight: 16,
   },
   priceInfo: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFF8F3",
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#E0D6C7",
-    marginTop: 4,
+    alignSelf: "flex-start",
+  },
+  beansIcon: {
+    alignSelf: "center",
   },
   productPrice: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#8B4513",
-    marginLeft: 6,
+    marginLeft: 4,
     fontWeight: "600",
+    lineHeight: 12,
   },
   quantityContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 10,
+    marginRight: 8,
   },
   quantityButton: {
-    width: 35,
-    height: 35,
-    borderRadius: 18,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: "#8B4513",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   quantityButtonDisabled: {
     opacity: 0.6,
@@ -599,10 +621,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#3C2415",
-    marginHorizontal: 15,
+    marginHorizontal: 10,
+    textAlign: "center",
+    minWidth: 20,
   },
   removeButton: {
-    padding: 8,
+    padding: 6,
   },
   bottomContainer: {
     position: "absolute",
@@ -633,6 +657,9 @@ const styles = StyleSheet.create({
   totalValueContainer: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  totalBeansIcon: {
+    marginTop: 1,
   },
   totalValue: {
     fontSize: 20,

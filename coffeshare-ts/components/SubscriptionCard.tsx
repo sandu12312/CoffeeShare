@@ -59,7 +59,7 @@ export default function SubscriptionCard({
     return (
       <View style={styles.card}>
         <ActivityIndicator size="large" color="#FFFFFF" />
-        <Text style={styles.loadingText}>{t("map.loading")}</Text>
+        <Text style={styles.loadingText}>{t("common.loading")}</Text>
       </View>
     );
   }
@@ -72,14 +72,18 @@ export default function SubscriptionCard({
         <Ionicons name="cafe" size={24} color="#FFFFFF" />
         <Text style={styles.cardTitle}>{type}</Text>
       </View>
-      <Text style={styles.expiresText}>Expires: {expires}</Text>
+      <Text style={styles.expiresText}>
+        {t("subscriptions.expires")}: {expires}
+      </Text>
 
       <View style={styles.coffeeInfoContainer}>
         <View style={styles.coffeeCounter}>
           <Text style={styles.coffeeCount}>{beansLeft}</Text>
           <Text style={styles.coffeeTotal}> / {beansTotal}</Text>
         </View>
-        <Text style={styles.coffeeText}>Beans Remaining</Text>
+        <Text style={styles.coffeeText}>
+          {t("subscriptions.beansRemaining")}
+        </Text>
       </View>
 
       {!noSubscription && renderBeanIcons()}
@@ -89,7 +93,9 @@ export default function SubscriptionCard({
           <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
         </View>
         {progress <= 25 && (
-          <Text style={styles.lowBeansWarning}>Low on beans!</Text>
+          <Text style={styles.lowBeansWarning}>
+            {t("subscriptions.lowOnBeans")}
+          </Text>
         )}
       </View>
 
@@ -101,7 +107,9 @@ export default function SubscriptionCard({
         onPress={onRenew}
       >
         <Text style={styles.renewButtonText}>
-          {noSubscription ? t("dashboard.viewAll") : t("renewSubscription")}
+          {noSubscription
+            ? t("subscriptions.getSubscription")
+            : t("subscriptions.renewSubscription")}
         </Text>
         <Ionicons
           name={

@@ -247,7 +247,144 @@ export type TranslationKey =
   | "cafe.exportData"
   | "cafe.exportComingSoon"
   | "cafe.indexBuildingTitle"
-  | "cafe.indexBuildingMessage";
+  | "cafe.indexBuildingMessage"
+  // Cart Screen
+  | "cart.title"
+  | "cart.loading"
+  | "cart.emptyCart"
+  | "cart.emptyCartMessage"
+  | "cart.removeItem"
+  | "cart.removeItemConfirm"
+  | "cart.removed"
+  | "cart.itemRemovedFromCart"
+  | "cart.insufficientBeans"
+  | "cart.needMoreBeans"
+  | "cart.checkout"
+  | "cart.total"
+  | "cart.beans"
+  | "cart.available"
+  | "cart.afterPurchase"
+  | "cart.checkoutFailed"
+  | "cart.checkoutFailedMessage"
+  | "cart.failedToLoadCart"
+  | "cart.failedToUpdateQuantity"
+  | "cart.failedToRemoveItem"
+  | "cart.failedToGenerateQR"
+  // Cafe Details Screen
+  | "cafeDetails.title"
+  | "cafeDetails.loading"
+  | "cafeDetails.error"
+  | "cafeDetails.noCafeId"
+  | "cafeDetails.cafeNotFound"
+  | "cafeDetails.failedToLoad"
+  | "cafeDetails.unnamedCafe"
+  | "cafeDetails.noAddress"
+  | "cafeDetails.noDescription"
+  | "cafeDetails.openNow"
+  | "cafeDetails.closed"
+  | "cafeDetails.openingHours"
+  | "cafeDetails.monday"
+  | "cafeDetails.tuesday"
+  | "cafeDetails.wednesday"
+  | "cafeDetails.thursday"
+  | "cafeDetails.friday"
+  | "cafeDetails.saturday"
+  | "cafeDetails.sunday"
+  | "cafeDetails.menu"
+  | "cafeDetails.contact"
+  | "cafeDetails.directions"
+  | "cafeDetails.website"
+  | "cafeDetails.phone"
+  | "cafeDetails.noMenu"
+  | "cafeDetails.noContact"
+  // Full Menu Screen
+  | "fullMenu.searchIn"
+  | "fullMenu.cart"
+  | "fullMenu.emptyMenu"
+  | "fullMenu.noProducts"
+  | "fullMenu.allCategories"
+  | "fullMenu.coffee"
+  | "fullMenu.tea"
+  | "fullMenu.pastries"
+  | "fullMenu.snacks"
+  | "fullMenu.hotDrinks"
+  | "fullMenu.success"
+  | "fullMenu.addedToCart"
+  | "fullMenu.loginRequired"
+  | "fullMenu.pleaseLoginToAdd"
+  // QR Screen
+  | "qr.title"
+  | "qr.loading"
+  | "qr.generating"
+  | "qr.error"
+  | "qr.noSubscription"
+  | "qr.subscriptionExpired"
+  | "qr.insufficientCredits"
+  | "qr.checkoutMode"
+  | "qr.orderTotal"
+  | "qr.orderComplete"
+  | "qr.orderProcessed"
+  | "qr.refreshIn"
+  | "qr.seconds"
+  | "qr.expired"
+  | "qr.generateNew"
+  | "qr.scanAtCafe"
+  | "qr.validFor"
+  | "qr.autoRefresh"
+  // Subscriptions Errors/Messages
+  | "subscriptions.subscriptionActivated"
+  | "subscriptions.receivedBeans"
+  | "subscriptions.enjoyYourCoffee"
+  | "subscriptions.subscriptionError"
+  | "subscriptions.failedToActivate"
+  | "subscriptions.loginRequired"
+  | "subscriptions.chooseBeanPack"
+  | "subscriptions.monthlySubscription"
+  | "subscriptions.oneTimePurchase"
+  | "subscriptions.changePlan"
+  | "subscriptions.startSipping"
+  | "subscriptions.howBeansWork"
+  | "subscriptions.beansCurrency"
+  | "subscriptions.gotIt"
+  // Map Screen Additional
+  | "map.added"
+  | "map.failedToAddItem"
+  | "map.noImageAvailable"
+  // Common Additional Keys
+  | "common.loading"
+  | "common.tryAgain"
+  | "common.confirm"
+  | "common.remove"
+  | "common.add"
+  | "common.update"
+  | "common.save"
+  | "common.close"
+  | "common.back"
+  // Subscription Components Additional Keys
+  | "subscriptions.popular"
+  | "subscriptions.beans"
+  | "subscriptions.perMonth"
+  | "subscriptions.beansRemaining"
+  | "subscriptions.lowOnBeans"
+  | "subscriptions.expires"
+  | "subscriptions.renewSubscription"
+  | "subscriptions.getSubscription"
+  | "subscriptions.usedBeansThisMonth"
+  | "subscriptions.beansRemaining"
+  | "subscriptions.noPlansAvailable"
+  | "subscriptions.currentlyOnPlan"
+  | "subscriptions.beansLeft"
+  | "subscriptions.beansWorkTitle"
+  | "subscriptions.beansWorkDescription"
+  | "subscriptions.espresso"
+  | "subscriptions.cappuccino"
+  | "subscriptions.latte"
+  | "subscriptions.frappe"
+  | "subscriptions.oneBean"
+  | "subscriptions.twoBeans"
+  | "subscriptions.threeBeans"
+  | "subscriptions.modalDescription1"
+  | "subscriptions.modalDescription2";
 
 // Exportă și interfața contextului dacă e necesar în altă parte
 export interface LanguageContextType {
@@ -563,6 +700,166 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     "cafe.indexBuildingTitle": "Optimizare în Curs",
     "cafe.indexBuildingMessage":
       "Baza de date este în curs de optimizare. Te rugăm să încerci din nou în câteva minute.",
+
+    // Cart Screen
+    "cart.title": "Coșul Meu",
+    "cart.loading": "Se încarcă coșul...",
+    "cart.emptyCart": "Coș Gol",
+    "cart.emptyCartMessage":
+      "Coșul tău este gol. Adaugă produse din cafenelele tale preferate!",
+    "cart.removeItem": "Șterge Articol",
+    "cart.removeItemConfirm":
+      "Ești sigur că vrei să ștergi acest articol din coș?",
+    "cart.removed": "Șters!",
+    "cart.itemRemovedFromCart": "Articol șters din coș",
+    "cart.insufficientBeans": "Boabe Insuficiente",
+    "cart.needMoreBeans": "Ai nevoie de {needed} boabe dar ai doar {available}",
+    "cart.checkout": "Finalizează Comanda",
+    "cart.total": "Total",
+    "cart.beans": "boabe",
+    "cart.available": "Disponibil",
+    "cart.afterPurchase": "După cumpărare",
+    "cart.checkoutFailed": "Finalizarea a eșuat",
+    "cart.checkoutFailedMessage":
+      "Finalizarea comenzii a eșuat. Te rog încearcă din nou.",
+    "cart.failedToLoadCart": "Nu s-a putut încărca coșul",
+    "cart.failedToUpdateQuantity": "Nu s-a putut actualiza cantitatea",
+    "cart.failedToRemoveItem": "Nu s-a putut șterge articolul",
+    "cart.failedToGenerateQR": "Nu s-a putut genera codul QR pentru finalizare",
+
+    // Cafe Details Screen
+    "cafeDetails.title": "Detalii Cafenea",
+    "cafeDetails.loading": "Se încarcă detaliile cafenelei...",
+    "cafeDetails.error": "Eroare",
+    "cafeDetails.noCafeId": "Nu a fost furnizat ID-ul cafenelei",
+    "cafeDetails.cafeNotFound": "Cafeneaua nu a fost găsită",
+    "cafeDetails.failedToLoad": "Nu s-au putut încărca detaliile cafenelei",
+    "cafeDetails.unnamedCafe": "Cafenea fără nume",
+    "cafeDetails.noAddress": "Adresă necomunicată",
+    "cafeDetails.noDescription": "Nicio descriere disponibilă",
+    "cafeDetails.openNow": "Deschis Acum",
+    "cafeDetails.closed": "Închis",
+    "cafeDetails.openingHours": "Program",
+    "cafeDetails.monday": "Luni",
+    "cafeDetails.tuesday": "Marți",
+    "cafeDetails.wednesday": "Miercuri",
+    "cafeDetails.thursday": "Joi",
+    "cafeDetails.friday": "Vineri",
+    "cafeDetails.saturday": "Sâmbătă",
+    "cafeDetails.sunday": "Duminică",
+    "cafeDetails.menu": "Meniu",
+    "cafeDetails.contact": "Contact",
+    "cafeDetails.directions": "Direcții",
+    "cafeDetails.website": "Website",
+    "cafeDetails.phone": "Telefon",
+    "cafeDetails.noMenu": "Meniu indisponibil",
+    "cafeDetails.noContact": "Informații de contact indisponibile",
+
+    // Full Menu Screen
+    "fullMenu.searchIn": "Caută în {cafeName}",
+    "fullMenu.cart": "Coș",
+    "fullMenu.emptyMenu": "Meniu Gol",
+    "fullMenu.noProducts":
+      "Această cafenea nu are produse disponibile momentan",
+    "fullMenu.allCategories": "Toate",
+    "fullMenu.coffee": "Cafea",
+    "fullMenu.tea": "Ceai",
+    "fullMenu.pastries": "Prăjituri",
+    "fullMenu.snacks": "Gustări",
+    "fullMenu.hotDrinks": "Băuturi Calde",
+    "fullMenu.success": "Succes",
+    "fullMenu.addedToCart": "{productName} adăugat în coș",
+    "fullMenu.loginRequired": "Autentificare necesară",
+    "fullMenu.pleaseLoginToAdd":
+      "Te rog autentifică-te pentru a adăuga articole în coș",
+
+    // QR Screen
+    "qr.title": "Codul Meu QR",
+    "qr.loading": "Se generează codul QR...",
+    "qr.generating": "Se generează un cod nou...",
+    "qr.error": "Eroare la generarea codului QR",
+    "qr.noSubscription": "Niciun abonament activ",
+    "qr.subscriptionExpired": "Abonamentul a expirat",
+    "qr.insufficientCredits": "Credite insuficiente",
+    "qr.checkoutMode": "Finalizare Comandă",
+    "qr.orderTotal": "Total comandă: {total} boabe",
+    "qr.orderComplete": "Comandă Finalizată!",
+    "qr.orderProcessed": "Comanda ta a fost procesată cu succes",
+    "qr.refreshIn": "Se reîmprospătează în {seconds} secunde",
+    "qr.seconds": "secunde",
+    "qr.expired": "Expirat",
+    "qr.generateNew": "Generează Nou",
+    "qr.scanAtCafe": "Scanează la cafenea",
+    "qr.validFor": "Valabil pentru",
+    "qr.autoRefresh": "Se reîmprospătează automat",
+
+    // Subscriptions Errors/Messages
+    "subscriptions.subscriptionActivated": "Abonament Activat!",
+    "subscriptions.receivedBeans":
+      "🎉 Ai primit {credits} Boabe! Bucură-te de cafeaua ta!",
+    "subscriptions.enjoyYourCoffee": "Bucură-te de cafeaua ta!",
+    "subscriptions.subscriptionError": "Eroare Abonament",
+    "subscriptions.failedToActivate":
+      "Nu s-a putut activa abonamentul. Te rog încearcă din nou.",
+    "subscriptions.loginRequired":
+      "Trebuie să fii autentificat pentru a te abona la un plan",
+    "subscriptions.chooseBeanPack": "Alege Pachetul Tău de Boabe ☕",
+    "subscriptions.monthlySubscription": "Abonament Lunar",
+    "subscriptions.oneTimePurchase": "Cumpărătură Unică",
+    "subscriptions.changePlan": "Schimbă Planul",
+    "subscriptions.startSipping": "Începe să Savurezi",
+    "subscriptions.howBeansWork": "Cum Funcționează Boabele",
+    "subscriptions.beansCurrency":
+      "Boabele sunt moneda ta pentru cafea! Iată cum funcționează:",
+    "subscriptions.gotIt": "Am Înțeles!",
+
+    // Map Screen Additional
+    "map.added": "Adăugat!",
+    "map.failedToAddItem": "Nu s-a putut adăuga articolul",
+    "map.noImageAvailable": "Nicio imagine disponibilă",
+
+    // Common Additional Keys - removing duplicates
+    "common.loading": "Se încarcă...",
+    "common.tryAgain": "Încearcă din nou",
+    "common.confirm": "Confirmă",
+    "common.remove": "Șterge",
+    "common.add": "Adaugă",
+    "common.update": "Actualizează",
+    "common.save": "Salvează",
+    "common.close": "Închide",
+    "common.back": "Înapoi",
+
+    // Subscription Components Additional Keys
+    "subscriptions.popular": "Popular",
+    "subscriptions.beans": "Boabe",
+    "subscriptions.perMonth": "/lună",
+    "subscriptions.beansRemaining": "Boabe Rămase",
+    "subscriptions.lowOnBeans": "Puține boabe!",
+    "subscriptions.expires": "Expiră",
+    "subscriptions.renewSubscription": "Reînnoiește Abonamentul",
+    "subscriptions.getSubscription": "Vezi Abonamentele",
+    "subscriptions.usedBeansThisMonth":
+      "Ai folosit {used} din {total} Boabe în această lună",
+    "subscriptions.beansLeft": "{beans} boabe rămase",
+    "subscriptions.noPlansAvailable":
+      "Niciun plan de abonament disponibil momentan.",
+    "subscriptions.currentlyOnPlan":
+      "Ești momentan pe planul {planName} cu {beansLeft} boabe rămase",
+    "subscriptions.beansWorkTitle":
+      "Boabele sunt moneda ta pentru cafea! Iată cum funcționează:",
+    "subscriptions.beansWorkDescription":
+      "Abonează-te la un pachet lunar de boabe și folosește-le la orice cafenea parteneră. Boabele se reînnnoiesc la fiecare ciclu de facturare. Boabele nefolosite nu se reportează.",
+    "subscriptions.espresso": "Espresso",
+    "subscriptions.cappuccino": "Cappuccino",
+    "subscriptions.latte": "Latte",
+    "subscriptions.frappe": "Frappé",
+    "subscriptions.oneBean": "1 Boabă",
+    "subscriptions.twoBeans": "2 Boabe",
+    "subscriptions.threeBeans": "3 Boabe",
+    "subscriptions.modalDescription1":
+      "Abonează-te la un pachet lunar de boabe și folosește-le la orice cafenea parteneră. Boabele se reînnoiesc la fiecare ciclu de facturare. Boabele nefolosite nu se reportează.",
+    "subscriptions.modalDescription2":
+      "Doar arată codul QR la checkout și boabele vor fi deduse automat.",
   },
   en: {
     // Auth
@@ -862,6 +1159,163 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     "cafe.indexBuildingTitle": "Optimization in Progress",
     "cafe.indexBuildingMessage":
       "The database is currently being optimized. Please try again in a few minutes.",
+
+    // Cart Screen
+    "cart.title": "My Cart",
+    "cart.loading": "Loading cart...",
+    "cart.emptyCart": "Empty Cart",
+    "cart.emptyCartMessage":
+      "Your cart is empty. Add products from your favorite cafes!",
+    "cart.removeItem": "Remove Item",
+    "cart.removeItemConfirm":
+      "Are you sure you want to remove this item from your cart?",
+    "cart.removed": "Removed!",
+    "cart.itemRemovedFromCart": "Item removed from cart",
+    "cart.insufficientBeans": "Insufficient Beans",
+    "cart.needMoreBeans": "You need {needed} beans but only have {available}",
+    "cart.checkout": "Checkout",
+    "cart.total": "Total",
+    "cart.beans": "beans",
+    "cart.available": "Available",
+    "cart.afterPurchase": "After purchase",
+    "cart.checkoutFailed": "Checkout failed",
+    "cart.checkoutFailedMessage": "Checkout failed. Please try again.",
+    "cart.failedToLoadCart": "Failed to load cart",
+    "cart.failedToUpdateQuantity": "Failed to update quantity",
+    "cart.failedToRemoveItem": "Failed to remove item",
+    "cart.failedToGenerateQR": "Failed to generate checkout QR code",
+
+    // Cafe Details Screen
+    "cafeDetails.title": "Cafe Details",
+    "cafeDetails.loading": "Loading cafe details...",
+    "cafeDetails.error": "Error",
+    "cafeDetails.noCafeId": "No cafe ID provided",
+    "cafeDetails.cafeNotFound": "Cafe not found",
+    "cafeDetails.failedToLoad": "Failed to load cafe details",
+    "cafeDetails.unnamedCafe": "Unnamed Cafe",
+    "cafeDetails.noAddress": "No address provided",
+    "cafeDetails.noDescription": "No description available",
+    "cafeDetails.openNow": "Open Now",
+    "cafeDetails.closed": "Closed",
+    "cafeDetails.openingHours": "Opening Hours",
+    "cafeDetails.monday": "Monday",
+    "cafeDetails.tuesday": "Tuesday",
+    "cafeDetails.wednesday": "Wednesday",
+    "cafeDetails.thursday": "Thursday",
+    "cafeDetails.friday": "Friday",
+    "cafeDetails.saturday": "Saturday",
+    "cafeDetails.sunday": "Sunday",
+    "cafeDetails.menu": "Menu",
+    "cafeDetails.contact": "Contact",
+    "cafeDetails.directions": "Directions",
+    "cafeDetails.website": "Website",
+    "cafeDetails.phone": "Phone",
+    "cafeDetails.noMenu": "Menu not available",
+    "cafeDetails.noContact": "Contact information not available",
+
+    // Full Menu Screen
+    "fullMenu.searchIn": "Search in {cafeName}",
+    "fullMenu.cart": "Cart",
+    "fullMenu.emptyMenu": "Empty Menu",
+    "fullMenu.noProducts": "This cafe has no products available at the moment",
+    "fullMenu.allCategories": "All",
+    "fullMenu.coffee": "Coffee",
+    "fullMenu.tea": "Tea",
+    "fullMenu.pastries": "Pastries",
+    "fullMenu.snacks": "Snacks",
+    "fullMenu.hotDrinks": "Hot Drinks",
+    "fullMenu.success": "Success",
+    "fullMenu.addedToCart": "{productName} added to cart",
+    "fullMenu.loginRequired": "Login required",
+    "fullMenu.pleaseLoginToAdd": "Please login to add items to cart",
+
+    // QR Screen
+    "qr.title": "My QR Code",
+    "qr.loading": "Generating QR code...",
+    "qr.generating": "Generating new code...",
+    "qr.error": "Error generating QR code",
+    "qr.noSubscription": "No active subscription",
+    "qr.subscriptionExpired": "Subscription expired",
+    "qr.insufficientCredits": "Insufficient credits",
+    "qr.checkoutMode": "Checkout Mode",
+    "qr.orderTotal": "Order total: {total} beans",
+    "qr.orderComplete": "Order Complete!",
+    "qr.orderProcessed": "Your order has been successfully processed",
+    "qr.refreshIn": "Refreshing in {seconds} seconds",
+    "qr.seconds": "seconds",
+    "qr.expired": "Expired",
+    "qr.generateNew": "Generate New",
+    "qr.scanAtCafe": "Scan at cafe",
+    "qr.validFor": "Valid for",
+    "qr.autoRefresh": "Auto-refreshes",
+
+    // Subscriptions Errors/Messages
+    "subscriptions.subscriptionActivated": "Subscription Activated!",
+    "subscriptions.receivedBeans":
+      "🎉 You've received {credits} Beans! Enjoy your coffee!",
+    "subscriptions.enjoyYourCoffee": "Enjoy your coffee!",
+    "subscriptions.subscriptionError": "Subscription Error",
+    "subscriptions.failedToActivate":
+      "Failed to activate subscription. Please try again.",
+    "subscriptions.loginRequired":
+      "You must be logged in to subscribe to a plan",
+    "subscriptions.chooseBeanPack": "Choose Your Bean Pack ☕",
+    "subscriptions.monthlySubscription": "Monthly Subscription",
+    "subscriptions.oneTimePurchase": "One-Time Purchase",
+    "subscriptions.changePlan": "Change Plan",
+    "subscriptions.startSipping": "Start Sipping",
+    "subscriptions.howBeansWork": "How Beans Work",
+    "subscriptions.beansCurrency":
+      "Beans are your coffee currency! Here's how they work:",
+    "subscriptions.gotIt": "Got It!",
+
+    // Map Screen Additional
+    "map.added": "Added!",
+    "map.failedToAddItem": "Failed to add item",
+    "map.noImageAvailable": "No image available",
+
+    // Common Additional Keys
+    "common.loading": "Loading...",
+    "common.tryAgain": "Try again",
+    "common.confirm": "Confirm",
+    "common.remove": "Remove",
+    "common.add": "Add",
+    "common.update": "Update",
+    "common.save": "Save",
+    "common.close": "Close",
+    "common.back": "Back",
+
+    // Subscription Components Additional Keys
+    "subscriptions.popular": "Popular",
+    "subscriptions.beans": "Beans",
+    "subscriptions.perMonth": "/month",
+    "subscriptions.beansRemaining": "Beans Remaining",
+    "subscriptions.lowOnBeans": "Low on beans!",
+    "subscriptions.expires": "Expires",
+    "subscriptions.renewSubscription": "Renew Subscription",
+    "subscriptions.getSubscription": "View Subscriptions",
+    "subscriptions.usedBeansThisMonth":
+      "You've used {used} of your {total} Beans this month",
+    "subscriptions.beansLeft": "{beans} beans remaining",
+    "subscriptions.noPlansAvailable":
+      "No subscription plans available at the moment.",
+    "subscriptions.currentlyOnPlan":
+      "You're currently on the {planName} plan with {beansLeft} beans remaining",
+    "subscriptions.beansWorkTitle":
+      "Beans are your coffee currency! Here's how they work:",
+    "subscriptions.beansWorkDescription":
+      "Subscribe to a monthly bean pack and use your beans at any partner café. Beans refresh with each new billing cycle. Unused beans don't roll over.",
+    "subscriptions.espresso": "Espresso",
+    "subscriptions.cappuccino": "Cappuccino",
+    "subscriptions.latte": "Latte",
+    "subscriptions.frappe": "Frappé",
+    "subscriptions.oneBean": "1 Bean",
+    "subscriptions.twoBeans": "2 Beans",
+    "subscriptions.threeBeans": "3 Beans",
+    "subscriptions.modalDescription1":
+      "Subscribe to a monthly bean pack and use your beans at any partner café. Beans refresh with each new billing cycle. Unused beans don't roll over.",
+    "subscriptions.modalDescription2":
+      "Just show your QR code at checkout and your beans will be automatically deducted.",
   },
 };
 

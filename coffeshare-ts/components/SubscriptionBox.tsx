@@ -72,7 +72,9 @@ export default function SubscriptionBox({
             { backgroundColor: isPopular ? "#FF9800" : "#2196F3" },
           ]}
         >
-          <Text style={styles.badgeText}>{tag || "Popular"}</Text>
+          <Text style={styles.badgeText}>
+            {tag || t("subscriptions.popular")}
+          </Text>
         </View>
       )}
 
@@ -91,12 +93,12 @@ export default function SubscriptionBox({
           <Text style={[styles.beansAmount, isSelected && { color }]}>
             {credits}
           </Text>
-          <Text style={styles.beansLabel}>Beans</Text>
+          <Text style={styles.beansLabel}>{t("subscriptions.beans")}</Text>
         </View>
 
         <Text style={styles.price}>
           {price.toFixed(0)} RON
-          <Text style={styles.priceLabel}>/month</Text>
+          <Text style={styles.priceLabel}>{t("subscriptions.perMonth")}</Text>
         </Text>
 
         {description && (
