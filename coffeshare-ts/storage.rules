@@ -1,0 +1,33 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper function to check if user is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Cafe images - Allow authenticated users to upload
+    match /cafes/{imageId} {
+      allow read: if true; // Anyone can read cafe images
+      allow write: if isAuth(); // Any authenticated user can upload
+    }
+
+    // User profile images
+    match /users/{userId}/{imageId} {
+      allow read: if true; // Anyone can read profile images
+      allow write: if isAuth() && request.auth.uid == userId; // Users can only upload their own images
+    }
+
+    // Product images - Allow authenticated users to upload
+    match /products/{imageId} {
+      allow read: if true; // Anyone can read product images
+      allow write: if isAuth(); // Authenticated users can upload product images
+    }
+
+    // Default rule - deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+} 

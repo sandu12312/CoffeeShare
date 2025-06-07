@@ -34,6 +34,12 @@ export default function FullMenu() {
   const [cartItemCount, setCartItemCount] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [cafeCategories, setCafeCategories] = useState<string[]>([
+    "Coffee",
+    "Tea",
+    "Pastries",
+    "Snacks",
+  ]);
 
   const cafeId = params.cafeId as string;
   const cafeName = params.cafeName as string;
@@ -41,6 +47,7 @@ export default function FullMenu() {
   useEffect(() => {
     loadProducts();
     loadCartCount();
+    loadCafeCategories();
   }, [cafeId]);
 
   const loadProducts = async () => {
@@ -61,6 +68,18 @@ export default function FullMenu() {
     if (user?.uid) {
       const count = await cartService.getCartItemCount(user.uid);
       setCartItemCount(count);
+    }
+  };
+
+  const loadCafeCategories = async () => {
+    try {
+      // For now, keep the default categories since we need cafe service to fetch menuCategories
+      // This could be enhanced later to fetch from cafe data
+      const categories = ["Coffee", "Tea", "Pastries", "Snacks"];
+      setCafeCategories(categories);
+    } catch (error) {
+      console.error("Error loading cafe categories:", error);
+      // Keep default categories on error
     }
   };
 
@@ -98,12 +117,13 @@ export default function FullMenu() {
     }
   };
 
-  const categories = ["All", "Coffee", "Tea", "Pastries", "Snacks"];
+  const categories = ["All", ...cafeCategories];
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
+    // Category filtering can be added later when Product interface includes category
     return matchesSearch;
   });
 

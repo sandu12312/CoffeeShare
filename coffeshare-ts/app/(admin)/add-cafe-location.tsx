@@ -11,12 +11,16 @@ import {
   Platform,
   KeyboardAvoidingView,
   Keyboard,
+  Image,
+  Modal,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from "react-native-maps";
 import * as Location from "expo-location";
+import * as ImagePicker from "expo-image-picker";
 import { collection, addDoc, GeoPoint } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db } from "../../config/firebase";
 import { useLanguage } from "../../context/LanguageContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
@@ -54,7 +58,26 @@ export default function AddCafeLocationScreen() {
     Array<{ email: string; name: string; uid: string }>
   >([]);
   const [loadingPartners, setLoadingPartners] = useState(true);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showImagePicker, setShowImagePicker] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [showHoursDropdown, setShowHoursDropdown] = useState(false);
   const mapRef = useRef<MapView>(null);
+
+  // Predefined opening hours options
+  const openingHoursOptions = [
+    "Mon-Fri: 7:00-20:00, Sat-Sun: 8:00-18:00",
+    "Mon-Sun: 6:00-22:00",
+    "Mon-Fri: 8:00-18:00, Sat-Sun: 9:00-17:00",
+    "Mon-Fri: 7:00-18:00, Sat-Sun: 8:00-16:00",
+    "Mon-Sun: 24/7",
+    "Mon-Fri: 6:30-19:00, Sat-Sun: 7:00-18:00",
+    "Custom (enter manually)",
+  ];
+
+  // Product categories available
+  const productCategories = ["Coffee", "Tea", "Pastries", "Snacks"];
 
   // Get user's current location
   useEffect(() => {
@@ -105,6 +128,100 @@ export default function AddCafeLocationScreen() {
     setSelectedLocation(coordinate);
   };
 
+  // Image picker functions
+  const requestPermissions = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission needed",
+        "Please grant camera roll permissions to upload images."
+      );
+      return false;
+    }
+    return true;
+  };
+
+  const pickImageFromGallery = async () => {
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setSelectedImage(result.assets[0].uri);
+      setShowImagePicker(false);
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission needed",
+        "Please grant camera permissions to take photos."
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setSelectedImage(result.assets[0].uri);
+      setShowImagePicker(false);
+    }
+  };
+
+  const uploadImageToStorage = async (imageUri: string) => {
+    try {
+      const storage = getStorage();
+      const filename = `cafes/${Date.now()}_${Math.random()
+        .toString(36)
+        .substring(7)}.jpg`;
+      const storageRef = ref(storage, filename);
+
+      // Convert image to blob
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+
+      // Upload to Firebase Storage
+      await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(storageRef);
+
+      return downloadURL;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      throw error;
+    }
+  };
+
+  // Category handlers
+  const toggleCategory = (category: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  // Opening hours handler
+  const handleOpeningHoursSelect = (hours: string) => {
+    if (hours === "Custom (enter manually)") {
+      setFormData({ ...formData, openingHours: "" });
+    } else {
+      setFormData({ ...formData, openingHours: hours });
+    }
+    setShowHoursDropdown(false);
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -137,6 +254,23 @@ export default function AddCafeLocationScreen() {
 
     setLoading(true);
     try {
+      // Upload image if selected
+      let imageUrl = null;
+      if (selectedImage) {
+        setUploadingImage(true);
+        try {
+          imageUrl = await uploadImageToStorage(selectedImage);
+        } catch (error) {
+          console.error("Error uploading image:", error);
+          Alert.alert(
+            "Warning",
+            "Failed to upload image, but cafe will be created without photo."
+          );
+        } finally {
+          setUploadingImage(false);
+        }
+      }
+
       // Find the selected partner to get their email
       const selectedPartner = coffeePartners.find(
         (p) => p.email === formData.ownerEmail
@@ -155,6 +289,8 @@ export default function AddCafeLocationScreen() {
           latitude: selectedLocation?.latitude,
           longitude: selectedLocation?.longitude,
         },
+        imageUrl: imageUrl, // Add the uploaded image URL
+        menuCategories: selectedCategories, // Add selected product categories
         status: "active",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -185,6 +321,8 @@ export default function AddCafeLocationScreen() {
               ownerEmail: "",
             });
             setSelectedLocation(null);
+            setSelectedImage(null);
+            setSelectedCategories([]);
           },
         },
       ]);
@@ -367,17 +505,107 @@ export default function AddCafeLocationScreen() {
             />
           </View>
 
+          {/* Photo Upload Section */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Cafe Photo</Text>
+            <TouchableOpacity
+              style={styles.photoUploadContainer}
+              onPress={() => setShowImagePicker(true)}
+            >
+              {selectedImage ? (
+                <View style={styles.selectedImageContainer}>
+                  <Image
+                    source={{ uri: selectedImage }}
+                    style={styles.selectedImage}
+                  />
+                  <View style={styles.imageOverlay}>
+                    <Ionicons name="camera" size={24} color="#FFFFFF" />
+                    <Text style={styles.imageOverlayText}>Tap to change</Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.photoPlaceholder}>
+                  <Ionicons name="camera-outline" size={40} color="#999" />
+                  <Text style={styles.photoPlaceholderText}>
+                    Add cafe photo
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color="#8B4513" />
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Menu Categories Selection */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Menu Categories</Text>
+            <Text style={styles.subLabel}>
+              Select what products this cafe can serve:
+            </Text>
+            <View style={styles.categoriesContainer}>
+              {productCategories.map((category) => (
+                <TouchableOpacity
+                  key={category}
+                  style={[
+                    styles.categoryChip,
+                    selectedCategories.includes(category) &&
+                      styles.categoryChipSelected,
+                  ]}
+                  onPress={() => toggleCategory(category)}
+                >
+                  <Ionicons
+                    name={
+                      selectedCategories.includes(category)
+                        ? "checkmark-circle"
+                        : "ellipse-outline"
+                    }
+                    size={20}
+                    color={
+                      selectedCategories.includes(category)
+                        ? "#FFFFFF"
+                        : "#8B4513"
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.categoryChipText,
+                      selectedCategories.includes(category) &&
+                        styles.categoryChipTextSelected,
+                    ]}
+                  >
+                    {category}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
           <View style={styles.formGroup}>
             <Text style={styles.label}>Opening Hours</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.openingHours}
-              onChangeText={(text) =>
-                setFormData({ ...formData, openingHours: text })
-              }
-              placeholder="e.g. Mon-Fri: 7am-8pm, Sat-Sun: 8am-6pm"
-              placeholderTextColor="#999"
-            />
+            <TouchableOpacity
+              style={styles.dropdown}
+              onPress={() => setShowHoursDropdown(true)}
+            >
+              <Text
+                style={[
+                  styles.dropdownText,
+                  !formData.openingHours && styles.placeholderText,
+                ]}
+              >
+                {formData.openingHours || "Select opening hours"}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color="#666" />
+            </TouchableOpacity>
+            {formData.openingHours === "" && (
+              <TextInput
+                style={[styles.input, { marginTop: 8 }]}
+                value={formData.openingHours}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, openingHours: text })
+                }
+                placeholder="Enter custom opening hours"
+                placeholderTextColor="#999"
+              />
+            )}
           </View>
 
           <View style={styles.formGroup}>
@@ -402,9 +630,9 @@ export default function AddCafeLocationScreen() {
               !selectedLocation && styles.disabledButton,
             ]}
             onPress={handleAddCafe}
-            disabled={loading || !selectedLocation}
+            disabled={loading || !selectedLocation || uploadingImage}
           >
-            {loading ? (
+            {loading || uploadingImage ? (
               <ActivityIndicator size="small" color="#FFF" />
             ) : (
               <>
@@ -415,6 +643,84 @@ export default function AddCafeLocationScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Image Picker Modal */}
+      <Modal
+        visible={showImagePicker}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowImagePicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.bottomSheet}>
+            <View style={styles.bottomSheetHeader}>
+              <Text style={styles.bottomSheetTitle}>Add Cafe Photo</Text>
+              <TouchableOpacity onPress={() => setShowImagePicker(false)}>
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.bottomSheetOption}
+              onPress={takePhoto}
+            >
+              <Ionicons name="camera" size={24} color="#8B4513" />
+              <Text style={styles.bottomSheetOptionText}>Take Photo</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.bottomSheetOption}
+              onPress={pickImageFromGallery}
+            >
+              <Ionicons name="images" size={24} color="#8B4513" />
+              <Text style={styles.bottomSheetOptionText}>
+                Choose from Gallery
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.bottomSheetOption, styles.cancelOption]}
+              onPress={() => setShowImagePicker(false)}
+            >
+              <Ionicons name="close-circle" size={24} color="#FF6B6B" />
+              <Text style={[styles.bottomSheetOptionText, styles.cancelText]}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Opening Hours Dropdown Modal */}
+      <Modal
+        visible={showHoursDropdown}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowHoursDropdown(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.dropdownModal}>
+            <View style={styles.dropdownHeader}>
+              <Text style={styles.dropdownTitle}>Select Opening Hours</Text>
+              <TouchableOpacity onPress={() => setShowHoursDropdown(false)}>
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.dropdownList}>
+              {openingHoursOptions.map((hours, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.dropdownOption}
+                  onPress={() => handleOpeningHoursSelect(hours)}
+                >
+                  <Text style={styles.dropdownOptionText}>{hours}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </ScreenWrapper>
   );
 }
@@ -538,5 +844,163 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     color: "#999",
+  },
+
+  // Photo Upload Styles
+  photoUploadContainer: {
+    backgroundColor: "#FFF",
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 8,
+    height: 120,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+  selectedImageContainer: {
+    width: "100%",
+    height: "100%",
+    position: "relative",
+  },
+  selectedImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  imageOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+  },
+  imageOverlayText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    marginLeft: 8,
+  },
+  photoPlaceholder: {
+    alignItems: "center",
+    gap: 8,
+  },
+  photoPlaceholderText: {
+    fontSize: 16,
+    color: "#999",
+    marginBottom: 4,
+  },
+
+  // Category Selection Styles
+  subLabel: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 12,
+  },
+  categoriesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  categoryChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF",
+    borderWidth: 2,
+    borderColor: "#8B4513",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  categoryChipSelected: {
+    backgroundColor: "#8B4513",
+  },
+  categoryChipText: {
+    fontSize: 14,
+    color: "#8B4513",
+    fontWeight: "600",
+  },
+  categoryChipTextSelected: {
+    color: "#FFFFFF",
+  },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  bottomSheet: {
+    backgroundColor: "#FFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 34,
+  },
+  bottomSheetHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  bottomSheetTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  bottomSheetOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 20,
+    gap: 16,
+  },
+  bottomSheetOptionText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  cancelOption: {
+    borderTopWidth: 1,
+    borderTopColor: "#F0F0F0",
+  },
+  cancelText: {
+    color: "#FF6B6B",
+  },
+
+  // Dropdown Modal Styles
+  dropdownModal: {
+    backgroundColor: "#FFF",
+    marginHorizontal: 20,
+    borderRadius: 12,
+    maxHeight: "80%",
+    marginVertical: "10%",
+  },
+  dropdownHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  dropdownTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  dropdownList: {
+    maxHeight: 300,
+  },
+  dropdownOption: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F8F8F8",
+  },
+  dropdownOptionText: {
+    fontSize: 16,
+    color: "#333",
   },
 });

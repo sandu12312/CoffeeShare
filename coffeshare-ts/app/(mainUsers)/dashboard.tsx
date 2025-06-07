@@ -173,6 +173,7 @@ export default function Dashboard() {
           id: "no-activity",
           cafe: t("dashboard.noRecentActivity"),
           date: t("dashboard.getActivityPrompt"),
+          qrTokenId: null, // Add missing property
         },
       ];
     }
@@ -359,7 +360,10 @@ export default function Dashboard() {
 
           {/* Recent Activity Card - Using Real User Data */}
           <RecentActivityCard
-            activities={recentActivity}
+            activities={recentActivity.map((activity) => ({
+              ...activity,
+              qrTokenId: activity.qrTokenId || undefined, // Convert null to undefined
+            }))}
             onViewAll={handleViewFullHistory}
             onActivityPress={handleActivityPress}
           />
