@@ -29,23 +29,90 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
 
+  // Error states for inline validation
+  const [nameError, setNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
+
   const { register } = useFirebase();
   const { t } = useLanguage();
 
-  const handleRegister = async () => {
-    // Validate inputs
-    if (!name || !email || !password || !confirmPassword) {
-      Alert.alert(t("common.error"), t("register.fillAllFieldsError"));
-      return;
+  // Validation functions
+  const validateName = (name: string) => {
+    if (!name.trim()) {
+      setNameError("Full name is required");
+      return false;
     }
+    setNameError("");
+    return true;
+  };
 
-    if (password !== confirmPassword) {
-      Alert.alert(t("common.error"), t("register.passwordsMismatchError"));
-      return;
+  const validateEmail = (email: string) => {
+    if (!email) {
+      setEmailError("Email is required");
+      return false;
     }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError("Please enter a valid email");
+      return false;
+    }
+    setEmailError("");
+    return true;
+  };
 
+  const validatePassword = (password: string) => {
+    if (!password) {
+      setPasswordError("Password is required");
+      return false;
+    }
     if (password.length < 6) {
-      Alert.alert(t("common.error"), t("register.passwordTooShortError"));
+      setPasswordError("Password must be at least 6 characters");
+      return false;
+    }
+    setPasswordError("");
+    return true;
+  };
+
+  const validateConfirmPassword = (
+    confirmPassword: string,
+    password: string
+  ) => {
+    if (!confirmPassword) {
+      setConfirmPasswordError("Please confirm your password");
+      return false;
+    }
+    if (confirmPassword !== password) {
+      setConfirmPasswordError("Passwords do not match");
+      return false;
+    }
+    setConfirmPasswordError("");
+    return true;
+  };
+
+  const handleRegister = async () => {
+    // Clear previous errors
+    setNameError("");
+    setEmailError("");
+    setPasswordError("");
+    setConfirmPasswordError("");
+
+    // Validate inputs
+    const isNameValid = validateName(name);
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+    const isConfirmPasswordValid = validateConfirmPassword(
+      confirmPassword,
+      password
+    );
+
+    if (
+      !isNameValid ||
+      !isEmailValid ||
+      !isPasswordValid ||
+      !isConfirmPasswordValid
+    ) {
       return;
     }
 
@@ -140,89 +207,156 @@ export default function Register() {
               {t("register.joinCommunitySubtitle")}
             </Text>
 
-            <View style={styles.inputContainer}>
-              <Ionicons
-                name="person-outline"
-                size={20}
-                color="#8B4513"
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder={t("register.fullNamePlaceholder")}
-                placeholderTextColor="#8B4513"
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Ionicons
-                name="mail-outline"
-                size={20}
-                color="#8B4513"
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder={t("common.emailPlaceholder")}
-                placeholderTextColor="#8B4513"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Ionicons
-                name="lock-closed-outline"
-                size={20}
-                color="#8B4513"
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder={t("common.passwordPlaceholder")}
-                placeholderTextColor="#8B4513"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <Ionicons
-                  name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20}
-                  color="#8B4513"
-                />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Ionicons
-                name="lock-closed-outline"
-                size={20}
-                color="#8B4513"
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder={t("register.confirmPasswordPlaceholder")}
-                placeholderTextColor="#8B4513"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showConfirmPassword}
-              />
-              <TouchableOpacity
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            <View style={styles.inputGroup}>
+              <View
+                style={[
+                  styles.inputContainer,
+                  nameError ? styles.inputContainerError : null,
+                ]}
               >
                 <Ionicons
-                  name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                  name="person-outline"
                   size={20}
                   color="#8B4513"
+                  style={styles.inputIcon}
                 />
-              </TouchableOpacity>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t("register.fullNamePlaceholder")}
+                  placeholderTextColor="#8B4513"
+                  value={name}
+                  onChangeText={(text) => {
+                    setName(text);
+                    if (nameError) validateName(text);
+                  }}
+                  onBlur={() => validateName(name)}
+                  autoCapitalize="words"
+                />
+              </View>
+              {nameError ? (
+                <Text style={styles.errorText}>{nameError}</Text>
+              ) : null}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <View
+                style={[
+                  styles.inputContainer,
+                  emailError ? styles.inputContainerError : null,
+                ]}
+              >
+                <Ionicons
+                  name="mail-outline"
+                  size={20}
+                  color="#8B4513"
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder={t("common.emailPlaceholder")}
+                  placeholderTextColor="#8B4513"
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    if (emailError) validateEmail(text);
+                  }}
+                  onBlur={() => validateEmail(email)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+              {emailError ? (
+                <Text style={styles.errorText}>{emailError}</Text>
+              ) : null}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <View
+                style={[
+                  styles.inputContainer,
+                  passwordError ? styles.inputContainerError : null,
+                ]}
+              >
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={20}
+                  color="#8B4513"
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder={t("common.passwordPlaceholder")}
+                  placeholderTextColor="#8B4513"
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    if (passwordError) validatePassword(text);
+                    // Also revalidate confirm password if it exists
+                    if (confirmPassword && confirmPasswordError) {
+                      validateConfirmPassword(confirmPassword, text);
+                    }
+                  }}
+                  onBlur={() => validatePassword(password)}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons
+                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color="#8B4513"
+                  />
+                </TouchableOpacity>
+              </View>
+              {passwordError ? (
+                <Text style={styles.errorText}>{passwordError}</Text>
+              ) : null}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <View
+                style={[
+                  styles.inputContainer,
+                  confirmPasswordError ? styles.inputContainerError : null,
+                ]}
+              >
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={20}
+                  color="#8B4513"
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder={t("register.confirmPasswordPlaceholder")}
+                  placeholderTextColor="#8B4513"
+                  value={confirmPassword}
+                  onChangeText={(text) => {
+                    setConfirmPassword(text);
+                    if (confirmPasswordError)
+                      validateConfirmPassword(text, password);
+                  }}
+                  onBlur={() =>
+                    validateConfirmPassword(confirmPassword, password)
+                  }
+                  secureTextEntry={!showConfirmPassword}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  <Ionicons
+                    name={
+                      showConfirmPassword ? "eye-off-outline" : "eye-outline"
+                    }
+                    size={20}
+                    color="#8B4513"
+                  />
+                </TouchableOpacity>
+              </View>
+              {confirmPasswordError ? (
+                <Text style={styles.errorText}>{confirmPasswordError}</Text>
+              ) : null}
             </View>
 
             <TouchableOpacity
@@ -310,16 +444,22 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "center",
   },
+  inputGroup: {
+    marginBottom: 15,
+  },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.7)",
     borderRadius: 10,
-    marginBottom: 15,
     paddingHorizontal: 15,
     height: 50,
     borderWidth: 1,
     borderColor: "rgba(139, 69, 19, 0.3)",
+  },
+  inputContainerError: {
+    borderColor: "#FF4444",
+    borderWidth: 2,
   },
   inputIcon: {
     marginRight: 10,
@@ -328,6 +468,13 @@ const styles = StyleSheet.create({
     flex: 1,
     color: "#321E0E",
     fontSize: 16,
+  },
+  errorText: {
+    color: "#FF4444",
+    fontSize: 12,
+    marginTop: 5,
+    marginLeft: 5,
+    fontWeight: "500",
   },
   registerButton: {
     backgroundColor: "#8B4513",

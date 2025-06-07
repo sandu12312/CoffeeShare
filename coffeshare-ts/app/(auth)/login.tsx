@@ -30,12 +30,47 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  // Error states for inline validation
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
   const { login, sendVerificationEmail, signInWithGoogle } = useFirebase();
   const { t } = useLanguage();
 
+  // Validation functions
+  const validateEmail = (email: string) => {
+    if (!email) {
+      setEmailError("Email is required");
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError("Please enter a valid email");
+      return false;
+    }
+    setEmailError("");
+    return true;
+  };
+
+  const validatePassword = (password: string) => {
+    if (!password) {
+      setPasswordError("Password is required");
+      return false;
+    }
+    setPasswordError("");
+    return true;
+  };
+
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert(t("common.error"), t("login.missingCredentials"));
+    // Clear previous errors
+    setEmailError("");
+    setPasswordError("");
+
+    // Validate inputs
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+
+    if (!isEmailValid || !isPasswordValid) {
       return;
     }
 
@@ -204,39 +239,71 @@ export default function Login() {
               {t("login.signInToContinue")}
             </Text>
 
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color="#8B4513" />
-              <TextInput
-                style={styles.input}
-                placeholder={t("common.emailPlaceholder")}
-                placeholderTextColor="#8B4513"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
+            <View style={styles.inputGroup}>
+              <View
+                style={[
+                  styles.inputContainer,
+                  emailError ? styles.inputContainerError : null,
+                ]}
+              >
+                <Ionicons name="mail-outline" size={20} color="#8B4513" />
+                <TextInput
+                  style={styles.input}
+                  placeholder={t("common.emailPlaceholder")}
+                  placeholderTextColor="#8B4513"
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    if (emailError) validateEmail(text);
+                  }}
+                  onBlur={() => validateEmail(email)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+              {emailError ? (
+                <Text style={styles.errorText}>{emailError}</Text>
+              ) : null}
             </View>
 
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color="#8B4513" />
-              <TextInput
-                style={styles.input}
-                placeholder={t("common.passwordPlaceholder")}
-                placeholderTextColor="#8B4513"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
+            <View style={styles.inputGroup}>
+              <View
+                style={[
+                  styles.inputContainer,
+                  passwordError ? styles.inputContainerError : null,
+                ]}
               >
                 <Ionicons
-                  name={showPassword ? "eye-off-outline" : "eye-outline"}
+                  name="lock-closed-outline"
                   size={20}
                   color="#8B4513"
                 />
-              </TouchableOpacity>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t("common.passwordPlaceholder")}
+                  placeholderTextColor="#8B4513"
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    if (passwordError) validatePassword(text);
+                  }}
+                  onBlur={() => validatePassword(password)}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons
+                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color="#8B4513"
+                  />
+                </TouchableOpacity>
+              </View>
+              {passwordError ? (
+                <Text style={styles.errorText}>{passwordError}</Text>
+              ) : null}
             </View>
 
             <TouchableOpacity
@@ -409,15 +476,21 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 30,
   },
+  inputGroup: {
+    marginBottom: 15,
+  },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.7)",
     borderRadius: 10,
-    marginBottom: 15,
     paddingHorizontal: 15,
     borderWidth: 1,
     borderColor: "rgba(139, 69, 19, 0.3)",
+  },
+  inputContainerError: {
+    borderColor: "#FF4444",
+    borderWidth: 2,
   },
   input: {
     flex: 1,
@@ -428,6 +501,13 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     padding: 10,
+  },
+  errorText: {
+    color: "#FF4444",
+    fontSize: 12,
+    marginTop: 5,
+    marginLeft: 5,
+    fontWeight: "500",
   },
   forgotPasswordContainer: {
     alignItems: "flex-end",

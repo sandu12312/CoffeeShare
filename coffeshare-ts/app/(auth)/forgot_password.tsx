@@ -24,12 +24,35 @@ export default function ForgotPassword() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Error state for inline validation
+  const [emailError, setEmailError] = useState("");
+
   const { resetPassword } = useFirebase();
   const { t } = useLanguage();
 
-  const handleResetPassword = async () => {
+  // Validation function
+  const validateEmail = (email: string) => {
     if (!email) {
-      Alert.alert(t("common.error"), t("forgotPassword.enterEmailError"));
+      setEmailError("Email is required");
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError("Please enter a valid email");
+      return false;
+    }
+    setEmailError("");
+    return true;
+  };
+
+  const handleResetPassword = async () => {
+    // Clear previous errors
+    setEmailError("");
+
+    // Validate input
+    const isEmailValid = validateEmail(email);
+
+    if (!isEmailValid) {
       return;
     }
 
@@ -93,22 +116,36 @@ export default function ForgotPassword() {
 
             {!isSubmitted ? (
               <>
-                <View style={styles.inputContainer}>
-                  <Ionicons
-                    name="mail-outline"
-                    size={20}
-                    color="#8B4513"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder={t("common.emailPlaceholder")}
-                    placeholderTextColor="#8B4513"
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
+                <View style={styles.inputGroup}>
+                  <View
+                    style={[
+                      styles.inputContainer,
+                      emailError ? styles.inputContainerError : null,
+                    ]}
+                  >
+                    <Ionicons
+                      name="mail-outline"
+                      size={20}
+                      color="#8B4513"
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      placeholder={t("common.emailPlaceholder")}
+                      placeholderTextColor="#8B4513"
+                      value={email}
+                      onChangeText={(text) => {
+                        setEmail(text);
+                        if (emailError) validateEmail(text);
+                      }}
+                      onBlur={() => validateEmail(email)}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+                  </View>
+                  {emailError ? (
+                    <Text style={styles.errorText}>{emailError}</Text>
+                  ) : null}
                 </View>
 
                 <TouchableOpacity
@@ -207,16 +244,22 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "center",
   },
+  inputGroup: {
+    marginBottom: 15,
+  },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.7)",
     borderRadius: 10,
-    marginBottom: 15,
     paddingHorizontal: 15,
     height: 50,
     borderWidth: 1,
     borderColor: "rgba(139, 69, 19, 0.3)",
+  },
+  inputContainerError: {
+    borderColor: "#FF4444",
+    borderWidth: 2,
   },
   inputIcon: {
     marginRight: 10,
@@ -225,6 +268,13 @@ const styles = StyleSheet.create({
     flex: 1,
     color: "#321E0E",
     fontSize: 16,
+  },
+  errorText: {
+    color: "#FF4444",
+    fontSize: 12,
+    marginTop: 5,
+    marginLeft: 5,
+    fontWeight: "500",
   },
   resetButton: {
     backgroundColor: "#8B4513",
