@@ -311,130 +311,138 @@ export default function CafeDetailsScreen() {
         }}
       />
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Cover Image */}
-        <Image
-          source={{ uri: cafe.mainImageUrl }}
-          style={styles.coverImage}
-          resizeMode="cover"
-        />
-
-        {/* Open/Closed Status Banner */}
-        <View
-          style={[
-            styles.statusBanner,
-            isOpenNow() ? styles.openBanner : styles.closedBanner,
-          ]}
+      <View style={styles.container}>
+        <ScrollView
+          style={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
         >
-          <Text style={styles.statusText}>
-            {isOpenNow() ? "Open Now" : "Closed"}
-          </Text>
-          {isOpenNow() && (
-            <Text style={styles.statusDetails}>
-              Until {cafe.openingHours[getDayOfWeek()]?.close}
+          {/* Cover Image */}
+          <Image
+            source={{ uri: cafe.mainImageUrl }}
+            style={styles.coverImage}
+            resizeMode="cover"
+          />
+
+          {/* Open/Closed Status Banner */}
+          <View
+            style={[
+              styles.statusBanner,
+              isOpenNow() ? styles.openBanner : styles.closedBanner,
+            ]}
+          >
+            <Text style={styles.statusText}>
+              {isOpenNow() ? "Open Now" : "Closed"}
             </Text>
-          )}
-        </View>
-
-        {/* Cafe Name and Address */}
-        <View style={styles.headerContainer}>
-          <Text style={styles.title}>{cafe.businessName}</Text>
-          <View style={styles.addressContainer}>
-            <Ionicons name="location-outline" size={16} color="#8B4513" />
-            <Text style={styles.address}>{cafe.address}</Text>
+            {isOpenNow() && (
+              <Text style={styles.statusDetails}>
+                Until {cafe.openingHours[getDayOfWeek()]?.close}
+              </Text>
+            )}
           </View>
-        </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actionButtonsContainer}>
-          <TouchableOpacity style={styles.actionButton} onPress={openMaps}>
-            <Ionicons name="navigate-outline" size={22} color="#8B4513" />
-            <Text style={styles.actionButtonText}>Directions</Text>
-          </TouchableOpacity>
-
-          {cafe.phoneNumber && (
-            <TouchableOpacity style={styles.actionButton} onPress={callPhone}>
-              <Ionicons name="call-outline" size={22} color="#8B4513" />
-              <Text style={styles.actionButtonText}>Call</Text>
-            </TouchableOpacity>
-          )}
-
-          {cafe.websiteUrl && (
-            <TouchableOpacity style={styles.actionButton} onPress={openWebsite}>
-              <Ionicons name="globe-outline" size={22} color="#8B4513" />
-              <Text style={styles.actionButtonText}>Website</Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="heart-outline" size={22} color="#8B4513" />
-            <Text style={styles.actionButtonText}>Save</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Description */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
-          <Text style={styles.description}>{cafe.description}</Text>
-        </View>
-
-        {/* Gallery */}
-        {cafe.galleryImages.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Gallery</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.galleryContainer}
-            >
-              {cafe.galleryImages.map((image, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: image }}
-                  style={styles.galleryImage}
-                  resizeMode="cover"
-                />
-              ))}
-            </ScrollView>
+          {/* Cafe Name and Address */}
+          <View style={styles.headerContainer}>
+            <Text style={styles.title}>{cafe.businessName}</Text>
+            <View style={styles.addressContainer}>
+              <Ionicons name="location-outline" size={16} color="#8B4513" />
+              <Text style={styles.address}>{cafe.address}</Text>
+            </View>
           </View>
-        )}
 
-        {/* Menu/Products */}
-        {cafe.products.length > 0 && (
+          {/* Action Buttons */}
+          <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity style={styles.actionButton} onPress={openMaps}>
+              <Ionicons name="navigate-outline" size={22} color="#8B4513" />
+              <Text style={styles.actionButtonText}>Directions</Text>
+            </TouchableOpacity>
+
+            {cafe.phoneNumber && (
+              <TouchableOpacity style={styles.actionButton} onPress={callPhone}>
+                <Ionicons name="call-outline" size={22} color="#8B4513" />
+                <Text style={styles.actionButtonText}>Call</Text>
+              </TouchableOpacity>
+            )}
+
+            {cafe.websiteUrl && (
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={openWebsite}
+              >
+                <Ionicons name="globe-outline" size={22} color="#8B4513" />
+                <Text style={styles.actionButtonText}>Website</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity style={styles.actionButton}>
+              <Ionicons name="heart-outline" size={22} color="#8B4513" />
+              <Text style={styles.actionButtonText}>Save</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Description */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Menu</Text>
-            {Object.entries(groupedProducts()).map(([category, products]) => (
-              <View key={category} style={styles.categoryContainer}>
-                <Text style={styles.categoryTitle}>{category}</Text>
-                {products.map((product, index) => (
-                  <View key={index} style={styles.productItem}>
-                    <View style={styles.productInfo}>
-                      <Text style={styles.productName}>{product.name}</Text>
-                      {product.description && (
-                        <Text style={styles.productDescription}>
-                          {product.description}
-                        </Text>
-                      )}
-                    </View>
-                    <Text style={styles.productPrice}>{product.price} RON</Text>
-                  </View>
+            <Text style={styles.sectionTitle}>About</Text>
+            <Text style={styles.description}>{cafe.description}</Text>
+          </View>
+
+          {/* Gallery */}
+          {cafe.galleryImages.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Gallery</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.galleryContainer}
+              >
+                {cafe.galleryImages.map((image, index) => (
+                  <Image
+                    key={index}
+                    source={{ uri: image }}
+                    style={styles.galleryImage}
+                    resizeMode="cover"
+                  />
                 ))}
-              </View>
-            ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Menu/Products */}
+          {cafe.products.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Menu</Text>
+              {Object.entries(groupedProducts()).map(([category, products]) => (
+                <View key={category} style={styles.categoryContainer}>
+                  <Text style={styles.categoryTitle}>{category}</Text>
+                  {products.map((product, index) => (
+                    <View key={index} style={styles.productItem}>
+                      <View style={styles.productInfo}>
+                        <Text style={styles.productName}>{product.name}</Text>
+                        {product.description && (
+                          <Text style={styles.productDescription}>
+                            {product.description}
+                          </Text>
+                        )}
+                      </View>
+                      <Text style={styles.productPrice}>
+                        {product.price} RON
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Opening Hours */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Opening Hours</Text>
+            <View style={styles.scheduleContainer}>{renderDayHours()}</View>
           </View>
-        )}
+        </ScrollView>
 
-        {/* Opening Hours */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Opening Hours</Text>
-          <View style={styles.scheduleContainer}>{renderDayHours()}</View>
-        </View>
-
-        {/* Spacing at bottom for tab bar */}
-        <View style={styles.bottomSpacer} />
-      </ScrollView>
-
-      <BottomTabBar />
+        <BottomTabBar />
+      </View>
     </>
   );
 }
@@ -443,6 +451,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 15,
+    paddingBottom: 100, // Ensure content is not hidden behind the tab bar
   },
   loadingContainer: {
     flex: 1,
@@ -482,6 +497,7 @@ const styles = StyleSheet.create({
   coverImage: {
     width: width,
     height: 250,
+    marginHorizontal: -15, // Offset the scroll content padding
   },
   statusBanner: {
     flexDirection: "row",
@@ -489,6 +505,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 8,
     paddingHorizontal: 15,
+    marginHorizontal: -15, // Offset the scroll content padding
   },
   openBanner: {
     backgroundColor: "#E6F7E9",
@@ -508,6 +525,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     padding: 15,
+    marginHorizontal: -15, // Offset the scroll content padding
   },
   title: {
     fontSize: 22,
@@ -532,7 +550,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderBottomWidth: 1,
     borderColor: "#F0EAE2",
-    marginHorizontal: 15,
+    marginHorizontal: 0, // Keep this aligned with scroll content padding
   },
   actionButton: {
     alignItems: "center",
@@ -543,9 +561,11 @@ const styles = StyleSheet.create({
     color: "#8B4513",
   },
   section: {
-    padding: 15,
+    paddingVertical: 15,
     borderBottomWidth: 1,
     borderBottomColor: "#F0EAE2",
+    marginHorizontal: -15, // Offset the scroll content padding
+    paddingHorizontal: 15, // Add back horizontal padding
   },
   sectionTitle: {
     fontSize: 18,
@@ -632,8 +652,5 @@ const styles = StyleSheet.create({
   todayText: {
     fontWeight: "600",
     color: "#8B4513",
-  },
-  bottomSpacer: {
-    height: 80, // Ensure content is not hidden behind the tab bar
   },
 });

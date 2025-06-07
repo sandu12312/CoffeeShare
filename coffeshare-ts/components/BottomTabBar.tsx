@@ -310,6 +310,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 5,
+    zIndex: 1000, // Ensure it appears above other content
   },
   navButton: {
     alignItems: "center",
@@ -351,6 +352,7 @@ const styles = StyleSheet.create({
     elevation: 8,
     borderWidth: 2,
     borderColor: "#FFFFFF", // Add white border for definition
+    zIndex: 1001, // Ensure it appears above the bottom nav
   },
   cartBadge: {
     position: "absolute",
