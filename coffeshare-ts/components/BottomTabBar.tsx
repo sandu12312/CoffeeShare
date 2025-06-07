@@ -12,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { router, usePathname } from "expo-router";
 import { useFirebase } from "../context/FirebaseContext";
+import { useCart } from "../context/CartContext";
 import cartService from "../services/cartService";
 import coffeePartnerService, {
   Product,
@@ -21,7 +22,7 @@ import Toast from "react-native-toast-message";
 export default function BottomTabBar() {
   const pathname = usePathname();
   const { user } = useFirebase();
-  const [cartItemCount, setCartItemCount] = useState(0);
+  const { cartItemCount, incrementCartCount } = useCart();
   const [showQuickOrder, setShowQuickOrder] = useState(false);
   const [quickProducts, setQuickProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -33,22 +34,7 @@ export default function BottomTabBar() {
     return currentBaseRoute === path;
   };
 
-  // Load cart item count
-  useEffect(() => {
-    const loadCartCount = async () => {
-      if (user?.uid) {
-        const count = await cartService.getCartItemCount(user.uid);
-        setCartItemCount(count);
-      }
-    };
-
-    loadCartCount();
-
-    // Set up an interval to refresh cart count
-    const interval = setInterval(loadCartCount, 5000); // Refresh every 5 seconds
-
-    return () => clearInterval(interval);
-  }, [user]);
+  // Cart count is now managed by CartContext, no need for polling
 
   // Load recent products for quick order
   const loadQuickProducts = async () => {
@@ -93,9 +79,8 @@ export default function BottomTabBar() {
         text2: `${product.name} added to cart`,
       });
 
-      // Update cart count
-      const count = await cartService.getCartItemCount(user.uid);
-      setCartItemCount(count);
+      // Increment cart count immediately
+      incrementCartCount(1);
     } else {
       Toast.show({
         type: "error",

@@ -29,6 +29,7 @@ export default function CartScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [processingCheckout, setProcessingCheckout] = useState(false);
+  const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
 
   // Get real-time subscription status
   const subscriptionStatus = useSubscriptionStatus(user?.uid);
@@ -69,27 +70,85 @@ export default function CartScreen() {
     productId: string,
     newQuantity: number
   ) => {
-    if (!user?.uid) return;
+    if (!user?.uid || !cart) return;
 
-    const result = await cartService.updateQuantity(
-      user.uid,
-      productId,
-      newQuantity
+    // Prevent multiple rapid updates on the same item
+    if (updatingItems.has(productId)) return;
+
+    // Add to updating set
+    setUpdatingItems((prev) => new Set(prev).add(productId));
+
+    // Optimistic UI update - immediately update the cart state
+    const updatedCart = { ...cart };
+    const itemIndex = updatedCart.items.findIndex(
+      (item) => item.product.id === productId
     );
 
-    if (result.success) {
-      await loadCart();
-    } else {
+    if (itemIndex === -1) {
+      setUpdatingItems((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(productId);
+        return newSet;
+      });
+      return;
+    }
+
+    const oldQuantity = updatedCart.items[itemIndex].quantity;
+    const quantityDiff = newQuantity - oldQuantity;
+    const beansDiff =
+      updatedCart.items[itemIndex].product.beansValue * quantityDiff;
+
+    // Update quantity and total beans optimistically
+    updatedCart.items[itemIndex].quantity = newQuantity;
+    updatedCart.totalBeans += beansDiff;
+
+    // Update UI immediately
+    setCart(updatedCart);
+
+    try {
+      const result = await cartService.updateQuantity(
+        user.uid,
+        productId,
+        newQuantity
+      );
+
+      if (!result.success) {
+        // Revert optimistic update on failure
+        const revertedCart = { ...updatedCart };
+        revertedCart.items[itemIndex].quantity = oldQuantity;
+        revertedCart.totalBeans -= beansDiff;
+        setCart(revertedCart);
+
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: result.message,
+        });
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      const revertedCart = { ...updatedCart };
+      revertedCart.items[itemIndex].quantity = oldQuantity;
+      revertedCart.totalBeans -= beansDiff;
+      setCart(revertedCart);
+
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: result.message,
+        text2: "Failed to update quantity",
+      });
+    } finally {
+      // Remove from updating set
+      setUpdatingItems((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(productId);
+        return newSet;
       });
     }
   };
 
   const handleRemoveItem = async (productId: string) => {
-    if (!user?.uid) return;
+    if (!user?.uid || !cart) return;
 
     Alert.alert(
       "Remove Item",
@@ -100,23 +159,55 @@ export default function CartScreen() {
           text: "Remove",
           style: "destructive",
           onPress: async () => {
-            const result = await cartService.removeFromCart(
-              user.uid,
-              productId
+            // Find the item to remove for optimistic update
+            const itemToRemove = cart.items.find(
+              (item) => item.product.id === productId
             );
+            if (!itemToRemove) return;
 
-            if (result.success) {
-              await loadCart();
-              Toast.show({
-                type: "success",
-                text1: "Success",
-                text2: "Item removed from cart",
-              });
+            // Optimistic UI update - immediately remove the item
+            const updatedCart = { ...cart };
+            updatedCart.items = updatedCart.items.filter(
+              (item) => item.product.id !== productId
+            );
+            updatedCart.totalBeans -=
+              itemToRemove.product.beansValue * itemToRemove.quantity;
+
+            // If cart becomes empty, set to null
+            if (updatedCart.items.length === 0) {
+              setCart(null);
             } else {
+              setCart(updatedCart);
+            }
+
+            try {
+              const result = await cartService.removeFromCart(
+                user.uid,
+                productId
+              );
+
+              if (result.success) {
+                Toast.show({
+                  type: "success",
+                  text1: "Removed!",
+                  text2: "Item removed from cart",
+                });
+              } else {
+                // Revert optimistic update on failure
+                setCart(cart);
+                Toast.show({
+                  type: "error",
+                  text1: "Error",
+                  text2: result.message,
+                });
+              }
+            } catch (error) {
+              // Revert optimistic update on error
+              setCart(cart);
               Toast.show({
                 type: "error",
                 text1: "Error",
-                text2: result.message,
+                text2: "Failed to remove item",
               });
             }
           },
@@ -206,23 +297,39 @@ export default function CartScreen() {
 
       <View style={styles.quantityContainer}>
         <TouchableOpacity
-          style={styles.quantityButton}
+          style={[
+            styles.quantityButton,
+            updatingItems.has(item.product.id) && styles.quantityButtonDisabled,
+          ]}
           onPress={() =>
             handleUpdateQuantity(item.product.id, item.quantity - 1)
           }
+          disabled={updatingItems.has(item.product.id)}
         >
-          <Ionicons name="remove" size={18} color="#FFFFFF" />
+          {updatingItems.has(item.product.id) ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Ionicons name="remove" size={18} color="#FFFFFF" />
+          )}
         </TouchableOpacity>
 
         <Text style={styles.quantityText}>{item.quantity}</Text>
 
         <TouchableOpacity
-          style={styles.quantityButton}
+          style={[
+            styles.quantityButton,
+            updatingItems.has(item.product.id) && styles.quantityButtonDisabled,
+          ]}
           onPress={() =>
             handleUpdateQuantity(item.product.id, item.quantity + 1)
           }
+          disabled={updatingItems.has(item.product.id)}
         >
-          <Ionicons name="add" size={18} color="#FFFFFF" />
+          {updatingItems.has(item.product.id) ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Ionicons name="add" size={18} color="#FFFFFF" />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -481,6 +588,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 3,
     elevation: 3,
+  },
+  quantityButtonDisabled: {
+    opacity: 0.6,
   },
   quantityText: {
     fontSize: 16,

@@ -29,6 +29,7 @@ import coffeePartnerService, {
 } from "../../services/coffeePartnerService";
 import cartService from "../../services/cartService";
 import { useFirebase } from "../../context/FirebaseContext";
+import { useCart } from "../../context/CartContext";
 import Toast from "react-native-toast-message";
 import * as Animatable from "react-native-animatable";
 
@@ -106,6 +107,7 @@ const FIVE_TO_GO_LOCATIONS: Cafe[] = [
 export default function MapScreen() {
   const { t } = useLanguage();
   const { user } = useFirebase();
+  const { cartItemCount, incrementCartCount } = useCart();
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -121,8 +123,8 @@ export default function MapScreen() {
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
-  const [cartItemCount, setCartItemCount] = useState(0);
   const [bottomSheetExpanded, setBottomSheetExpanded] = useState(false);
+  const [addingToCart, setAddingToCart] = useState<string | null>(null);
 
   // Animation value for sliding in bottom sheet
   const slideAnim = useRef(new Animated.Value(-200)).current;
@@ -199,16 +201,7 @@ export default function MapScreen() {
     loadMapData();
   }, []);
 
-  // Load cart item count
-  useEffect(() => {
-    const loadCartCount = async () => {
-      if (user?.uid) {
-        const count = await cartService.getCartItemCount(user.uid);
-        setCartItemCount(count);
-      }
-    };
-    loadCartCount();
-  }, [user]);
+  // Cart count is now managed by CartContext
 
   // Load products when cafe is selected
   const loadCafeProducts = async (cafeId: string) => {
@@ -271,7 +264,7 @@ export default function MapScreen() {
     }).start();
   };
 
-  // Add product to cart
+  // Add product to cart with optimistic UI update
   const handleAddToCart = async (product: Product) => {
     if (!user?.uid || !selectedCafe) {
       Toast.show({
@@ -282,30 +275,49 @@ export default function MapScreen() {
       return;
     }
 
-    const result = await cartService.addToCart(
-      user.uid,
-      product,
-      selectedCafe.id,
-      selectedCafe.businessName,
-      1
-    );
+    // Prevent multiple rapid additions of the same product
+    if (addingToCart === product.id) return;
 
-    if (result.success) {
-      Toast.show({
-        type: "success",
-        text1: "Success",
-        text2: `${product.name} added to cart`,
-      });
+    setAddingToCart(product.id);
 
-      // Update cart count
-      const count = await cartService.getCartItemCount(user.uid);
-      setCartItemCount(count);
-    } else {
+    // Optimistic UI update - immediately increment cart count
+    incrementCartCount(1);
+
+    try {
+      const result = await cartService.addToCart(
+        user.uid,
+        product,
+        selectedCafe.id,
+        selectedCafe.businessName,
+        1
+      );
+
+      if (result.success) {
+        Toast.show({
+          type: "success",
+          text1: "Added!",
+          text2: `${product.name}`,
+        });
+        // Count already updated optimistically, no need to fetch again
+      } else {
+        // Revert optimistic update on failure - decrement the count we just added
+        incrementCartCount(-1);
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: result.message,
+        });
+      }
+    } catch (error) {
+      // Revert optimistic update on error - decrement the count we just added
+      incrementCartCount(-1);
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: result.message,
+        text2: "Failed to add item",
       });
+    } finally {
+      setAddingToCart(null);
     }
   };
 
@@ -457,7 +469,16 @@ export default function MapScreen() {
                   style={styles.quickActionButton}
                   onPress={() => router.push("/(mainUsers)/cart")}
                 >
-                  <Ionicons name="cart" size={20} color="#8B4513" />
+                  <View style={styles.cartIconContainer}>
+                    <Ionicons name="cart" size={20} color="#8B4513" />
+                    {cartItemCount > 0 && (
+                      <View style={styles.cartBadge}>
+                        <Text style={styles.cartBadgeText}>
+                          {cartItemCount > 99 ? "99+" : cartItemCount}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                   <Text style={styles.quickActionText}>Cart</Text>
                 </TouchableOpacity>
 
@@ -489,8 +510,13 @@ export default function MapScreen() {
                       {products.slice(0, 5).map((product) => (
                         <TouchableOpacity
                           key={product.id}
-                          style={styles.quickProductItem}
+                          style={[
+                            styles.quickProductItem,
+                            addingToCart === product.id &&
+                              styles.quickProductItemDisabled,
+                          ]}
                           onPress={() => handleAddToCart(product)}
+                          disabled={addingToCart === product.id}
                         >
                           <Image
                             source={{ uri: product.imageUrl }}
@@ -902,6 +928,31 @@ const styles = StyleSheet.create({
     marginTop: 5,
     fontWeight: "500",
   },
+  cartIconContainer: {
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cartBadge: {
+    position: "absolute",
+    top: -8,
+    right: -8,
+    backgroundColor: "#FF4444",
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+  },
+  cartBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "bold",
+    textAlign: "center",
+    paddingHorizontal: 2,
+  },
   // Products styles
   productsContainer: {
     flex: 1,
@@ -1038,6 +1089,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  quickProductItemDisabled: {
+    opacity: 0.6,
   },
   quickProductImage: {
     width: 50,
