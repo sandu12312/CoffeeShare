@@ -30,6 +30,7 @@ export interface Cart {
 
 class CartService {
   private readonly COLLECTION_NAME = "userCarts";
+  private lastLoggedCartState: Map<string, string> = new Map(); // Track last logged state per user
 
   /**
    * Get user's cart
@@ -44,12 +45,18 @@ class CartService {
       }
 
       const cart = cartDoc.data() as Cart;
-      // Only log when there are actually items in the cart to reduce noise
-      if (cart.items.length > 0) {
+
+      // Only log when cart state actually changes to reduce spam
+      const currentCartState = `${cart.totalBeans}_${cart.items.length}`;
+      const lastState = this.lastLoggedCartState.get(userId);
+
+      if (cart.items.length > 0 && currentCartState !== lastState) {
         console.log(
-          `Retrieved cart for user ${userId}: ${cart.totalBeans} beans, ${cart.items.length} items`
+          `Loaded cart for user ${userId}: ${cart.totalBeans} beans, ${cart.items.length} items`
         );
+        this.lastLoggedCartState.set(userId, currentCartState);
       }
+
       return cart;
     } catch (error) {
       console.error("Error fetching user cart:", error);
@@ -102,6 +109,9 @@ class CartService {
         };
 
         await setDoc(cartRef, newCart);
+        console.log(`✅ Added ${product.name} to new cart for user ${userId}`);
+        // Clear cached state since cart changed
+        this.lastLoggedCartState.delete(userId);
       } else {
         // Update existing cart
         const existingItemIndex = cart.items.findIndex(
@@ -134,6 +144,18 @@ class CartService {
           cafeId,
           cafeName,
         });
+
+        if (existingItemIndex > -1) {
+          console.log(
+            `✅ Updated ${product.name} quantity in cart for user ${userId}`
+          );
+        } else {
+          console.log(
+            `✅ Added ${product.name} to existing cart for user ${userId}`
+          );
+        }
+        // Clear cached state since cart changed
+        this.lastLoggedCartState.delete(userId);
       }
 
       return {
@@ -178,13 +200,18 @@ class CartService {
       if (updatedItems.length === 0) {
         // Delete cart if empty
         await deleteDoc(doc(db, this.COLLECTION_NAME, userId));
+        console.log(`🗑️ Cart emptied and deleted for user ${userId}`);
       } else {
         await updateDoc(doc(db, this.COLLECTION_NAME, userId), {
           items: updatedItems,
           totalBeans: newTotalBeans,
           lastUpdated: serverTimestamp(),
         });
+        console.log(`🗑️ Item removed from cart for user ${userId}`);
       }
+
+      // Clear cached state since cart changed
+      this.lastLoggedCartState.delete(userId);
 
       return {
         success: true,
@@ -247,6 +274,12 @@ class CartService {
         lastUpdated: serverTimestamp(),
       });
 
+      console.log(
+        `🔄 Updated quantity for user ${userId}: ${oldQuantity} → ${newQuantity}`
+      );
+      // Clear cached state since cart changed
+      this.lastLoggedCartState.delete(userId);
+
       return {
         success: true,
         message: "Quantity updated",
@@ -268,6 +301,10 @@ class CartService {
   ): Promise<{ success: boolean; message: string }> {
     try {
       await deleteDoc(doc(db, this.COLLECTION_NAME, userId));
+
+      console.log(`🧹 Cart manually cleared for user ${userId}`);
+      // Clear cached state since cart is now empty
+      this.lastLoggedCartState.delete(userId);
 
       return {
         success: true,
