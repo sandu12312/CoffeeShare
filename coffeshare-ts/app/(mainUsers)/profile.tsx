@@ -97,7 +97,7 @@ export default function ProfileScreen() {
     {
       title: t("notifications"),
       icon: "notifications-outline",
-      onPress: () => router.push("/(mainUsers)/AccountSettings/Notifications"),
+      onPress: () => router.push("/(mainUsers)/notifications"),
     },
     {
       title: t("privacy"),

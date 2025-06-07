@@ -31,6 +31,7 @@ import {
 } from "../../services/subscriptionService";
 import { useSubscriptionStatus } from "../../hooks/useSubscriptionStatus";
 import cartService from "../../services/cartService";
+import notificationService from "../../services/notificationService";
 
 const HEADER_HEIGHT = 80;
 
@@ -77,6 +78,7 @@ export default function Dashboard() {
   const lastScrollY = useRef(0);
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   // Use the new subscription status hook
   const subscriptionStatus = useSubscriptionStatus(user?.uid);
@@ -92,6 +94,8 @@ export default function Dashboard() {
       try {
         setLoading(true);
         await fetchUserActivities();
+        await initializeNotifications();
+        await loadUnreadNotifications();
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -101,6 +105,13 @@ export default function Dashboard() {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    // Initialize notifications when subscription status changes
+    if (user?.uid && subscriptionStatus.subscription) {
+      initializeNotifications();
+    }
+  }, [user?.uid, subscriptionStatus]);
 
   const fetchUserActivities = async () => {
     try {
@@ -119,6 +130,31 @@ export default function Dashboard() {
           [{ text: t("common.ok") }]
         );
       }
+    }
+  };
+
+  const initializeNotifications = async () => {
+    if (!user?.uid || !subscriptionStatus.subscription) return;
+
+    try {
+      await notificationService.initializeNotifications(
+        user.uid,
+        subscriptionStatus.subscription
+      );
+      await loadUnreadNotifications();
+    } catch (error) {
+      console.error("Error initializing notifications:", error);
+    }
+  };
+
+  const loadUnreadNotifications = async () => {
+    if (!user?.uid) return;
+
+    try {
+      const count = await notificationService.getUnreadCount(user.uid);
+      setUnreadNotifications(count);
+    } catch (error) {
+      console.error("Error loading unread notifications:", error);
     }
   };
 
@@ -235,6 +271,10 @@ export default function Dashboard() {
     router.push("/(mainUsers)/profile");
   };
 
+  const handleNotificationsPress = () => {
+    router.push("/(mainUsers)/notifications");
+  };
+
   if (loading || !userProfile) {
     return (
       <ImageBackground
@@ -292,13 +332,25 @@ export default function Dashboard() {
           <Text style={styles.floatingHeaderTitle}>{t("common.appName")}</Text>
           <View style={styles.floatingHeaderIcons}>
             {/* Icon Buttons */}
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons
-                name="notifications-outline"
-                size={26}
-                color="#FFFFFF"
-                style={styles.iconShadow}
-              />
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={handleNotificationsPress}
+            >
+              <View style={styles.notificationIconContainer}>
+                <Ionicons
+                  name="notifications-outline"
+                  size={26}
+                  color="#FFFFFF"
+                  style={styles.iconShadow}
+                />
+                {unreadNotifications > 0 && (
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.notificationBadgeText}>
+                      {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                    </Text>
+                  </View>
+                )}
+              </View>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.iconButton}
@@ -566,5 +618,26 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 14,
     textAlign: "center",
+  },
+  notificationIconContainer: {
+    position: "relative",
+  },
+  notificationBadge: {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    backgroundColor: "#E74C3C",
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+  },
+  notificationBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "bold",
   },
 });
