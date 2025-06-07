@@ -690,51 +690,73 @@ class AdminService {
     Array<{ email: string; name: string; uid: string }>
   > {
     try {
-      // First try the coffeePartners collection
+      console.log("Fetching coffee partners...");
+
+      // First try the coffeePartners collection - get all partners
       try {
-        const partnersQuery = query(
-          collection(db, "coffeePartners"),
-          where("status", "==", "active")
+        const partnersSnapshot = await getDocs(
+          collection(db, "coffeePartners")
         );
-        const partnersSnapshot = await getDocs(partnersQuery);
+        console.log(
+          `Found ${partnersSnapshot.size} documents in coffeePartners collection`
+        );
 
         if (!partnersSnapshot.empty) {
           const partners: Array<{ email: string; name: string; uid: string }> =
             [];
           partnersSnapshot.forEach((doc) => {
             const data = doc.data();
-            partners.push({
-              email: data.email || "",
-              name: data.displayName || data.businessName || data.email || "",
-              uid: doc.id,
-            });
+            console.log(`Coffee partner document:`, { id: doc.id, data });
+
+            // Only include partners that have an email and are either active or don't have a status field
+            if (data.email && (!data.status || data.status === "active")) {
+              partners.push({
+                email: data.email,
+                name:
+                  data.displayName ||
+                  data.businessName ||
+                  data.email ||
+                  "Unknown",
+                uid: doc.id,
+              });
+            }
           });
+
+          console.log(
+            `Returning ${partners.length} coffee partners:`,
+            partners
+          );
           return partners;
         }
       } catch (error) {
-        console.warn(
-          "coffeePartners collection not accessible, trying legacy approach"
-        );
+        console.warn("coffeePartners collection query failed:", error);
       }
 
       // Fallback to legacy users collection with role filter
+      console.log("Trying legacy users collection...");
       const usersQuery = query(
         collection(db, "users"),
-        where("role", "==", "partner"),
-        where("status", "==", "active")
+        where("role", "==", "partner")
       );
       const usersSnapshot = await getDocs(usersQuery);
+      console.log(
+        `Found ${usersSnapshot.size} partner users in users collection`
+      );
 
       const partners: Array<{ email: string; name: string; uid: string }> = [];
       usersSnapshot.forEach((doc) => {
         const data = doc.data();
-        partners.push({
-          email: data.email || "",
-          name: data.displayName || data.email || "",
-          uid: doc.id,
-        });
+        // Only include active partners or those without status
+        if (data.email && (!data.status || data.status === "active")) {
+          partners.push({
+            email: data.email,
+            name: data.displayName || data.email || "Unknown",
+            uid: doc.id,
+          });
+        }
       });
 
+      console.log(`Returning ${partners.length} legacy partners:`, partners);
       return partners;
     } catch (error) {
       console.error("Error fetching coffee partners:", error);
