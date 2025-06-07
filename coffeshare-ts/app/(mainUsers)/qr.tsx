@@ -7,7 +7,10 @@ import {
   AppState,
   TouchableOpacity,
   Alert,
+  Animated,
+  Dimensions,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useLanguage } from "../../context/LanguageContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
 import BottomTabBar from "../../components/BottomTabBar";
@@ -41,6 +44,15 @@ export default function QRScreen() {
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const appState = useRef(AppState.currentState);
+  const previousTokenRef = useRef<QRToken | null>(null);
+  const hasRedirectedRef = useRef<boolean>(false);
+  const previousCreditsRef = useRef<number | null>(null);
+
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
 
   // Check if we're in checkout mode
   const isCheckoutMode = params.checkoutMode === "true";
@@ -147,9 +159,14 @@ export default function QRScreen() {
     const unsubscribeToken = QRService.subscribeToUserQRToken(
       user.uid,
       (token) => {
+        const previousToken = previousTokenRef.current;
+        previousTokenRef.current = token;
+
         setCurrentToken(token);
         if (token) {
           setTimeLeft(calculateTimeLeft(token));
+          // Reset redirect flag when we get a new token
+          hasRedirectedRef.current = false;
         }
         setIsLoading(false);
       }
@@ -158,6 +175,34 @@ export default function QRScreen() {
     // Subscribe to user's subscription
     const unsubscribeSubscription =
       SubscriptionService.subscribeToUserSubscription(user.uid, (sub) => {
+        const previousCredits = previousCreditsRef.current;
+
+        // Monitor credits for successful redemption detection (before setting state)
+        if (sub && sub.creditsLeft !== null && sub.creditsLeft !== undefined) {
+          if (previousCredits !== null && previousCredits > sub.creditsLeft) {
+            // Credits decreased - successful redemption happened!
+            if (isCheckoutMode && !hasRedirectedRef.current) {
+              hasRedirectedRef.current = true;
+              console.log(
+                "🎉 Credits decreased - successful redemption detected!"
+              );
+
+              Toast.show({
+                type: "success",
+                text1: "Order Complete!",
+                text2: "Your order has been successfully processed",
+              });
+
+              setTimeout(() => {
+                router.push("/(mainUsers)/map");
+              }, 1500);
+            }
+          }
+          // Update the reference for next comparison
+          previousCreditsRef.current = sub.creditsLeft;
+        }
+
+        // Set the subscription state after processing
         setSubscription(sub);
       });
 
@@ -165,7 +210,7 @@ export default function QRScreen() {
       unsubscribeToken();
       unsubscribeSubscription();
     };
-  }, [user?.uid, calculateTimeLeft]);
+  }, [user?.uid, calculateTimeLeft, isCheckoutMode, router]);
 
   // Timer for countdown
   useEffect(() => {
@@ -174,9 +219,8 @@ export default function QRScreen() {
         const newTimeLeft = calculateTimeLeft(currentToken);
         setTimeLeft(newTimeLeft);
 
-        if (newTimeLeft <= 0) {
-          setCurrentToken(null);
-        }
+        // Don't manually set token to null when expired - let Firebase handle it
+        // This prevents false redirects due to local timer expiry
       }, 1000);
     } else {
       if (intervalRef.current) {
@@ -192,47 +236,111 @@ export default function QRScreen() {
     };
   }, [currentToken, timeLeft, calculateTimeLeft]);
 
-  // Load cart total beans
+  // Load cart total beans (only in checkout mode)
   useEffect(() => {
     const loadCartTotal = async () => {
-      if (!user?.uid) return;
+      if (!user?.uid || !isCheckoutMode) return;
 
       try {
         const cart = await cartService.getUserCart(user.uid);
         const totalBeans = cart?.totalBeans || 0;
         setCartTotalBeans(totalBeans);
-        console.log(
-          `QR Screen: Loaded cart total of ${totalBeans} beans for user ${user.uid}`
-        );
+        if (totalBeans > 0) {
+          console.log(
+            `QR Screen: Loaded cart total of ${totalBeans} beans for checkout`
+          );
+        }
       } catch (error) {
         console.error("Error loading cart total:", error);
       }
     };
 
     loadCartTotal();
-  }, [user?.uid]);
+  }, [user?.uid, isCheckoutMode]);
 
-  // Check permissions and setup monitoring
+  // Initialize credits tracking when subscription changes
+  useEffect(() => {
+    if (subscription && subscription.creditsLeft !== null) {
+      previousCreditsRef.current = subscription.creditsLeft;
+    }
+  }, [subscription]);
+
+  // Setup monitoring (separate from subscription dependency)
   useEffect(() => {
     checkCanGenerate();
     const cleanup = setupTokenMonitoring();
 
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextAppState === "active"
-      ) {
-        console.log("App has come to the foreground!");
-        checkCanGenerate();
+    const appStateSubscription = AppState.addEventListener(
+      "change",
+      (nextAppState) => {
+        if (
+          appState.current.match(/inactive|background/) &&
+          nextAppState === "active"
+        ) {
+          checkCanGenerate();
+        }
+        appState.current = nextAppState;
       }
-      appState.current = nextAppState;
-    });
+    );
 
     return () => {
       cleanup?.();
-      subscription.remove();
+      appStateSubscription.remove();
     };
   }, [checkCanGenerate, setupTokenMonitoring]);
+
+  // Animation effects
+  useEffect(() => {
+    // Entrance animation
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Pulse animation for active QR
+    if (currentToken && timeLeft > 0) {
+      const pulseAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulseAnimation.start();
+      return () => pulseAnimation.stop();
+    }
+  }, [currentToken, timeLeft]);
+
+  // Rotation animation for loading
+  useEffect(() => {
+    if (isLoading || generatingNew) {
+      const rotateAnimation = Animated.loop(
+        Animated.timing(rotateAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        })
+      );
+      rotateAnimation.start();
+      return () => rotateAnimation.stop();
+    }
+  }, [isLoading, generatingNew]);
 
   // Format time remaining
   const formatTimeLeft = (seconds: number): string => {
@@ -241,94 +349,130 @@ export default function QRScreen() {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
+  const { width, height } = Dimensions.get("window");
+
+  // Get rotation interpolation
+  const spin = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+
   // Show subscription required message
   if (!canGenerate && !isLoading) {
     return (
-      <ScreenWrapper>
-        <View style={styles.container}>
-          <View style={styles.content}>
-            <Ionicons name="cafe-outline" size={80} color="#8B4513" />
-            <Text style={styles.title}>QR Code Not Available</Text>
-            <Text style={styles.subtitle}>
-              {error ||
-                "You need an active subscription with available beans to generate a QR code."}
-            </Text>
-            <TouchableOpacity
-              style={styles.subscribeButton}
-              onPress={() => {
-                // Navigate to subscriptions
-                // router.push('/(mainUsers)/subscriptions');
-              }}
-            >
-              <Text style={styles.subscribeButtonText}>View Subscriptions</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        <BottomTabBar />
-      </ScreenWrapper>
+      <LinearGradient
+        colors={["#F5E6D3", "#E8D5B7", "#D4C4A8"]}
+        style={styles.background}
+      >
+        <ScreenWrapper>
+          <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+            <View style={styles.noSubscriptionCard}>
+              <View style={styles.coffeeIconContainer}>
+                <Ionicons name="cafe-outline" size={80} color="#8B4513" />
+                <View style={styles.coffeeBeansDecor}>
+                  <Ionicons name="ellipse" size={12} color="#8B4513" />
+                  <Ionicons name="ellipse" size={8} color="#A0522D" />
+                  <Ionicons name="ellipse" size={10} color="#8B4513" />
+                </View>
+              </View>
+              <Text style={styles.noSubTitle}>Coffee Break Needed!</Text>
+              <Text style={styles.noSubText}>
+                {error ||
+                  "You need an active subscription with available beans to brew your digital coffee code."}
+              </Text>
+              <TouchableOpacity
+                style={styles.brewButton}
+                onPress={() => router.push("/(mainUsers)/subscriptions")}
+              >
+                <Ionicons name="leaf-outline" size={20} color="#FFFFFF" />
+                <Text style={styles.brewButtonText}>Get Brewing Plan</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+          <BottomTabBar />
+        </ScreenWrapper>
+      </LinearGradient>
     );
   }
 
   return (
-    <ScreenWrapper>
-      <View style={styles.container}>
-        <View style={styles.content}>
+    <LinearGradient
+      colors={["#F5E6D3", "#E8D5B7", "#D4C4A8"]}
+      style={styles.background}
+    >
+      <ScreenWrapper>
+        <Animated.View
+          style={[
+            styles.container,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }],
+            },
+          ]}
+        >
+          {/* Header */}
           <Text style={styles.title}>
-            {isCheckoutMode ? "Checkout QR Code" : t("scanQRCode")}
+            {isCheckoutMode ? "Checkout QR Code" : "Your Coffee Code"}
           </Text>
           <Text style={styles.subtitle}>
             {isCheckoutMode
-              ? `Show this QR code at ${checkoutCafeName} to complete your order`
-              : "Show this QR code to the barista to redeem your coffee"}
+              ? `Show this code at ${checkoutCafeName}`
+              : "Show this code to the barista"}
           </Text>
 
           {/* Info Section */}
           {isCheckoutMode ? (
-            <View style={styles.checkoutInfo}>
-              <View style={styles.checkoutRow}>
+            <View style={styles.infoCard}>
+              <View style={styles.infoRow}>
                 <Ionicons name="storefront" size={20} color="#8B4513" />
-                <Text style={styles.checkoutText}>{checkoutCafeName}</Text>
+                <Text style={styles.infoLabel}>Café:</Text>
+                <Text style={styles.infoValue}>{checkoutCafeName}</Text>
               </View>
-              <View style={styles.checkoutRow}>
+              <View style={styles.infoRow}>
                 <Ionicons name="cafe" size={20} color="#8B4513" />
-                <Text style={styles.checkoutText}>
-                  {checkoutTotalBeans} beans total
-                </Text>
+                <Text style={styles.infoLabel}>Beans:</Text>
+                <Text style={styles.infoValue}>{checkoutTotalBeans}</Text>
               </View>
               {subscription && (
-                <View style={styles.checkoutRow}>
+                <View style={styles.infoRow}>
                   <Ionicons name="wallet" size={20} color="#8B4513" />
-                  <Text style={styles.checkoutText}>
-                    {subscription.creditsLeft -
-                      (isCheckoutMode
-                        ? checkoutTotalBeans
-                        : cartTotalBeans)}{" "}
-                    beans will remain
+                  <Text style={styles.infoLabel}>Remaining:</Text>
+                  <Text style={styles.infoValue}>
+                    {subscription.creditsLeft - checkoutTotalBeans}
                   </Text>
                 </View>
               )}
             </View>
           ) : (
             subscription && (
-              <View style={styles.subscriptionInfo}>
-                <Text style={styles.subscriptionText}>
-                  {subscription.subscriptionName}
-                </Text>
-                <Text style={styles.beansText}>
-                  {subscription.creditsLeft} beans remaining
-                </Text>
-                {cartTotalBeans > 0 && !isCheckoutMode && (
-                  <Text style={styles.cartBeansText}>
-                    Cart total: {cartTotalBeans} beans
+              <View style={styles.infoCard}>
+                <View style={styles.infoRow}>
+                  <Ionicons name="card" size={20} color="#8B4513" />
+                  <Text style={styles.infoLabel}>Plan:</Text>
+                  <Text style={styles.infoValue}>
+                    {subscription.subscriptionName}
                   </Text>
-                )}
+                </View>
+                <View style={styles.infoRow}>
+                  <Ionicons name="cafe" size={20} color="#8B4513" />
+                  <Text style={styles.infoLabel}>Beans:</Text>
+                  <Text style={styles.infoValue}>
+                    {subscription.creditsLeft}
+                  </Text>
+                </View>
               </View>
             )
           )}
 
-          <View style={styles.qrContainer}>
+          {/* QR Code Section */}
+          <View style={styles.qrSection}>
             {isLoading ? (
-              <ActivityIndicator size="large" color="#8B4513" />
+              <View style={styles.loadingContainer}>
+                <Animated.View style={{ transform: [{ rotate: spin }] }}>
+                  <Ionicons name="cafe-outline" size={60} color="#8B4513" />
+                </Animated.View>
+                <Text style={styles.loadingText}>Generating your code...</Text>
+              </View>
             ) : error ? (
               <View style={styles.errorContainer}>
                 <Ionicons
@@ -339,24 +483,57 @@ export default function QRScreen() {
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             ) : currentToken && timeLeft > 0 ? (
-              <>
-                <QRCode
-                  value={currentToken.token}
-                  size={250}
-                  backgroundColor="white"
-                  color="black"
-                />
+              <View style={styles.qrContainer}>
+                <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                  <QRCode
+                    value={currentToken.token}
+                    size={200}
+                    backgroundColor="white"
+                    color="#2C1810"
+                  />
+                </Animated.View>
+
                 <View style={styles.timerContainer}>
+                  <Ionicons name="time-outline" size={16} color="#8B4513" />
                   <Text style={styles.timerText}>
                     Expires in: {formatTimeLeft(timeLeft)}
                   </Text>
                 </View>
-              </>
+
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity
+                    style={styles.refreshButton}
+                    onPress={generateNewToken}
+                    disabled={generatingNew}
+                  >
+                    <Ionicons
+                      name="refresh-outline"
+                      size={20}
+                      color="#FFFFFF"
+                    />
+                    <Text style={styles.refreshButtonText}>Generate New</Text>
+                  </TouchableOpacity>
+
+                  {isCheckoutMode && (
+                    <TouchableOpacity
+                      style={styles.backButton}
+                      onPress={() => router.push("/(mainUsers)/map")}
+                    >
+                      <Ionicons
+                        name="arrow-back-outline"
+                        size={20}
+                        color="#8B4513"
+                      />
+                      <Text style={styles.backButtonText}>Back to Map</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
             ) : (
               <View style={styles.generateContainer}>
-                <Ionicons name="qr-code-outline" size={48} color="#8B4513" />
+                <Ionicons name="qr-code-outline" size={60} color="#8B4513" />
                 <Text style={styles.generateText}>
-                  Tap to generate your QR code
+                  Ready to generate your QR code
                 </Text>
                 <TouchableOpacity
                   style={styles.generateButton}
@@ -364,199 +541,268 @@ export default function QRScreen() {
                   disabled={generatingNew}
                 >
                   {generatingNew ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <Animated.View style={{ transform: [{ rotate: spin }] }}>
+                      <Ionicons name="cafe-outline" size={20} color="#FFFFFF" />
+                    </Animated.View>
                   ) : (
-                    <Text style={styles.generateButtonText}>
-                      Generate QR Code
-                    </Text>
+                    <>
+                      <Ionicons
+                        name="add-circle-outline"
+                        size={20}
+                        color="#FFFFFF"
+                      />
+                      <Text style={styles.generateButtonText}>
+                        Generate QR Code
+                      </Text>
+                    </>
                   )}
                 </TouchableOpacity>
               </View>
             )}
           </View>
-
-          {/* Refresh Button */}
-          {currentToken && timeLeft > 0 && (
-            <TouchableOpacity
-              style={styles.refreshButton}
-              onPress={generateNewToken}
-              disabled={generatingNew}
-            >
-              <Ionicons
-                name="refresh-outline"
-                size={20}
-                color="#8B4513"
-                style={{ marginRight: 8 }}
-              />
-              <Text style={styles.refreshButtonText}>Generate New Code</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-      <BottomTabBar />
-    </ScreenWrapper>
+        </Animated.View>
+        <BottomTabBar />
+      </ScreenWrapper>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    paddingBottom: 20,
   },
-  content: {
-    flex: 1,
-    padding: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+
+  // Header Styles
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
-    marginBottom: 10,
-    color: "#4A4A4A",
+    color: "#2C1810",
     textAlign: "center",
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#666666",
+    color: "#6B4E3D",
     textAlign: "center",
-    marginBottom: 30,
+    marginBottom: 24,
+    lineHeight: 22,
   },
-  qrContainer: {
-    width: 280,
-    height: 280,
-    padding: 15,
-    backgroundColor: "white",
-    borderRadius: 10,
+
+  // No Subscription Styles
+  noSubscriptionCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 20,
+    padding: 24,
+    margin: 20,
     alignItems: "center",
-    justifyContent: "center",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.23,
-    shadowRadius: 2.62,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
     elevation: 4,
+  },
+  coffeeIconContainer: {
     marginBottom: 20,
   },
-  otpText: {
-    marginTop: 15,
-    fontSize: 28,
+  coffeeBeansDecor: {
+    position: "absolute",
+    top: -8,
+    right: -12,
+    flexDirection: "row",
+    gap: 3,
+  },
+  noSubTitle: {
+    fontSize: 22,
     fontWeight: "bold",
-    color: "#333",
-    letterSpacing: 3,
-  },
-  errorText: {
-    fontSize: 16,
-    color: "red",
+    color: "#2C1810",
+    marginBottom: 12,
     textAlign: "center",
-    paddingHorizontal: 10,
   },
-  subscriptionInfo: {
+  noSubText: {
+    fontSize: 16,
+    color: "#6B4E3D",
+    textAlign: "center",
+    lineHeight: 22,
     marginBottom: 20,
+  },
+  brewButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#8B4513",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  brewButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+
+  // Info Card Styles
+  infoCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    gap: 12,
+  },
+  infoLabel: {
+    fontSize: 16,
+    color: "#6B4E3D",
+    fontWeight: "600",
+    flex: 1,
+  },
+  infoValue: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#2C1810",
+  },
+
+  // QR Section Styles
+  qrSection: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
   },
-  subscriptionText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#4A4A4A",
+
+  // QR Container
+  qrContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+    gap: 20,
   },
-  beansText: {
-    fontSize: 16,
-    color: "#666666",
+
+  // Timer Styles
+  timerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(139, 69, 19, 0.1)",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 6,
   },
-  cartBeansText: {
+  timerText: {
     fontSize: 14,
     color: "#8B4513",
     fontWeight: "600",
-    marginTop: 4,
   },
-  timerContainer: {
-    marginTop: 10,
-    padding: 10,
-    backgroundColor: "white",
-    borderRadius: 5,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.23,
-    shadowRadius: 2.62,
-    elevation: 4,
-  },
-  timerText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#4A4A4A",
-  },
-  generateContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  generateText: {
-    fontSize: 16,
-    color: "#4A4A4A",
-    marginRight: 10,
-  },
-  generateButton: {
-    padding: 10,
-    backgroundColor: "#8B4513",
-    borderRadius: 5,
-  },
-  generateButtonText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-  },
+
+  // Button Styles
   refreshButton: {
-    marginTop: 10,
-    padding: 10,
-    backgroundColor: "#8B4513",
-    borderRadius: 5,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: "#8B4513",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    gap: 6,
   },
   refreshButtonText: {
-    fontSize: 16,
-    fontWeight: "bold",
     color: "#FFFFFF",
-    marginLeft: 10,
+    fontSize: 14,
+    fontWeight: "bold",
   },
+
+  // Loading Styles
+  loadingContainer: {
+    alignItems: "center",
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#8B4513",
+    fontWeight: "600",
+  },
+
+  // Error Styles
   errorContainer: {
+    alignItems: "center",
+    gap: 16,
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#FF6B6B",
+    textAlign: "center",
+    fontWeight: "600",
+  },
+
+  // Generate Styles
+  generateContainer: {
+    alignItems: "center",
+    gap: 20,
+    padding: 20,
+  },
+  generateText: {
+    fontSize: 18,
+    color: "#6B4E3D",
+    textAlign: "center",
+    fontWeight: "600",
+  },
+  generateButton: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-  },
-  subscribeButton: {
-    padding: 10,
     backgroundColor: "#8B4513",
-    borderRadius: 5,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
   },
-  subscribeButtonText: {
+  generateButtonText: {
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
-    color: "#FFFFFF",
   },
-  checkoutInfo: {
-    backgroundColor: "#FFF8F3",
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 20,
-    width: "100%",
+
+  // Button Container
+  buttonContainer: {
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  checkoutRow: {
+
+  // Back Button Styles
+  backButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    backgroundColor: "transparent",
+    borderWidth: 2,
+    borderColor: "#8B4513",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    gap: 6,
   },
-  checkoutText: {
-    fontSize: 16,
-    color: "#4A4A4A",
-    marginLeft: 10,
-    flex: 1,
+  backButtonText: {
+    color: "#8B4513",
+    fontSize: 14,
+    fontWeight: "bold",
   },
 });

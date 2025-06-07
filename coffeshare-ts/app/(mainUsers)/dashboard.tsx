@@ -34,12 +34,39 @@ import cartService from "../../services/cartService";
 
 const HEADER_HEIGHT = 80;
 
-// Helper function to format activity data
+// Helper function to format activity data with checkout transaction details
 const formatActivityForDisplay = (activity: any, t: Function) => {
+  const beansUsed = activity.metadata?.beansUsed || activity.beansUsed || 1;
+  const tokenType =
+    activity.metadata?.tokenType || activity.tokenType || "instant";
+  const qrTokenId = activity.metadata?.qrTokenId || activity.qrTokenId;
+
+  // Determine transaction type and description
+  let transactionDescription = "";
+  let transactionIcon = "cafe-outline";
+
+  if (tokenType === "checkout") {
+    transactionDescription = `Checkout Order - ${beansUsed} beans`;
+    transactionIcon = "cart-outline";
+  } else {
+    transactionDescription = `Coffee Redemption - ${beansUsed} bean${
+      beansUsed > 1 ? "s" : ""
+    }`;
+    transactionIcon = "cafe-outline";
+  }
+
   return {
     id: activity.id,
-    cafe: activity.cafeName || t("dashboard.defaultCafeName"),
+    cafe:
+      activity.cafeName ||
+      activity.metadata?.cafeName ||
+      t("dashboard.defaultCafeName"),
     date: formatDate(activity.timestamp, true),
+    beansUsed,
+    tokenType,
+    transactionDescription,
+    transactionIcon,
+    qrTokenId: qrTokenId ? qrTokenId.substring(0, 8) + "..." : null,
   };
 };
 

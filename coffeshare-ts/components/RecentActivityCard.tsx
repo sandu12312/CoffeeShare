@@ -7,6 +7,11 @@ interface Activity {
   id: string;
   cafe: string;
   date: string;
+  beansUsed?: number;
+  tokenType?: "instant" | "checkout";
+  transactionDescription?: string;
+  transactionIcon?: string;
+  qrTokenId?: string;
 }
 
 interface RecentActivityCardProps {
@@ -34,11 +39,27 @@ export default function RecentActivityCard({
           style={styles.listItem}
           onPress={() => onActivityPress(activity)}
         >
+          <View style={styles.listItemIcon}>
+            <Ionicons
+              name={(activity.transactionIcon as any) || "cafe-outline"}
+              size={24}
+              color="#8B4513"
+            />
+          </View>
           <View style={styles.listItemContent}>
             <Text style={styles.listItemTitle}>{activity.cafe}</Text>
-            <Text style={styles.listItemSubtitle}>{activity.date}</Text>
+            <Text style={styles.listItemSubtitle}>
+              {activity.transactionDescription || activity.date}
+            </Text>
+            <Text style={styles.listItemDate}>{activity.date}</Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#8B4513" />
+          <View style={styles.listItemBeans}>
+            <View style={styles.beansContainer}>
+              <Ionicons name="ellipse" size={12} color="#8B4513" />
+              <Text style={styles.beansText}>{activity.beansUsed || 1}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#8B4513" />
+          </View>
         </TouchableOpacity>
       ))}
       <TouchableOpacity style={styles.textButton} onPress={onViewAll}>
@@ -84,6 +105,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "rgba(139, 69, 19, 0.08)", // Lighter border
   },
+  listItemIcon: {
+    width: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
   listItemContent: {
     flex: 1, // Allow content to take available space
     marginRight: 10, // Add space before chevron
@@ -92,10 +119,36 @@ const styles = StyleSheet.create({
     fontSize: 16, // Larger title
     color: "#321E0E",
     marginBottom: 2,
+    fontWeight: "600",
   },
   listItemSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#8B4513",
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  listItemDate: {
+    fontSize: 12,
+    color: "#999",
+  },
+  listItemBeans: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  beansContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8F4EF",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  beansText: {
+    fontSize: 12,
+    color: "#8B4513",
+    fontWeight: "600",
   },
   textButton: {
     marginTop: 15, // Increased spacing

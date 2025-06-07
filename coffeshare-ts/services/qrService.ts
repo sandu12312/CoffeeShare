@@ -366,8 +366,19 @@ export class QRService {
         };
       });
 
-      // Note: Cart clearing will be handled by the user's app, not during scanning
-      // to avoid permissions issues with cross-user data access
+      // Clear cart if this was a checkout token with cart total
+      if (qrToken.cartTotalBeans && qrToken.cartTotalBeans > 0) {
+        try {
+          await cartService.clearCartAfterRedemption(qrToken.userId);
+          console.log(
+            `🛒 Cart cleared for user ${qrToken.userId} after successful redemption`
+          );
+        } catch (cartError) {
+          console.error("❌ Error clearing cart after redemption:", cartError);
+          // Don't fail the operation if cart clearing fails
+        }
+      }
+
       console.log(
         `🎉 Successfully redeemed ${beansToSubtract} beans for user ${qrToken.userId}`
       );
@@ -723,6 +734,22 @@ export class QRService {
           },
         };
       });
+
+      // Clear cart if this was a checkout token with cart total
+      if (qrToken.cartTotalBeans && qrToken.cartTotalBeans > 0) {
+        try {
+          await cartService.clearCartAfterRedemption(qrToken.userId);
+          console.log(
+            `🛒 Cart cleared for user ${qrToken.userId} after legacy redemption`
+          );
+        } catch (cartError) {
+          console.error(
+            "❌ Error clearing cart after legacy redemption:",
+            cartError
+          );
+          // Don't fail the operation if cart clearing fails
+        }
+      }
 
       return result;
     } catch (error) {

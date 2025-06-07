@@ -44,9 +44,12 @@ class CartService {
       }
 
       const cart = cartDoc.data() as Cart;
-      console.log(
-        `Retrieved cart for user ${userId}: ${cart.totalBeans} beans, ${cart.items.length} items`
-      );
+      // Only log when there are actually items in the cart to reduce noise
+      if (cart.items.length > 0) {
+        console.log(
+          `Retrieved cart for user ${userId}: ${cart.totalBeans} beans, ${cart.items.length} items`
+        );
+      }
       return cart;
     } catch (error) {
       console.error("Error fetching user cart:", error);
