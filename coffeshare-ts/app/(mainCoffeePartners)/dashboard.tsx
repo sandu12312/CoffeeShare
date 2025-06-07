@@ -52,28 +52,213 @@ export default function CoffeePartnerDashboard() {
       setLoading(true);
 
       // Find the partner's cafe
-      const partnerDoc = await getDoc(doc(db, "partners", user.uid));
+      const partnerDoc = await getDoc(doc(db, "coffeePartners", user.uid));
       if (!partnerDoc.exists()) {
-        console.error("Partner document not found");
+        console.error(
+          "Partner document not found in coffeePartners collection"
+        );
+        // Try legacy partners collection as fallback
+        const legacyPartnerDoc = await getDoc(doc(db, "partners", user.uid));
+        if (!legacyPartnerDoc.exists()) {
+          console.error(
+            "Partner document not found in legacy partners collection either"
+          );
+          return;
+        }
+        console.log("Using legacy partners collection");
+        // Use legacy doc data
+        const partnerData = legacyPartnerDoc.data();
+        console.log(
+          "Legacy partner document data:",
+          JSON.stringify(partnerData, null, 2)
+        );
+
+        let associatedCafeId =
+          partnerData.associatedCafeId || partnerData.cafeId || "";
+        let businessName = partnerData.businessName || "Your Business";
+
+        if (!associatedCafeId) {
+          console.log(
+            "No associatedCafeId found in legacy, checking if partner has business info..."
+          );
+
+          // If partner has business info, use partner as cafe
+          if (partnerData.businessName) {
+            console.log(
+              "Legacy partner has business info, using partner as cafe"
+            );
+            // Use partner ID as cafe ID since the partner contains the business info
+            associatedCafeId = user.uid;
+            businessName = partnerData.businessName;
+
+            setCafeId(associatedCafeId);
+            setCafeName(businessName);
+            setPartnerId(user.uid);
+
+            // Initialize partner analytics profile
+            await partnerAnalyticsService.initializePartnerProfile(
+              user.uid,
+              user.email || "",
+              user.displayName || "Partner"
+            );
+
+            // Load dashboard stats
+            const stats =
+              await partnerAnalyticsService.getPartnerDashboardStats(user.uid);
+            console.log("Dashboard stats loaded:", stats);
+            setDashboardStats(stats);
+            return;
+          } else {
+            console.error(
+              "No associated cafe found and no business info in legacy partner document. Available fields:",
+              Object.keys(partnerData)
+            );
+            Alert.alert(
+              "Setup Required",
+              "Your partner account needs business information. Please complete your business profile setup.",
+              [
+                {
+                  text: "Continue Anyway",
+                  onPress: () => {
+                    // Allow dashboard to load with a default setup
+                    setCafeId("default");
+                    setCafeName("Setup Required");
+                    setPartnerId(user.uid);
+                  },
+                },
+              ]
+            );
+            return;
+          }
+        }
+
+        setCafeId(associatedCafeId);
+        setPartnerId(user.uid);
+
+        // Load cafe details (or use business name from partner if no separate cafe doc)
+        try {
+          const cafeDoc = await getDoc(doc(db, "cafes", associatedCafeId));
+          if (cafeDoc.exists()) {
+            const cafeData = cafeDoc.data();
+            setCafeName(cafeData.businessName || cafeData.name || businessName);
+          } else {
+            // No separate cafe document, use business name from partner
+            console.log(
+              "No legacy cafe document found, using business name from partner"
+            );
+            setCafeName(businessName);
+          }
+        } catch (error) {
+          console.log(
+            "Error loading legacy cafe document, using business name from partner:",
+            error
+          );
+          setCafeName(businessName);
+        }
+
+        // Initialize partner analytics profile
+        await partnerAnalyticsService.initializePartnerProfile(
+          user.uid,
+          user.email || "",
+          user.displayName || "Partner"
+        );
+
+        // Load dashboard stats
+        const stats = await partnerAnalyticsService.getPartnerDashboardStats(
+          user.uid
+        );
+        console.log("Dashboard stats loaded:", stats);
+        setDashboardStats(stats);
         return;
       }
 
       const partnerData = partnerDoc.data();
-      const associatedCafeId = partnerData.associatedCafeId || "";
+      console.log(
+        "Partner document data:",
+        JSON.stringify(partnerData, null, 2)
+      );
+
+      // Check if partner has associatedCafeId, otherwise use partner as cafe
+      let associatedCafeId =
+        partnerData.associatedCafeId || partnerData.cafeId || "";
+      let businessName = partnerData.businessName || "Your Business";
 
       if (!associatedCafeId) {
-        console.error("No associated cafe found for this partner");
-        return;
+        console.log(
+          "No associatedCafeId found, checking if partner has business info..."
+        );
+
+        // If partner has business info, use partner as cafe
+        if (partnerData.businessName) {
+          console.log("Partner has business info, using partner as cafe");
+          // Use partner ID as cafe ID since the partner contains the business info
+          associatedCafeId = user.uid;
+          businessName = partnerData.businessName;
+
+          setCafeId(associatedCafeId);
+          setCafeName(businessName);
+          setPartnerId(user.uid);
+
+          // Initialize partner analytics profile
+          await partnerAnalyticsService.initializePartnerProfile(
+            user.uid,
+            user.email || "",
+            user.displayName || "Partner"
+          );
+
+          // Load dashboard stats
+          const stats = await partnerAnalyticsService.getPartnerDashboardStats(
+            user.uid
+          );
+          console.log("Dashboard stats loaded:", stats);
+          setDashboardStats(stats);
+          return;
+        } else {
+          console.error(
+            "No associated cafe found and no business info in partner document. Available fields:",
+            Object.keys(partnerData)
+          );
+          Alert.alert(
+            "Setup Required",
+            "Your partner account needs business information. Please complete your business profile setup.",
+            [
+              {
+                text: "Continue Anyway",
+                onPress: () => {
+                  // Allow dashboard to load with a default setup
+                  setCafeId("default");
+                  setCafeName("Setup Required");
+                  setPartnerId(user.uid);
+                },
+              },
+            ]
+          );
+          return;
+        }
       }
 
       setCafeId(associatedCafeId);
       setPartnerId(user.uid);
 
-      // Load cafe details
-      const cafeDoc = await getDoc(doc(db, "cafes", associatedCafeId));
-      if (cafeDoc.exists()) {
-        const cafeData = cafeDoc.data();
-        setCafeName(cafeData.name || "Your Cafe");
+      // Load cafe details (or use business name from partner if no separate cafe doc)
+      try {
+        const cafeDoc = await getDoc(doc(db, "cafes", associatedCafeId));
+        if (cafeDoc.exists()) {
+          const cafeData = cafeDoc.data();
+          setCafeName(cafeData.businessName || cafeData.name || businessName);
+        } else {
+          // No separate cafe document, use business name from partner
+          console.log(
+            "No cafe document found, using business name from partner"
+          );
+          setCafeName(businessName);
+        }
+      } catch (error) {
+        console.log(
+          "Error loading cafe document, using business name from partner:",
+          error
+        );
+        setCafeName(businessName);
       }
 
       // Initialize partner analytics profile
@@ -87,6 +272,7 @@ export default function CoffeePartnerDashboard() {
       const stats = await partnerAnalyticsService.getPartnerDashboardStats(
         user.uid
       );
+      console.log("Dashboard stats loaded:", stats);
       setDashboardStats(stats);
     } catch (error) {
       console.error("Error loading partner data:", error);
@@ -185,6 +371,33 @@ export default function CoffeePartnerDashboard() {
             <Text style={styles.statLabel}>{"Unique Customers"}</Text>
           </View>
         </View>
+
+        {/* Info Message */}
+        {(!dashboardStats ||
+          (dashboardStats.todayScans === 0 &&
+            dashboardStats.todayEarnings === 0)) && (
+          <Animatable.View animation="fadeIn" style={styles.infoCard}>
+            <Ionicons
+              name="information-circle-outline"
+              size={24}
+              color="#8B4513"
+            />
+            <Text style={styles.infoText}>
+              Your daily stats will appear here once customers start scanning QR
+              codes at your cafe.
+            </Text>
+          </Animatable.View>
+        )}
+
+        {/* Setup Required Message */}
+        {cafeName === "Setup Required" && (
+          <Animatable.View animation="fadeIn" style={styles.warningCard}>
+            <Ionicons name="warning-outline" size={24} color="#FF6B6B" />
+            <Text style={styles.warningText}>
+              Cafe association required. Check console logs for debugging info.
+            </Text>
+          </Animatable.View>
+        )}
 
         {/* Quick Actions Section */}
         <Text style={styles.sectionTitle}>{t("cafe.quickActions")}</Text>
@@ -404,5 +617,42 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "bold",
     marginLeft: 8,
+  },
+  infoCard: {
+    backgroundColor: "#FFF8F3",
+    marginHorizontal: 20,
+    marginVertical: 15,
+    padding: 15,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E0D6C7",
+  },
+  infoText: {
+    fontSize: 14,
+    color: "#8B4513",
+    marginLeft: 10,
+    flex: 1,
+    lineHeight: 20,
+  },
+  warningCard: {
+    backgroundColor: "#FFF5F5",
+    marginHorizontal: 20,
+    marginVertical: 15,
+    padding: 15,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#FFB3B3",
+  },
+  warningText: {
+    fontSize: 14,
+    color: "#FF6B6B",
+    marginLeft: 10,
+    flex: 1,
+    lineHeight: 20,
+    fontWeight: "500",
   },
 });
