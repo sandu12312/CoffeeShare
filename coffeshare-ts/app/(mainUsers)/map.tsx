@@ -51,59 +51,6 @@ interface Cafe {
   imageUrl?: string; // Added for café image
 }
 
-// Static list of "5 to Go" locations in Timisoara
-const FIVE_TO_GO_LOCATIONS: Cafe[] = [
-  {
-    id: "5togo-savoya",
-    businessName: "5 to Go Eugeniu de Savoya",
-    location: { latitude: 45.7573, longitude: 21.228 },
-    address: "Strada Eugeniu de Savoya 1",
-    imageUrl:
-      "https://lh3.googleusercontent.com/p/AF1QipPzDZlVUUkRqwGS1q39H4UfJaGc8znUT9myd1eA=s1360-w1360-h1020",
-  },
-  {
-    id: "5togo-victoriei",
-    businessName: "5 to Go Piața Victoriei",
-    location: { latitude: 45.7549, longitude: 21.2265 },
-    address: "Piața Victoriei 5",
-    imageUrl:
-      "https://lh3.googleusercontent.com/p/AF1QipPsigUBwdtBx_ECHEJczh-CVmiKeuXxSx8NIz0L=s1360-w1360-h1020",
-  },
-  {
-    id: "5togo-shoppingcity",
-    businessName: "5 to Go Shopping City",
-    location: { latitude: 45.7433, longitude: 21.1967 },
-    address: "Bulevardul Cetății 70",
-    imageUrl:
-      "https://lh3.googleusercontent.com/p/AF1QipM8p8VMbLlxRvHI3VNKDR6_vk2QurgtRZIVXPux=s1360-w1360-h1020",
-  },
-  {
-    id: "5togo-lazar",
-    businessName: "5 to Go Gheorghe Lazăr",
-    location: { latitude: 45.7604, longitude: 21.2238 },
-    address: "Strada Gheorghe Lazăr 24",
-    imageUrl:
-      "https://lh3.googleusercontent.com/p/AF1QipNV2r64-ZZknUVsXz--MPUvxQ-lUDo1BNk_oJ81=s1360-w1360-h1020",
-  },
-  {
-    id: "5togo-iuliustown",
-    businessName: "5 to Go Iulius Town",
-    location: { latitude: 45.7639, longitude: 21.2301 },
-    address: "Strada Circumvalatiunii 8-12",
-    imageUrl:
-      "https://lh3.googleusercontent.com/p/AF1QipOd_TmcuXOAR_FylS4GyH9c36EwD49LzsjdQj5F=s1360-w1360-h1020",
-  },
-  {
-    id: "5togo-martirilor",
-    businessName: "5 to Go Calea Martirilor",
-    location: { latitude: 45.7407, longitude: 21.2343 },
-    address: "Calea Martirilor 1989 nr. 60",
-    imageUrl:
-      "https://lh3.googleusercontent.com/p/AF1QipObkYcDEYYBSrq9i_yO2Tq3DsSo_qELqpQ7yg4w=s1360-w1360-h1020",
-  },
-  // Add more locations here if known
-];
-
 export default function MapScreen() {
   const { t } = useLanguage();
   const { user } = useFirebase();
@@ -342,8 +289,7 @@ export default function MapScreen() {
     });
   };
 
-  const allCafes = [...cafes, ...FIVE_TO_GO_LOCATIONS];
-  const filteredCafes = allCafes.filter((cafe) =>
+  const filteredCafes = cafes.filter((cafe) =>
     cafe.businessName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -686,14 +632,14 @@ export default function MapScreen() {
       )}
 
       {/* No Results Message */}
-      {!loading && filteredCafes.length === 0 && allCafes.length > 0 && (
+      {!loading && filteredCafes.length === 0 && cafes.length > 0 && (
         <View style={styles.noResultsOverlay}>
           <Text style={styles.noResultsText}>
             {t("map.noResultsFound", { searchQuery: searchQuery })}
           </Text>
         </View>
       )}
-      {!loading && allCafes.length === 0 && !fetchError && (
+      {!loading && cafes.length === 0 && !fetchError && (
         <View style={styles.noResultsOverlay}>
           <Text style={styles.noResultsText}>{t("map.noCafesNearby")}</Text>
         </View>
