@@ -10,6 +10,7 @@ import {
   Alert,
   RefreshControl,
   Platform,
+  ImageBackground,
 } from "react-native";
 import { useLanguage } from "../../context/LanguageContext";
 import { useFirebase } from "../../context/FirebaseContext";
@@ -317,7 +318,11 @@ export default function CoffeePartnerDashboard() {
   }
 
   return (
-    <View style={styles.container}>
+    <ImageBackground
+      source={require("../../assets/images/BackGroundCoffeePartners app.jpg")}
+      style={styles.container}
+      resizeMode="cover"
+    >
       <ScrollView
         contentContainerStyle={styles.scrollViewContent}
         refreshControl={
@@ -468,14 +473,13 @@ export default function CoffeePartnerDashboard() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5E6D3",
     paddingTop: Platform.OS === "ios" ? 50 : 30,
   },
   scrollViewContent: {

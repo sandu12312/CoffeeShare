@@ -9,6 +9,7 @@ import {
   Switch,
   ActivityIndicator,
   Alert,
+  ImageBackground,
 } from "react-native";
 import { useLanguage } from "../../context/LanguageContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
@@ -255,250 +256,263 @@ export default function CafeSettingsScreen() {
 
   return (
     <ScreenWrapper>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color="#3C2415" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Setări Cafenea</Text>
-        <TouchableOpacity
-          onPress={handleSave}
-          style={[styles.saveButton, !hasChanges && styles.saveButtonDisabled]}
-          disabled={!hasChanges || saving}
-        >
-          {saving ? (
-            <ActivityIndicator size="small" color="#8B4513" />
-          ) : (
-            <Text
-              style={[
-                styles.saveButtonText,
-                !hasChanges && styles.saveButtonTextDisabled,
-              ]}
-            >
-              Salvează
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={styles.scrollViewContent}
-        showsVerticalScrollIndicator={false}
+      <ImageBackground
+        source={require("../../assets/images/BackGroundCoffeePartners app.jpg")}
+        style={styles.container}
+        resizeMode="cover"
       >
-        {/* Cafe Selection */}
-        {cafes.length > 1 && (
-          <Animatable.View animation="fadeInDown" duration={400}>
-            <View style={styles.cafeSelectionContainer}>
-              <Text style={styles.cafeSelectionLabel}>
-                Selectează Cafeneaua
-              </Text>
-              <TouchableOpacity
-                style={styles.cafeDropdown}
-                onPress={() => {
-                  // Simple dropdown - could be enhanced with a modal
-                  Alert.alert(
-                    "Selectează Cafeneaua",
-                    "Alege cafeneaua pe care vrei să o editezi:",
-                    [
-                      ...cafes.map((cafe) => ({
-                        text: cafe.businessName,
-                        onPress: () => handleCafeChange(cafe.id),
-                      })),
-                      { text: "Anulează", style: "cancel" },
-                    ]
-                  );
-                }}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={24} color="#3C2415" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Setări Cafenea</Text>
+          <TouchableOpacity
+            onPress={handleSave}
+            style={[
+              styles.saveButton,
+              !hasChanges && styles.saveButtonDisabled,
+            ]}
+            disabled={!hasChanges || saving}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color="#8B4513" />
+            ) : (
+              <Text
+                style={[
+                  styles.saveButtonText,
+                  !hasChanges && styles.saveButtonTextDisabled,
+                ]}
               >
-                <Text style={styles.cafeDropdownText}>
-                  {cafes.find((c) => c.id === selectedCafe)?.businessName ||
-                    "Selectează cafeneaua"}
+                Salvează
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          contentContainerStyle={styles.scrollViewContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Cafe Selection */}
+          {cafes.length > 1 && (
+            <Animatable.View animation="fadeInDown" duration={400}>
+              <View style={styles.cafeSelectionContainer}>
+                <Text style={styles.cafeSelectionLabel}>
+                  Selectează Cafeneaua
                 </Text>
-                <Ionicons name="chevron-down" size={20} color="#8B4513" />
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.cafeDropdown}
+                  onPress={() => {
+                    // Simple dropdown - could be enhanced with a modal
+                    Alert.alert(
+                      "Selectează Cafeneaua",
+                      "Alege cafeneaua pe care vrei să o editezi:",
+                      [
+                        ...cafes.map((cafe) => ({
+                          text: cafe.businessName,
+                          onPress: () => handleCafeChange(cafe.id),
+                        })),
+                        { text: "Anulează", style: "cancel" },
+                      ]
+                    );
+                  }}
+                >
+                  <Text style={styles.cafeDropdownText}>
+                    {cafes.find((c) => c.id === selectedCafe)?.businessName ||
+                      "Selectează cafeneaua"}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color="#8B4513" />
+                </TouchableOpacity>
+              </View>
+            </Animatable.View>
+          )}
+
+          {/* Profile Section */}
+          <Animatable.View animation="fadeInDown" duration={600}>
+            <LinearGradient
+              colors={["#8B4513", "#A0522D"]}
+              style={styles.sectionHeader}
+            >
+              <Ionicons name="storefront" size={20} color="#F5E6D3" />
+              <Text style={styles.sectionTitle}>Profil Cafenea</Text>
+            </LinearGradient>
+          </Animatable.View>
+
+          <Animatable.View
+            animation="fadeInUp"
+            delay={200}
+            style={styles.sectionContent}
+          >
+            <View style={styles.inputContainer}>
+              <View style={styles.inputLabelContainer}>
+                <Ionicons name="cafe-outline" size={18} color="#8B4513" />
+                <Text style={styles.label}>Nume Cafenea</Text>
+              </View>
+              <TextInput
+                style={styles.input}
+                value={settings.cafeName}
+                onChangeText={(text) => updateSetting("cafeName", text)}
+                placeholder="Numele cafenelei tale"
+                placeholderTextColor="#A0522D"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <View style={styles.inputLabelContainer}>
+                <Ionicons name="location-outline" size={18} color="#8B4513" />
+                <Text style={styles.label}>Adresă</Text>
+              </View>
+              <TextInput
+                style={styles.input}
+                value={settings.address}
+                onChangeText={(text) => updateSetting("address", text)}
+                placeholder="Adresa completă"
+                placeholderTextColor="#A0522D"
+                multiline
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <View style={styles.inputLabelContainer}>
+                <Ionicons
+                  name="document-text-outline"
+                  size={18}
+                  color="#8B4513"
+                />
+                <Text style={styles.label}>Descriere Scurtă</Text>
+              </View>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={settings.description}
+                onChangeText={(text) => updateSetting("description", text)}
+                placeholder="Descrie pe scurt cafeneaua"
+                placeholderTextColor="#A0522D"
+                multiline
+                numberOfLines={3}
+              />
             </View>
           </Animatable.View>
-        )}
 
-        {/* Profile Section */}
-        <Animatable.View animation="fadeInDown" duration={600}>
-          <LinearGradient
-            colors={["#8B4513", "#A0522D"]}
-            style={styles.sectionHeader}
+          {/* Contact Section */}
+          <Animatable.View animation="fadeInDown" delay={400} duration={600}>
+            <LinearGradient
+              colors={["#3C2415", "#5D3A1A"]}
+              style={styles.sectionHeader}
+            >
+              <Ionicons name="call" size={20} color="#F5E6D3" />
+              <Text style={styles.sectionTitle}>Informații Contact</Text>
+            </LinearGradient>
+          </Animatable.View>
+
+          <Animatable.View
+            animation="fadeInUp"
+            delay={600}
+            style={styles.sectionContent}
           >
-            <Ionicons name="storefront" size={20} color="#F5E6D3" />
-            <Text style={styles.sectionTitle}>Profil Cafenea</Text>
-          </LinearGradient>
-        </Animatable.View>
-
-        <Animatable.View
-          animation="fadeInUp"
-          delay={200}
-          style={styles.sectionContent}
-        >
-          <View style={styles.inputContainer}>
-            <View style={styles.inputLabelContainer}>
-              <Ionicons name="cafe-outline" size={18} color="#8B4513" />
-              <Text style={styles.label}>Nume Cafenea</Text>
-            </View>
-            <TextInput
-              style={styles.input}
-              value={settings.cafeName}
-              onChangeText={(text) => updateSetting("cafeName", text)}
-              placeholder="Numele cafenelei tale"
-              placeholderTextColor="#A0522D"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <View style={styles.inputLabelContainer}>
-              <Ionicons name="location-outline" size={18} color="#8B4513" />
-              <Text style={styles.label}>Adresă</Text>
-            </View>
-            <TextInput
-              style={styles.input}
-              value={settings.address}
-              onChangeText={(text) => updateSetting("address", text)}
-              placeholder="Adresa completă"
-              placeholderTextColor="#A0522D"
-              multiline
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <View style={styles.inputLabelContainer}>
-              <Ionicons
-                name="document-text-outline"
-                size={18}
-                color="#8B4513"
-              />
-              <Text style={styles.label}>Descriere Scurtă</Text>
-            </View>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={settings.description}
-              onChangeText={(text) => updateSetting("description", text)}
-              placeholder="Descrie pe scurt cafeneaua"
-              placeholderTextColor="#A0522D"
-              multiline
-              numberOfLines={3}
-            />
-          </View>
-        </Animatable.View>
-
-        {/* Contact Section */}
-        <Animatable.View animation="fadeInDown" delay={400} duration={600}>
-          <LinearGradient
-            colors={["#3C2415", "#5D3A1A"]}
-            style={styles.sectionHeader}
-          >
-            <Ionicons name="call" size={20} color="#F5E6D3" />
-            <Text style={styles.sectionTitle}>Informații Contact</Text>
-          </LinearGradient>
-        </Animatable.View>
-
-        <Animatable.View
-          animation="fadeInUp"
-          delay={600}
-          style={styles.sectionContent}
-        >
-          <View style={styles.inputContainer}>
-            <View style={styles.inputLabelContainer}>
-              <Ionicons name="mail-outline" size={18} color="#8B4513" />
-              <Text style={styles.label}>Email Contact</Text>
-            </View>
-            <TextInput
-              style={styles.input}
-              value={settings.contactEmail}
-              onChangeText={(text) => updateSetting("contactEmail", text)}
-              placeholder="Email de contact"
-              placeholderTextColor="#A0522D"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <View style={styles.inputLabelContainer}>
-              <Ionicons name="call-outline" size={18} color="#8B4513" />
-              <Text style={styles.label}>Telefon Contact</Text>
-            </View>
-            <TextInput
-              style={styles.input}
-              value={settings.contactPhone}
-              onChangeText={(text) => updateSetting("contactPhone", text)}
-              placeholder="Număr de telefon"
-              placeholderTextColor="#A0522D"
-              keyboardType="phone-pad"
-            />
-          </View>
-        </Animatable.View>
-
-        {/* Accepted Subscriptions Section */}
-        <Animatable.View animation="fadeInDown" delay={800} duration={600}>
-          <LinearGradient
-            colors={["#D2691E", "#DEB887"]}
-            style={styles.sectionHeader}
-          >
-            <Ionicons name="card" size={20} color="#F5E6D3" />
-            <Text style={styles.sectionTitle}>Abonamente Acceptate</Text>
-          </LinearGradient>
-        </Animatable.View>
-
-        <Animatable.View
-          animation="fadeInUp"
-          delay={1000}
-          style={styles.sectionContent}
-        >
-          {subscriptionPlans.map((plan) => {
-            const planId = plan.id || plan.name;
-            const isAccepted = settings.acceptedSubscriptions[planId] || false;
-
-            // Get icon based on plan name
-            const getIcon = (name: string) => {
-              if (name.toLowerCase().includes("student"))
-                return "school-outline";
-              if (name.toLowerCase().includes("elite")) return "star-outline";
-              if (name.toLowerCase().includes("premium"))
-                return "diamond-outline";
-              return "card-outline";
-            };
-
-            return (
-              <View key={planId} style={styles.switchContainer}>
-                <LinearGradient
-                  colors={["#FFFFFF", "#FFF8F3"]}
-                  style={styles.switchGradient}
-                >
-                  <View style={styles.switchLeft}>
-                    <Ionicons
-                      name={getIcon(plan.name) as any}
-                      size={20}
-                      color="#8B4513"
-                    />
-                    <Text style={styles.switchLabel}>{plan.name}</Text>
-                  </View>
-                  <Switch
-                    trackColor={{ false: "#D7CCC8", true: "#D2691E" }}
-                    thumbColor={isAccepted ? "#8B4513" : "#f4f3f4"}
-                    ios_backgroundColor="#D7CCC8"
-                    onValueChange={(value) =>
-                      updateSubscriptionSetting(planId, value)
-                    }
-                    value={isAccepted}
-                  />
-                </LinearGradient>
+            <View style={styles.inputContainer}>
+              <View style={styles.inputLabelContainer}>
+                <Ionicons name="mail-outline" size={18} color="#8B4513" />
+                <Text style={styles.label}>Email Contact</Text>
               </View>
-            );
-          })}
-        </Animatable.View>
-      </ScrollView>
+              <TextInput
+                style={styles.input}
+                value={settings.contactEmail}
+                onChangeText={(text) => updateSetting("contactEmail", text)}
+                placeholder="Email de contact"
+                placeholderTextColor="#A0522D"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <View style={styles.inputLabelContainer}>
+                <Ionicons name="call-outline" size={18} color="#8B4513" />
+                <Text style={styles.label}>Telefon Contact</Text>
+              </View>
+              <TextInput
+                style={styles.input}
+                value={settings.contactPhone}
+                onChangeText={(text) => updateSetting("contactPhone", text)}
+                placeholder="Număr de telefon"
+                placeholderTextColor="#A0522D"
+                keyboardType="phone-pad"
+              />
+            </View>
+          </Animatable.View>
+
+          {/* Accepted Subscriptions Section */}
+          <Animatable.View animation="fadeInDown" delay={800} duration={600}>
+            <LinearGradient
+              colors={["#D2691E", "#DEB887"]}
+              style={styles.sectionHeader}
+            >
+              <Ionicons name="card" size={20} color="#F5E6D3" />
+              <Text style={styles.sectionTitle}>Abonamente Acceptate</Text>
+            </LinearGradient>
+          </Animatable.View>
+
+          <Animatable.View
+            animation="fadeInUp"
+            delay={1000}
+            style={styles.sectionContent}
+          >
+            {subscriptionPlans.map((plan) => {
+              const planId = plan.id || plan.name;
+              const isAccepted =
+                settings.acceptedSubscriptions[planId] || false;
+
+              // Get icon based on plan name
+              const getIcon = (name: string) => {
+                if (name.toLowerCase().includes("student"))
+                  return "school-outline";
+                if (name.toLowerCase().includes("elite")) return "star-outline";
+                if (name.toLowerCase().includes("premium"))
+                  return "diamond-outline";
+                return "card-outline";
+              };
+
+              return (
+                <View key={planId} style={styles.switchContainer}>
+                  <LinearGradient
+                    colors={["#FFFFFF", "#FFF8F3"]}
+                    style={styles.switchGradient}
+                  >
+                    <View style={styles.switchLeft}>
+                      <Ionicons
+                        name={getIcon(plan.name) as any}
+                        size={20}
+                        color="#8B4513"
+                      />
+                      <Text style={styles.switchLabel}>{plan.name}</Text>
+                    </View>
+                    <Switch
+                      trackColor={{ false: "#D7CCC8", true: "#D2691E" }}
+                      thumbColor={isAccepted ? "#8B4513" : "#f4f3f4"}
+                      ios_backgroundColor="#D7CCC8"
+                      onValueChange={(value) =>
+                        updateSubscriptionSetting(planId, value)
+                      }
+                      value={isAccepted}
+                    />
+                  </LinearGradient>
+                </View>
+              );
+            })}
+          </Animatable.View>
+        </ScrollView>
+      </ImageBackground>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",

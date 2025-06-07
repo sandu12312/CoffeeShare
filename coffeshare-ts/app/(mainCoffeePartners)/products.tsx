@@ -10,6 +10,7 @@ import {
   Image,
   ActivityIndicator,
   ScrollView,
+  ImageBackground,
 } from "react-native";
 import { useLanguage } from "../../context/LanguageContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
@@ -383,310 +384,328 @@ export default function ManageProductsScreen() {
 
   return (
     <ScreenWrapper>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backButton}
-          >
-            <Ionicons name="arrow-back" size={24} color="#3C2415" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Gestionează Produse</Text>
-          <View style={{ width: 24 }} />
-        </View>
-
-        {/* Cafe Selection */}
-        <Animatable.View animation="fadeInDown" duration={600}>
-          <View style={styles.cafeSelectionContainer}>
-            <Text style={styles.cafeSelectionLabel}>Selectează Cafeneaua:</Text>
+      <ImageBackground
+        source={require("../../assets/images/BackGroundCoffeePartners app.jpg")}
+        style={styles.container}
+        resizeMode="cover"
+      >
+        <ScrollView
+          style={styles.container}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.header}>
             <TouchableOpacity
-              style={styles.cafeDropdown}
+              onPress={() => router.back()}
+              style={styles.backButton}
+            >
+              <Ionicons name="arrow-back" size={24} color="#3C2415" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Gestionează Produse</Text>
+            <View style={{ width: 24 }} />
+          </View>
+
+          {/* Cafe Selection */}
+          <Animatable.View animation="fadeInDown" duration={600}>
+            <View style={styles.cafeSelectionContainer}>
+              <Text style={styles.cafeSelectionLabel}>
+                Selectează Cafeneaua:
+              </Text>
+              <TouchableOpacity
+                style={styles.cafeDropdown}
+                onPress={() => {
+                  if (cafes.length === 0) {
+                    Toast.show({
+                      type: "info",
+                      text1: "Info",
+                      text2: "Nu aveți cafenele active",
+                    });
+                    return;
+                  }
+                  Alert.alert(
+                    "Selectează Cafeneaua",
+                    "Alege pentru care cafenea vrei să gestionezi produsele:",
+                    [
+                      ...cafes
+                        .filter((cafe) => cafe.status === "active")
+                        .map((cafe) => ({
+                          text: cafe.businessName,
+                          onPress: () => {
+                            setSelectedCafe(cafe.id);
+                            loadProductsForCafe(cafe.id);
+                          },
+                        })),
+                      { text: "Anulează", style: "cancel" },
+                    ]
+                  );
+                }}
+              >
+                <Text style={styles.cafeDropdownText}>
+                  {selectedCafe
+                    ? cafes.find((c) => c.id === selectedCafe)?.businessName ||
+                      "Selectează cafeneaua"
+                    : "Selectează cafeneaua"}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color="#8B4513" />
+              </TouchableOpacity>
+            </View>
+          </Animatable.View>
+
+          <Animatable.View animation="fadeInDown" duration={600}>
+            <TouchableOpacity
+              style={[
+                styles.addButton,
+                !selectedCafe && styles.addButtonDisabled,
+              ]}
               onPress={() => {
-                if (cafes.length === 0) {
+                if (!selectedCafe) {
                   Toast.show({
                     type: "info",
                     text1: "Info",
-                    text2: "Nu aveți cafenele active",
+                    text2: "Selectează o cafenea mai întâi",
                   });
                   return;
                 }
-                Alert.alert(
-                  "Selectează Cafeneaua",
-                  "Alege pentru care cafenea vrei să gestionezi produsele:",
-                  [
-                    ...cafes
-                      .filter((cafe) => cafe.status === "active")
-                      .map((cafe) => ({
-                        text: cafe.businessName,
-                        onPress: () => {
-                          setSelectedCafe(cafe.id);
-                          loadProductsForCafe(cafe.id);
-                        },
-                      })),
-                    { text: "Anulează", style: "cancel" },
-                  ]
-                );
-              }}
-            >
-              <Text style={styles.cafeDropdownText}>
-                {selectedCafe
-                  ? cafes.find((c) => c.id === selectedCafe)?.businessName ||
-                    "Selectează cafeneaua"
-                  : "Selectează cafeneaua"}
-              </Text>
-              <Ionicons name="chevron-down" size={20} color="#8B4513" />
-            </TouchableOpacity>
-          </View>
-        </Animatable.View>
-
-        <Animatable.View animation="fadeInDown" duration={600}>
-          <TouchableOpacity
-            style={[
-              styles.addButton,
-              !selectedCafe && styles.addButtonDisabled,
-            ]}
-            onPress={() => {
-              if (!selectedCafe) {
-                Toast.show({
-                  type: "info",
-                  text1: "Info",
-                  text2: "Selectează o cafenea mai întâi",
-                });
-                return;
-              }
-              if (isEditing) {
-                handleCancelEdit();
-              } else {
-                setShowForm(!showForm);
-              }
-            }}
-            activeOpacity={0.8}
-            disabled={!selectedCafe}
-          >
-            <LinearGradient
-              colors={
-                !selectedCafe
-                  ? ["#D7CCC8", "#BCAAA4"]
-                  : showForm
-                  ? ["#D32F2F", "#F44336"]
-                  : ["#8B4513", "#A0522D"]
-              }
-              style={styles.addButtonGradient}
-            >
-              <Ionicons
-                name={
-                  showForm
-                    ? "close-circle"
-                    : isEditing
-                    ? "pencil"
-                    : "add-circle"
+                if (isEditing) {
+                  handleCancelEdit();
+                } else {
+                  setShowForm(!showForm);
                 }
-                size={24}
-                color="#FFFFFF"
-              />
-              <Text style={styles.addButtonText}>
-                {showForm
-                  ? "Anulează"
-                  : isEditing
-                  ? "Editează Produs"
-                  : "Adaugă Produs Nou"}
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animatable.View>
-
-        {showForm && (
-          <Animatable.View
-            animation="fadeInUp"
-            duration={500}
-            style={styles.form}
-          >
-            <LinearGradient
-              colors={["#FFFFFF", "#FFF8F3"]}
-              style={styles.formGradient}
+              }}
+              activeOpacity={0.8}
+              disabled={!selectedCafe}
             >
-              <Text style={styles.formTitle}>
-                {isEditing ? "Editează Produs" : "Produs Nou"}
-              </Text>
-
-              <View style={styles.inputContainer}>
-                <Ionicons
-                  name="cafe-outline"
-                  size={20}
-                  color="#8B4513"
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Denumire produs"
-                  placeholderTextColor="#A0522D"
-                  value={productName}
-                  onChangeText={setProductName}
-                />
-              </View>
-
-              {/* Category Selection */}
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Categorie Produs</Text>
-                <View style={styles.categoriesContainer}>
-                  {(["Coffee", "Tea", "Pastries", "Snacks"] as const).map(
-                    (category) => (
-                      <TouchableOpacity
-                        key={category}
-                        style={[
-                          styles.categoryChip,
-                          selectedCategory === category &&
-                            styles.categoryChipSelected,
-                        ]}
-                        onPress={() => setSelectedCategory(category)}
-                      >
-                        <Ionicons
-                          name={
-                            selectedCategory === category
-                              ? "checkmark-circle"
-                              : "ellipse-outline"
-                          }
-                          size={18}
-                          color={
-                            selectedCategory === category
-                              ? "#FFFFFF"
-                              : "#8B4513"
-                          }
-                        />
-                        <Text
-                          style={[
-                            styles.categoryChipText,
-                            selectedCategory === category &&
-                              styles.categoryChipTextSelected,
-                          ]}
-                        >
-                          {category === "Coffee"
-                            ? "Cafea"
-                            : category === "Tea"
-                            ? "Ceai"
-                            : category === "Pastries"
-                            ? "Prăjituri"
-                            : "Gustări"}
-                        </Text>
-                      </TouchableOpacity>
-                    )
-                  )}
-                </View>
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Ionicons
-                  name="cash-outline"
-                  size={20}
-                  color="#8B4513"
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Preț (lei)"
-                  placeholderTextColor="#A0522D"
-                  value={priceLei}
-                  onChangeText={setPriceLei}
-                  keyboardType="decimal-pad"
-                />
-              </View>
-
-              {priceLei && (
-                <Animatable.View
-                  animation="fadeIn"
-                  style={styles.beansCalculation}
-                >
-                  <Ionicons
-                    name="information-circle"
-                    size={16}
-                    color="#8B4513"
-                  />
-                  <Text style={styles.beansText}>
-                    Acest produs valorează{" "}
-                    {calculateBeans(parseFloat(priceLei))} beans
-                  </Text>
-                </Animatable.View>
-              )}
-
-              <TouchableOpacity
-                style={styles.imagePickerButton}
-                onPress={pickImage}
-                activeOpacity={0.8}
+              <LinearGradient
+                colors={
+                  !selectedCafe
+                    ? ["#D7CCC8", "#BCAAA4"]
+                    : showForm
+                    ? ["#D32F2F", "#F44336"]
+                    : ["#8B4513", "#A0522D"]
+                }
+                style={styles.addButtonGradient}
               >
-                {image ? (
-                  <Image source={{ uri: image }} style={styles.previewImage} />
-                ) : (
-                  <LinearGradient
-                    colors={["#F5E6D3", "#D7CCC8"]}
-                    style={styles.imagePickerGradient}
-                  >
-                    <Ionicons name="image-outline" size={32} color="#8B4513" />
-                    <Text style={styles.imagePickerText}>
-                      Adaugă poză produs
-                    </Text>
-                  </LinearGradient>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.submitButton,
-                  (!productName || !priceLei || !image) &&
-                    styles.submitButtonDisabled,
-                ]}
-                onPress={isEditing ? handleUpdateProduct : handleAddProduct}
-                disabled={!productName || !priceLei || !image || uploading}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={
-                    !productName || !priceLei || !image
-                      ? ["#D7CCC8", "#BCAAA4"]
+                <Ionicons
+                  name={
+                    showForm
+                      ? "close-circle"
                       : isEditing
-                      ? ["#FF9800", "#F57C00"]
-                      : ["#4CAF50", "#66BB6A"]
+                      ? "pencil"
+                      : "add-circle"
                   }
-                  style={styles.submitButtonGradient}
-                >
-                  {uploading ? (
-                    <ActivityIndicator color="#FFF" />
-                  ) : (
-                    <>
-                      <Ionicons
-                        name={isEditing ? "save" : "checkmark-circle"}
-                        size={20}
-                        color="#FFF"
-                      />
-                      <Text style={styles.submitButtonText}>
-                        {isEditing ? "Actualizează Produs" : "Adaugă Produs"}
-                      </Text>
-                    </>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
-            </LinearGradient>
+                  size={24}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.addButtonText}>
+                  {showForm
+                    ? "Anulează"
+                    : isEditing
+                    ? "Editează Produs"
+                    : "Adaugă Produs Nou"}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
           </Animatable.View>
-        )}
 
-        <FlatList
-          data={products}
-          renderItem={renderProductItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
-          scrollEnabled={false}
-          ListEmptyComponent={() => (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="cafe-outline" size={60} color="#D7CCC8" />
-              <Text style={styles.emptyListText}>
-                Nu există produse adăugate.
-              </Text>
-              <Text style={styles.emptySubtext}>
-                Apasă butonul de mai sus pentru a adăuga primul produs
-              </Text>
-            </View>
+          {showForm && (
+            <Animatable.View
+              animation="fadeInUp"
+              duration={500}
+              style={styles.form}
+            >
+              <LinearGradient
+                colors={["#FFFFFF", "#FFF8F3"]}
+                style={styles.formGradient}
+              >
+                <Text style={styles.formTitle}>
+                  {isEditing ? "Editează Produs" : "Produs Nou"}
+                </Text>
+
+                <View style={styles.inputContainer}>
+                  <Ionicons
+                    name="cafe-outline"
+                    size={20}
+                    color="#8B4513"
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Denumire produs"
+                    placeholderTextColor="#A0522D"
+                    value={productName}
+                    onChangeText={setProductName}
+                  />
+                </View>
+
+                {/* Category Selection */}
+                <View style={styles.formGroup}>
+                  <Text style={styles.label}>Categorie Produs</Text>
+                  <View style={styles.categoriesContainer}>
+                    {(["Coffee", "Tea", "Pastries", "Snacks"] as const).map(
+                      (category) => (
+                        <TouchableOpacity
+                          key={category}
+                          style={[
+                            styles.categoryChip,
+                            selectedCategory === category &&
+                              styles.categoryChipSelected,
+                          ]}
+                          onPress={() => setSelectedCategory(category)}
+                        >
+                          <Ionicons
+                            name={
+                              selectedCategory === category
+                                ? "checkmark-circle"
+                                : "ellipse-outline"
+                            }
+                            size={18}
+                            color={
+                              selectedCategory === category
+                                ? "#FFFFFF"
+                                : "#8B4513"
+                            }
+                          />
+                          <Text
+                            style={[
+                              styles.categoryChipText,
+                              selectedCategory === category &&
+                                styles.categoryChipTextSelected,
+                            ]}
+                          >
+                            {category === "Coffee"
+                              ? "Cafea"
+                              : category === "Tea"
+                              ? "Ceai"
+                              : category === "Pastries"
+                              ? "Prăjituri"
+                              : "Gustări"}
+                          </Text>
+                        </TouchableOpacity>
+                      )
+                    )}
+                  </View>
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Ionicons
+                    name="cash-outline"
+                    size={20}
+                    color="#8B4513"
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Preț (lei)"
+                    placeholderTextColor="#A0522D"
+                    value={priceLei}
+                    onChangeText={setPriceLei}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+
+                {priceLei && (
+                  <Animatable.View
+                    animation="fadeIn"
+                    style={styles.beansCalculation}
+                  >
+                    <Ionicons
+                      name="information-circle"
+                      size={16}
+                      color="#8B4513"
+                    />
+                    <Text style={styles.beansText}>
+                      Acest produs valorează{" "}
+                      {calculateBeans(parseFloat(priceLei))} beans
+                    </Text>
+                  </Animatable.View>
+                )}
+
+                <TouchableOpacity
+                  style={styles.imagePickerButton}
+                  onPress={pickImage}
+                  activeOpacity={0.8}
+                >
+                  {image ? (
+                    <Image
+                      source={{ uri: image }}
+                      style={styles.previewImage}
+                    />
+                  ) : (
+                    <LinearGradient
+                      colors={["#F5E6D3", "#D7CCC8"]}
+                      style={styles.imagePickerGradient}
+                    >
+                      <Ionicons
+                        name="image-outline"
+                        size={32}
+                        color="#8B4513"
+                      />
+                      <Text style={styles.imagePickerText}>
+                        Adaugă poză produs
+                      </Text>
+                    </LinearGradient>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.submitButton,
+                    (!productName || !priceLei || !image) &&
+                      styles.submitButtonDisabled,
+                  ]}
+                  onPress={isEditing ? handleUpdateProduct : handleAddProduct}
+                  disabled={!productName || !priceLei || !image || uploading}
+                  activeOpacity={0.8}
+                >
+                  <LinearGradient
+                    colors={
+                      !productName || !priceLei || !image
+                        ? ["#D7CCC8", "#BCAAA4"]
+                        : isEditing
+                        ? ["#FF9800", "#F57C00"]
+                        : ["#4CAF50", "#66BB6A"]
+                    }
+                    style={styles.submitButtonGradient}
+                  >
+                    {uploading ? (
+                      <ActivityIndicator color="#FFF" />
+                    ) : (
+                      <>
+                        <Ionicons
+                          name={isEditing ? "save" : "checkmark-circle"}
+                          size={20}
+                          color="#FFF"
+                        />
+                        <Text style={styles.submitButtonText}>
+                          {isEditing ? "Actualizează Produs" : "Adaugă Produs"}
+                        </Text>
+                      </>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </LinearGradient>
+            </Animatable.View>
           )}
-        />
-      </ScrollView>
+
+          <FlatList
+            data={products}
+            renderItem={renderProductItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContainer}
+            scrollEnabled={false}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="cafe-outline" size={60} color="#D7CCC8" />
+                <Text style={styles.emptyListText}>
+                  Nu există produse adăugate.
+                </Text>
+                <Text style={styles.emptySubtext}>
+                  Apasă butonul de mai sus pentru a adăuga primul produs
+                </Text>
+              </View>
+            )}
+          />
+        </ScrollView>
+      </ImageBackground>
     </ScreenWrapper>
   );
 }
@@ -694,7 +713,6 @@ export default function ManageProductsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5E6D3",
   },
   header: {
     flexDirection: "row",

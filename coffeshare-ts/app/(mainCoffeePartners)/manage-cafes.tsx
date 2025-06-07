@@ -9,6 +9,7 @@ import {
   Alert,
   Keyboard,
   ActivityIndicator,
+  ImageBackground,
 } from "react-native";
 import { useLanguage } from "../../context/LanguageContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
@@ -654,84 +655,93 @@ A password reset email has been sent to the partner.`,
 
   return (
     <ScreenWrapper>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Manage Partnership Requests</Text>
-      </View>
-
-      {/* Search Bar */}
-      <Animatable.View
-        animation="fadeInDown"
-        duration={600}
-        style={styles.searchContainer}
+      <ImageBackground
+        source={require("../../assets/images/BackGroundCoffeePartners app.jpg")}
+        style={styles.container}
+        resizeMode="cover"
       >
-        <LinearGradient
-          colors={["#FFFFFF", "#FFF8F3"]}
-          style={styles.searchGradient}
-        >
-          <Ionicons
-            name="search"
-            size={20}
-            color="#8B4513"
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by name, email, or address..."
-            placeholderTextColor="#A0522D"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            returnKeyType="search"
-            onSubmitEditing={() => Keyboard.dismiss()}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity
-              onPress={() => setSearchQuery("")}
-              style={styles.clearButton}
-            >
-              <Ionicons name="close-circle" size={18} color="#8B4513" />
-            </TouchableOpacity>
-          )}
-        </LinearGradient>
-      </Animatable.View>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Manage Partnership Requests</Text>
+        </View>
 
-      {/* List of Requests */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8B4513" />
-          <Text style={styles.loadingText}>
-            Loading partnership requests...
-          </Text>
-        </View>
-      ) : filteredRequests.length > 0 ? (
-        <FlatList
-          data={filteredRequests}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
-          extraData={actionInProgressId}
-          showsVerticalScrollIndicator={false}
-        />
-      ) : (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="cafe-outline" size={80} color="#D7CCC8" />
-          <Text style={styles.emptyText}>No partnership requests found</Text>
-          <Text style={styles.emptySubText}>
-            {searchQuery
-              ? "Try a different search term"
-              : "All pending partnership requests will appear here"}
-          </Text>
-        </View>
-      )}
+        {/* Search Bar */}
+        <Animatable.View
+          animation="fadeInDown"
+          duration={600}
+          style={styles.searchContainer}
+        >
+          <LinearGradient
+            colors={["#FFFFFF", "#FFF8F3"]}
+            style={styles.searchGradient}
+          >
+            <Ionicons
+              name="search"
+              size={20}
+              color="#8B4513"
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by name, email, or address..."
+              placeholderTextColor="#A0522D"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+              onSubmitEditing={() => Keyboard.dismiss()}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setSearchQuery("")}
+                style={styles.clearButton}
+              >
+                <Ionicons name="close-circle" size={18} color="#8B4513" />
+              </TouchableOpacity>
+            )}
+          </LinearGradient>
+        </Animatable.View>
+
+        {/* List of Requests */}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#8B4513" />
+            <Text style={styles.loadingText}>
+              Loading partnership requests...
+            </Text>
+          </View>
+        ) : filteredRequests.length > 0 ? (
+          <FlatList
+            data={filteredRequests}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContainer}
+            extraData={actionInProgressId}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="cafe-outline" size={80} color="#D7CCC8" />
+            <Text style={styles.emptyText}>No partnership requests found</Text>
+            <Text style={styles.emptySubText}>
+              {searchQuery
+                ? "Try a different search term"
+                : "All pending partnership requests will appear here"}
+            </Text>
+          </View>
+        )}
+      </ImageBackground>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   header: {
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 15,
-    backgroundColor: "#F5E6D3",
+    backgroundColor: "transparent",
   },
   headerTitle: {
     fontSize: 24,

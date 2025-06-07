@@ -9,6 +9,7 @@ import {
   Alert,
   RefreshControl,
   Dimensions,
+  ImageBackground,
 } from "react-native";
 import { useLanguage } from "../../context/LanguageContext";
 import { useFirebase } from "../../context/FirebaseContext";
@@ -315,287 +316,297 @@ export default function ReportsScreen() {
 
   return (
     <ScreenWrapper>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color="#3C2415" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t("cafe.reportsAndStats")}</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      <ScrollView
-        contentContainerStyle={styles.scrollViewContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#8B4513"
-          />
-        }
-        showsVerticalScrollIndicator={false}
+      <ImageBackground
+        source={require("../../assets/images/BackGroundCoffeePartners app.jpg")}
+        style={styles.container}
+        resizeMode="cover"
       >
-        {/* Date Range Selector */}
-        <Animatable.View animation="fadeInDown" duration={600}>
-          <View style={styles.dateRangeSelectorContainer}>
-            <View style={styles.selectorHeader}>
-              <Ionicons name="analytics-outline" size={24} color="#8B4513" />
-              <Text style={styles.dateRangeSelectorTitle}>
-                Select Time Period
-              </Text>
-            </View>
-            <View style={styles.dateRangeButtons}>
-              {dateRangeOptions.map((option, index) => {
-                const isSelected = selectedDateRange === option.value;
-                return (
-                  <Animatable.View
-                    key={option.value}
-                    animation="fadeInUp"
-                    delay={100 + index * 50}
-                    style={styles.dateRangeButtonWrapper}
-                  >
-                    <TouchableOpacity
-                      style={[
-                        styles.dateRangeButton,
-                        isSelected && styles.dateRangeButtonSelected,
-                      ]}
-                      onPress={() => setSelectedDateRange(option.value)}
-                      activeOpacity={0.7}
-                    >
-                      <Animatable.View
-                        animation={isSelected ? "pulse" : undefined}
-                        duration={300}
-                        style={styles.dateRangeButtonContent}
-                      >
-                        <LinearGradient
-                          colors={
-                            isSelected
-                              ? ["#8B4513", "#A0522D"]
-                              : ["#FFFFFF", "#F8F4F0"]
-                          }
-                          style={styles.dateRangeButtonGradient}
-                        >
-                          <View style={styles.dateRangeButtonIcon}>
-                            <Ionicons
-                              name={option.icon}
-                              size={20}
-                              color={isSelected ? "#FFFFFF" : "#8B4513"}
-                            />
-                          </View>
-                          <Text
-                            style={[
-                              styles.dateRangeButtonText,
-                              isSelected && styles.dateRangeButtonTextSelected,
-                            ]}
-                          >
-                            {option.label}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.dateRangeButtonSublabel,
-                              isSelected &&
-                                styles.dateRangeButtonSublabelSelected,
-                            ]}
-                          >
-                            {option.sublabel}
-                          </Text>
-                        </LinearGradient>
-                      </Animatable.View>
-                    </TouchableOpacity>
-                  </Animatable.View>
-                );
-              })}
-            </View>
-          </View>
-        </Animatable.View>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={24} color="#3C2415" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t("cafe.reportsAndStats")}</Text>
+          <View style={{ width: 24 }} />
+        </View>
 
-        {/* Key Metrics */}
-        <View style={styles.metricsContainer}>
-          <Animatable.View
+        <ScrollView
+          contentContainerStyle={styles.scrollViewContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#8B4513"
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Date Range Selector */}
+          <Animatable.View animation="fadeInDown" duration={600}>
+            <View style={styles.dateRangeSelectorContainer}>
+              <View style={styles.selectorHeader}>
+                <Ionicons name="analytics-outline" size={24} color="#8B4513" />
+                <Text style={styles.dateRangeSelectorTitle}>
+                  Select Time Period
+                </Text>
+              </View>
+              <View style={styles.dateRangeButtons}>
+                {dateRangeOptions.map((option, index) => {
+                  const isSelected = selectedDateRange === option.value;
+                  return (
+                    <Animatable.View
+                      key={option.value}
+                      animation="fadeInUp"
+                      delay={100 + index * 50}
+                      style={styles.dateRangeButtonWrapper}
+                    >
+                      <TouchableOpacity
+                        style={[
+                          styles.dateRangeButton,
+                          isSelected && styles.dateRangeButtonSelected,
+                        ]}
+                        onPress={() => setSelectedDateRange(option.value)}
+                        activeOpacity={0.7}
+                      >
+                        <Animatable.View
+                          animation={isSelected ? "pulse" : undefined}
+                          duration={300}
+                          style={styles.dateRangeButtonContent}
+                        >
+                          <LinearGradient
+                            colors={
+                              isSelected
+                                ? ["#8B4513", "#A0522D"]
+                                : ["#FFFFFF", "#F8F4F0"]
+                            }
+                            style={styles.dateRangeButtonGradient}
+                          >
+                            <View style={styles.dateRangeButtonIcon}>
+                              <Ionicons
+                                name={option.icon}
+                                size={20}
+                                color={isSelected ? "#FFFFFF" : "#8B4513"}
+                              />
+                            </View>
+                            <Text
+                              style={[
+                                styles.dateRangeButtonText,
+                                isSelected &&
+                                  styles.dateRangeButtonTextSelected,
+                              ]}
+                            >
+                              {option.label}
+                            </Text>
+                            <Text
+                              style={[
+                                styles.dateRangeButtonSublabel,
+                                isSelected &&
+                                  styles.dateRangeButtonSublabelSelected,
+                              ]}
+                            >
+                              {option.sublabel}
+                            </Text>
+                          </LinearGradient>
+                        </Animatable.View>
+                      </TouchableOpacity>
+                    </Animatable.View>
+                  );
+                })}
+              </View>
+            </View>
+          </Animatable.View>
+
+          {/* Key Metrics */}
+          <View style={styles.metricsContainer}>
+            <Animatable.View
+              animation="fadeInLeft"
+              delay={200}
+              style={styles.metricCard}
+            >
+              <LinearGradient
+                colors={["#FFFFFF", "#FFF8F3"]}
+                style={styles.metricGradient}
+              >
+                <View style={styles.metricIconContainer}>
+                  <Ionicons name="scan-outline" size={28} color="#8B4513" />
+                </View>
+                <Text style={styles.metricValue}>
+                  {reportData?.totalScans || 0}
+                </Text>
+                <Text style={styles.metricLabel}>{"Total Scans"}</Text>
+              </LinearGradient>
+            </Animatable.View>
+
+            <Animatable.View
+              animation="fadeInRight"
+              delay={300}
+              style={styles.metricCard}
+            >
+              <LinearGradient
+                colors={["#FFFFFF", "#F0F8FF"]}
+                style={styles.metricGradient}
+              >
+                <View style={[styles.metricIconContainer, styles.blueIcon]}>
+                  <Ionicons name="people-outline" size={28} color="#2196F3" />
+                </View>
+                <Text style={[styles.metricValue, styles.blueText]}>
+                  {reportData?.uniqueCustomers || 0}
+                </Text>
+                <Text style={styles.metricLabel}>{"Unique Customers"}</Text>
+              </LinearGradient>
+            </Animatable.View>
+
+            <Animatable.View
+              animation="fadeInLeft"
+              delay={400}
+              style={styles.metricCard}
+            >
+              <LinearGradient
+                colors={["#FFFFFF", "#FFF5E6"]}
+                style={styles.metricGradient}
+              >
+                <View style={[styles.metricIconContainer, styles.orangeIcon]}>
+                  <Ionicons name="time-outline" size={28} color="#FF9800" />
+                </View>
+                <Text style={[styles.metricValue, styles.orangeText]}>
+                  {reportData?.peakHour || "N/A"}
+                </Text>
+                <Text style={styles.metricLabel}>{"Peak Hour"}</Text>
+              </LinearGradient>
+            </Animatable.View>
+
+            <Animatable.View
+              animation="fadeInRight"
+              delay={500}
+              style={styles.metricCard}
+            >
+              <LinearGradient
+                colors={["#FFFFFF", "#F0FFF0"]}
+                style={styles.metricGradient}
+              >
+                <View style={[styles.metricIconContainer, styles.greenIcon]}>
+                  <Ionicons
+                    name="stats-chart-outline"
+                    size={28}
+                    color="#4CAF50"
+                  />
+                </View>
+                <Text style={[styles.metricValue, styles.greenText]}>
+                  {(reportData?.totalEarnings || 0).toFixed(2)} RON
+                </Text>
+                <Text style={styles.metricLabel}>{"Total Earnings"}</Text>
+              </LinearGradient>
+            </Animatable.View>
+          </View>
+
+          {/* Charts Section */}
+          <Animatable.Text
             animation="fadeInLeft"
-            delay={200}
-            style={styles.metricCard}
+            delay={600}
+            style={styles.sectionTitle}
+          >
+            {selectedDateRange === 1
+              ? "Scans per Hour"
+              : selectedDateRange === 7
+              ? "Scans per Day"
+              : selectedDateRange === 28
+              ? "Scans per Week"
+              : "Scans per Month"}
+          </Animatable.Text>
+
+          <Animatable.View
+            animation="fadeInUp"
+            delay={700}
+            style={styles.chartContainer}
           >
             <LinearGradient
               colors={["#FFFFFF", "#FFF8F3"]}
-              style={styles.metricGradient}
+              style={styles.chartGradient}
             >
-              <View style={styles.metricIconContainer}>
-                <Ionicons name="scan-outline" size={28} color="#8B4513" />
+              <View style={styles.chartHeader}>
+                <Ionicons name="bar-chart" size={24} color="#8B4513" />
+                <Text style={styles.chartTitle}>
+                  {selectedDateRange === 1
+                    ? "Hourly Activity Pattern"
+                    : selectedDateRange === 7
+                    ? "Weekly Coffee Scans"
+                    : selectedDateRange === 28
+                    ? "Monthly Trends by Week"
+                    : "Long-term Monthly Analysis"}
+                </Text>
               </View>
-              <Text style={styles.metricValue}>
-                {reportData?.totalScans || 0}
-              </Text>
-              <Text style={styles.metricLabel}>{"Total Scans"}</Text>
-            </LinearGradient>
-          </Animatable.View>
 
-          <Animatable.View
-            animation="fadeInRight"
-            delay={300}
-            style={styles.metricCard}
-          >
-            <LinearGradient
-              colors={["#FFFFFF", "#F0F8FF"]}
-              style={styles.metricGradient}
-            >
-              <View style={[styles.metricIconContainer, styles.blueIcon]}>
-                <Ionicons name="people-outline" size={28} color="#2196F3" />
-              </View>
-              <Text style={[styles.metricValue, styles.blueText]}>
-                {reportData?.uniqueCustomers || 0}
-              </Text>
-              <Text style={styles.metricLabel}>{"Unique Customers"}</Text>
-            </LinearGradient>
-          </Animatable.View>
+              {/* Chart placeholder with better visualization */}
+              <View style={styles.barChartContainer}>
+                {chartData.labels.map((label, index) => {
+                  const value = chartData.datasets[0].data[index];
+                  const maxValue = Math.max(...chartData.datasets[0].data, 1);
+                  const barHeight = (value / maxValue) * 120;
 
-          <Animatable.View
-            animation="fadeInLeft"
-            delay={400}
-            style={styles.metricCard}
-          >
-            <LinearGradient
-              colors={["#FFFFFF", "#FFF5E6"]}
-              style={styles.metricGradient}
-            >
-              <View style={[styles.metricIconContainer, styles.orangeIcon]}>
-                <Ionicons name="time-outline" size={28} color="#FF9800" />
-              </View>
-              <Text style={[styles.metricValue, styles.orangeText]}>
-                {reportData?.peakHour || "N/A"}
-              </Text>
-              <Text style={styles.metricLabel}>{"Peak Hour"}</Text>
-            </LinearGradient>
-          </Animatable.View>
-
-          <Animatable.View
-            animation="fadeInRight"
-            delay={500}
-            style={styles.metricCard}
-          >
-            <LinearGradient
-              colors={["#FFFFFF", "#F0FFF0"]}
-              style={styles.metricGradient}
-            >
-              <View style={[styles.metricIconContainer, styles.greenIcon]}>
-                <Ionicons
-                  name="stats-chart-outline"
-                  size={28}
-                  color="#4CAF50"
-                />
-              </View>
-              <Text style={[styles.metricValue, styles.greenText]}>
-                {(reportData?.totalEarnings || 0).toFixed(2)} RON
-              </Text>
-              <Text style={styles.metricLabel}>{"Total Earnings"}</Text>
-            </LinearGradient>
-          </Animatable.View>
-        </View>
-
-        {/* Charts Section */}
-        <Animatable.Text
-          animation="fadeInLeft"
-          delay={600}
-          style={styles.sectionTitle}
-        >
-          {selectedDateRange === 1
-            ? "Scans per Hour"
-            : selectedDateRange === 7
-            ? "Scans per Day"
-            : selectedDateRange === 28
-            ? "Scans per Week"
-            : "Scans per Month"}
-        </Animatable.Text>
-
-        <Animatable.View
-          animation="fadeInUp"
-          delay={700}
-          style={styles.chartContainer}
-        >
-          <LinearGradient
-            colors={["#FFFFFF", "#FFF8F3"]}
-            style={styles.chartGradient}
-          >
-            <View style={styles.chartHeader}>
-              <Ionicons name="bar-chart" size={24} color="#8B4513" />
-              <Text style={styles.chartTitle}>
-                {selectedDateRange === 1
-                  ? "Hourly Activity Pattern"
-                  : selectedDateRange === 7
-                  ? "Weekly Coffee Scans"
-                  : selectedDateRange === 28
-                  ? "Monthly Trends by Week"
-                  : "Long-term Monthly Analysis"}
-              </Text>
-            </View>
-
-            {/* Chart placeholder with better visualization */}
-            <View style={styles.barChartContainer}>
-              {chartData.labels.map((label, index) => {
-                const value = chartData.datasets[0].data[index];
-                const maxValue = Math.max(...chartData.datasets[0].data, 1);
-                const barHeight = (value / maxValue) * 120;
-
-                return (
-                  <Animatable.View
-                    key={index}
-                    animation="fadeInUp"
-                    delay={800 + index * 100}
-                    style={styles.barWrapper}
-                  >
-                    <View style={styles.barContainer}>
-                      <Text style={styles.barValue}>{value}</Text>
-                      <View style={[styles.bar, { height: barHeight }]}>
-                        <LinearGradient
-                          colors={["#8B4513", "#D2691E"]}
-                          style={styles.barGradient}
-                        />
+                  return (
+                    <Animatable.View
+                      key={index}
+                      animation="fadeInUp"
+                      delay={800 + index * 100}
+                      style={styles.barWrapper}
+                    >
+                      <View style={styles.barContainer}>
+                        <Text style={styles.barValue}>{value}</Text>
+                        <View style={[styles.bar, { height: barHeight }]}>
+                          <LinearGradient
+                            colors={["#8B4513", "#D2691E"]}
+                            style={styles.barGradient}
+                          />
+                        </View>
                       </View>
-                    </View>
-                    <Text style={styles.barLabel}>{label}</Text>
-                  </Animatable.View>
-                );
-              })}
-            </View>
+                      <Text style={styles.barLabel}>{label}</Text>
+                    </Animatable.View>
+                  );
+                })}
+              </View>
 
-            <View style={styles.chartFooter}>
-              <Text style={styles.chartFooterText}>
-                {selectedDateRange === -1
-                  ? "All Time"
-                  : selectedDateRange === 1
-                  ? "Last Day"
-                  : `Last ${selectedDateRange} Days`}
-                : {reportData?.totalScans || 0} scans |{" "}
-                {(reportData?.totalEarnings || 0).toFixed(2)} RON earned
-              </Text>
-            </View>
-          </LinearGradient>
-        </Animatable.View>
-
-        {/* Export Button */}
-        <Animatable.View animation="bounceIn" delay={1500}>
-          <TouchableOpacity
-            style={styles.exportButton}
-            onPress={handleExportData}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={["#3C2415", "#5D3A1A"]}
-              style={styles.exportButtonGradient}
-            >
-              <Ionicons name="download-outline" size={22} color="#FFFFFF" />
-              <Text style={styles.exportButtonText}>Export Report</Text>
+              <View style={styles.chartFooter}>
+                <Text style={styles.chartFooterText}>
+                  {selectedDateRange === -1
+                    ? "All Time"
+                    : selectedDateRange === 1
+                    ? "Last Day"
+                    : `Last ${selectedDateRange} Days`}
+                  : {reportData?.totalScans || 0} scans |{" "}
+                  {(reportData?.totalEarnings || 0).toFixed(2)} RON earned
+                </Text>
+              </View>
             </LinearGradient>
-          </TouchableOpacity>
-        </Animatable.View>
-      </ScrollView>
+          </Animatable.View>
+
+          {/* Export Button */}
+          <Animatable.View animation="bounceIn" delay={1500}>
+            <TouchableOpacity
+              style={styles.exportButton}
+              onPress={handleExportData}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={["#3C2415", "#5D3A1A"]}
+                style={styles.exportButtonGradient}
+              >
+                <Ionicons name="download-outline" size={22} color="#FFFFFF" />
+                <Text style={styles.exportButtonText}>Export Report</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animatable.View>
+        </ScrollView>
+      </ImageBackground>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
