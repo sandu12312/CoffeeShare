@@ -52,7 +52,10 @@
     "react-native-svg": "15.8.0",
     "react-native-toast-message": "^2.3.0",
     "react-native-web": "~0.19.13",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "expo-file-system": "~18.0.12",
+    "expo-print": "~14.0.3",
+    "expo-sharing": "~13.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

@@ -19,6 +19,7 @@ import partnerAnalyticsService, {
   ReportsData,
   PartnerDailyReport,
 } from "../../services/partnerAnalyticsService";
+import reportExportService from "../../services/reportExportService";
 import * as Animatable from "react-native-animatable";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -37,6 +38,33 @@ export default function ReportsScreen() {
   const [partnerId, setPartnerId] = useState<string>(user?.uid || "");
   const [reportData, setReportData] = useState<ReportsData | null>(null);
   const [selectedDateRange, setSelectedDateRange] = useState<number>(7);
+
+  const dateRangeOptions = [
+    {
+      label: "1 Day",
+      sublabel: "Hours",
+      value: 1,
+      icon: "today-outline" as const,
+    },
+    {
+      label: "7 Days",
+      sublabel: "Daily",
+      value: 7,
+      icon: "calendar-outline" as const,
+    },
+    {
+      label: "1 Month",
+      sublabel: "Weekly",
+      value: 28,
+      icon: "calendar-number-outline" as const,
+    },
+    {
+      label: "All Time",
+      sublabel: "Monthly",
+      value: -1,
+      icon: "infinite-outline" as const,
+    },
+  ];
 
   useEffect(() => {
     if (user) {
@@ -82,12 +110,12 @@ export default function ReportsScreen() {
     loadReportData();
   };
 
-  // Prepare chart data from the analytics
+  // Prepare chart data from the analytics with different granularities
   const prepareChartData = () => {
-    if (!reportData?.dailyReports) {
+    if (!reportData?.dailyReports || reportData.dailyReports.length === 0) {
       return {
-        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-        datasets: [{ data: [0, 0, 0, 0, 0, 0, 0] }],
+        labels: ["No Data"],
+        datasets: [{ data: [0] }],
       };
     }
 
@@ -96,29 +124,182 @@ export default function ReportsScreen() {
       return a.date.localeCompare(b.date);
     });
 
-    // Get last 7 days or less
-    const last7Days = sortedData.slice(-7);
+    if (selectedDateRange === 1) {
+      // 1 DAY: Show scans per hour (every 3 hours for better readability)
+      const latestDay = sortedData[sortedData.length - 1];
+      if (!latestDay?.hourlyDistribution) {
+        return {
+          labels: ["6AM", "9AM", "12PM", "3PM", "6PM", "9PM", "12AM", "3AM"],
+          datasets: [{ data: Array(8).fill(0) }],
+        };
+      }
 
-    // Format for chart
-    return {
-      labels: last7Days.map((item) => {
-        // Format date to day of week (Mon, Tue, etc)
+      // Group hours into 3-hour intervals for better readability
+      const hourIntervals = [
+        { label: "6AM", hours: [6, 7, 8] },
+        { label: "9AM", hours: [9, 10, 11] },
+        { label: "12PM", hours: [12, 13, 14] },
+        { label: "3PM", hours: [15, 16, 17] },
+        { label: "6PM", hours: [18, 19, 20] },
+        { label: "9PM", hours: [21, 22, 23] },
+        { label: "12AM", hours: [0, 1, 2] },
+        { label: "3AM", hours: [3, 4, 5] },
+      ];
+
+      const intervalData = hourIntervals.map((interval) => {
+        return interval.hours.reduce((sum, hour) => {
+          const hourKey = `hour_${hour}`;
+          return sum + (latestDay.hourlyDistribution[hourKey] || 0);
+        }, 0);
+      });
+
+      return {
+        labels: hourIntervals.map((interval) => interval.label),
+        datasets: [{ data: intervalData }],
+      };
+    } else if (selectedDateRange === 7) {
+      // 7 DAYS: Show scans per day (week days)
+      const last7Days = sortedData.slice(-7);
+
+      return {
+        labels: last7Days.map((item) => {
+          const date = new Date(item.date);
+          return date.toLocaleDateString(undefined, { weekday: "short" });
+        }),
+        datasets: [{ data: last7Days.map((item) => item.scansCount || 0) }],
+      };
+    } else if (selectedDateRange === 28) {
+      // 1 MONTH: Show scans per week (4 weeks)
+      const weeklyData = [];
+      const weeklyLabels = [];
+
+      // Group data by weeks
+      for (let weekIndex = 0; weekIndex < 4; weekIndex++) {
+        const weekStart = weekIndex * 7;
+        const weekEnd = Math.min(weekStart + 7, sortedData.length);
+        const weekData = sortedData.slice(
+          sortedData.length - 28 + weekStart,
+          sortedData.length - 28 + weekEnd
+        );
+
+        const weekScans = weekData.reduce(
+          (sum, day) => sum + (day.scansCount || 0),
+          0
+        );
+        weeklyData.push(weekScans);
+        weeklyLabels.push(`Week ${weekIndex + 1}`);
+      }
+
+      return {
+        labels: weeklyLabels,
+        datasets: [{ data: weeklyData }],
+      };
+    } else {
+      // ALL TIME: Show scans per month
+      const monthlyData: { [key: string]: number } = {};
+
+      sortedData.forEach((item) => {
         const date = new Date(item.date);
-        return date.toLocaleDateString(undefined, { weekday: "short" });
-      }),
-      datasets: [
-        {
-          data: last7Days.map((item) => item.scansCount || 0),
-        },
-      ],
-    };
+        const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}`;
+        monthlyData[monthKey] =
+          (monthlyData[monthKey] || 0) + (item.scansCount || 0);
+      });
+
+      const sortedMonths = Object.keys(monthlyData).sort();
+      const last12Months = sortedMonths.slice(-12); // Show last 12 months max for readability
+
+      return {
+        labels: last12Months.map((monthKey) => {
+          const [year, month] = monthKey.split("-");
+          const date = new Date(parseInt(year), parseInt(month) - 1);
+          return date.toLocaleDateString(undefined, {
+            month: "short",
+            year: "2-digit",
+          });
+        }),
+        datasets: [
+          { data: last12Months.map((monthKey) => monthlyData[monthKey] || 0) },
+        ],
+      };
+    }
   };
 
   const chartData = prepareChartData();
 
   const handleExportData = () => {
-    // TODO: Implement data export functionality
-    Alert.alert(t("cafe.exportComingSoon"));
+    if (!reportData || !user) {
+      Alert.alert("Error", "No data available to export");
+      return;
+    }
+
+    const options = [
+      {
+        text: "Export PDF Report",
+        onPress: () => exportPDFReport(),
+      },
+      {
+        text: "Export CSV Data",
+        onPress: () => exportCSVData(),
+      },
+      {
+        text: "Cancel",
+        style: "cancel" as const,
+      },
+    ];
+
+    Alert.alert("Export Data", "Choose export format:", options);
+  };
+
+  const exportPDFReport = async () => {
+    if (!reportData || !user) return;
+
+    const dateRangeText =
+      selectedDateRange === -1
+        ? "All Time"
+        : selectedDateRange === 1
+        ? "Last Day"
+        : `Last ${selectedDateRange} Days`;
+
+    const exportOptions = {
+      partnerName: user.displayName || "Coffee Partner",
+      partnerEmail: user.email || "",
+      dateRange: dateRangeText,
+      reportData: reportData,
+      selectedDateRange: selectedDateRange,
+    };
+
+    try {
+      await reportExportService.generatePDFReport(exportOptions);
+    } catch (error) {
+      console.error("PDF export error:", error);
+    }
+  };
+
+  const exportCSVData = async () => {
+    if (!reportData || !user) return;
+
+    const dateRangeText =
+      selectedDateRange === -1
+        ? "All Time"
+        : selectedDateRange === 1
+        ? "Last Day"
+        : `Last ${selectedDateRange} Days`;
+
+    const exportOptions = {
+      partnerName: user.displayName || "Coffee Partner",
+      partnerEmail: user.email || "",
+      dateRange: dateRangeText,
+      reportData: reportData,
+      selectedDateRange: selectedDateRange,
+    };
+
+    try {
+      await reportExportService.exportCSVReport(exportOptions);
+    } catch (error) {
+      console.error("CSV export error:", error);
+    }
   };
 
   if (loading) {
@@ -156,17 +337,78 @@ export default function ReportsScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Date range info */}
+        {/* Date Range Selector */}
         <Animatable.View animation="fadeInDown" duration={600}>
-          <LinearGradient
-            colors={["#8B4513", "#A0522D"]}
-            style={styles.dateRangeContainer}
-          >
-            <Ionicons name="calendar-outline" size={20} color="#F5E6D3" />
-            <Text style={styles.dateRangeText}>
-              {`Last ${selectedDateRange} days`}
-            </Text>
-          </LinearGradient>
+          <View style={styles.dateRangeSelectorContainer}>
+            <View style={styles.selectorHeader}>
+              <Ionicons name="analytics-outline" size={24} color="#8B4513" />
+              <Text style={styles.dateRangeSelectorTitle}>
+                Select Time Period
+              </Text>
+            </View>
+            <View style={styles.dateRangeButtons}>
+              {dateRangeOptions.map((option, index) => {
+                const isSelected = selectedDateRange === option.value;
+                return (
+                  <Animatable.View
+                    key={option.value}
+                    animation="fadeInUp"
+                    delay={100 + index * 50}
+                    style={styles.dateRangeButtonWrapper}
+                  >
+                    <TouchableOpacity
+                      style={[
+                        styles.dateRangeButton,
+                        isSelected && styles.dateRangeButtonSelected,
+                      ]}
+                      onPress={() => setSelectedDateRange(option.value)}
+                      activeOpacity={0.7}
+                    >
+                      <Animatable.View
+                        animation={isSelected ? "pulse" : undefined}
+                        duration={300}
+                        style={styles.dateRangeButtonContent}
+                      >
+                        <LinearGradient
+                          colors={
+                            isSelected
+                              ? ["#8B4513", "#A0522D"]
+                              : ["#FFFFFF", "#F8F4F0"]
+                          }
+                          style={styles.dateRangeButtonGradient}
+                        >
+                          <View style={styles.dateRangeButtonIcon}>
+                            <Ionicons
+                              name={option.icon}
+                              size={20}
+                              color={isSelected ? "#FFFFFF" : "#8B4513"}
+                            />
+                          </View>
+                          <Text
+                            style={[
+                              styles.dateRangeButtonText,
+                              isSelected && styles.dateRangeButtonTextSelected,
+                            ]}
+                          >
+                            {option.label}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.dateRangeButtonSublabel,
+                              isSelected &&
+                                styles.dateRangeButtonSublabelSelected,
+                            ]}
+                          >
+                            {option.sublabel}
+                          </Text>
+                        </LinearGradient>
+                      </Animatable.View>
+                    </TouchableOpacity>
+                  </Animatable.View>
+                );
+              })}
+            </View>
+          </View>
         </Animatable.View>
 
         {/* Key Metrics */}
@@ -258,7 +500,13 @@ export default function ReportsScreen() {
           delay={600}
           style={styles.sectionTitle}
         >
-          {t("cafe.scansPerDay")}
+          {selectedDateRange === 1
+            ? "Scans per Hour"
+            : selectedDateRange === 7
+            ? "Scans per Day"
+            : selectedDateRange === 28
+            ? "Scans per Week"
+            : "Scans per Month"}
         </Animatable.Text>
 
         <Animatable.View
@@ -273,7 +521,13 @@ export default function ReportsScreen() {
             <View style={styles.chartHeader}>
               <Ionicons name="bar-chart" size={24} color="#8B4513" />
               <Text style={styles.chartTitle}>
-                {t("cafe.coffeeScansChart")}
+                {selectedDateRange === 1
+                  ? "Hourly Activity Pattern"
+                  : selectedDateRange === 7
+                  ? "Weekly Coffee Scans"
+                  : selectedDateRange === 28
+                  ? "Monthly Trends by Week"
+                  : "Long-term Monthly Analysis"}
               </Text>
             </View>
 
@@ -308,7 +562,12 @@ export default function ReportsScreen() {
 
             <View style={styles.chartFooter}>
               <Text style={styles.chartFooterText}>
-                Total: {reportData?.totalScans || 0} scans |{" "}
+                {selectedDateRange === -1
+                  ? "All Time"
+                  : selectedDateRange === 1
+                  ? "Last Day"
+                  : `Last ${selectedDateRange} Days`}
+                : {reportData?.totalScans || 0} scans |{" "}
                 {(reportData?.totalEarnings || 0).toFixed(2)} RON earned
               </Text>
             </View>
@@ -327,9 +586,7 @@ export default function ReportsScreen() {
               style={styles.exportButtonGradient}
             >
               <Ionicons name="download-outline" size={22} color="#FFFFFF" />
-              <Text style={styles.exportButtonText}>
-                {t("cafe.exportData")}
-              </Text>
+              <Text style={styles.exportButtonText}>Export Report</Text>
             </LinearGradient>
           </TouchableOpacity>
         </Animatable.View>
@@ -371,6 +628,84 @@ const styles = StyleSheet.create({
   scrollViewContent: {
     padding: 20,
     paddingBottom: 80,
+  },
+  dateRangeSelectorContainer: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  selectorHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+    gap: 10,
+  },
+  dateRangeSelectorTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#3C2415",
+  },
+  dateRangeButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  dateRangeButtonWrapper: {
+    flex: 1,
+  },
+  dateRangeButton: {
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    overflow: "hidden",
+  },
+  dateRangeButtonSelected: {
+    shadowColor: "#8B4513",
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  dateRangeButtonContent: {
+    width: "100%",
+  },
+  dateRangeButtonGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    minHeight: 90,
+    justifyContent: "center",
+  },
+  dateRangeButtonIcon: {
+    marginBottom: 8,
+  },
+  dateRangeButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#3C2415",
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  dateRangeButtonTextSelected: {
+    color: "#FFFFFF",
+  },
+  dateRangeButtonSublabel: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: "#666",
+    textAlign: "center",
+  },
+  dateRangeButtonSublabelSelected: {
+    color: "#F5E6D3",
   },
   dateRangeContainer: {
     flexDirection: "row",
@@ -484,9 +819,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",
-    height: 150,
-    paddingHorizontal: 10,
-    marginBottom: 20,
+    height: 160,
+    paddingHorizontal: 5,
+    marginBottom: 25,
   },
   barWrapper: {
     flex: 1,
@@ -498,7 +833,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   bar: {
-    width: 30,
+    width: 28,
     borderRadius: 8,
     overflow: "hidden",
     marginTop: 5,
@@ -513,9 +848,10 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   barLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#666",
     marginTop: 8,
+    fontWeight: "600",
   },
   chartFooter: {
     borderTopWidth: 1,

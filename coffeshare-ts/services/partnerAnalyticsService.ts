@@ -366,11 +366,17 @@ class PartnerAnalyticsService {
   ): Promise<ReportsData> {
     try {
       const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - daysBack);
-
-      const startDateStr = startDate.toISOString().split("T")[0];
       const endDateStr = endDate.toISOString().split("T")[0];
+
+      let startDateStr: string;
+      if (daysBack === -1) {
+        // All time - use a very early date
+        startDateStr = "2020-01-01";
+      } else {
+        const startDate = new Date();
+        startDate.setDate(endDate.getDate() - daysBack);
+        startDateStr = startDate.toISOString().split("T")[0];
+      }
 
       // Get daily reports for the date range (simplified query to avoid index)
       const reportsQuery = query(
