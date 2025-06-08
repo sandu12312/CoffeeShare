@@ -152,7 +152,7 @@ const QrScannerScreen = () => {
       }
 
       // Get partner's cafe information
-      let cafeId = "default_cafe";
+      let cafeId = user.uid; // Use partner's UID as default cafe ID
       let cafeName = "Partner Cafe";
 
       try {
@@ -160,20 +160,82 @@ const QrScannerScreen = () => {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          // If partner has associated cafe info
-          if (userData.associatedCafeId) {
-            cafeId = userData.associatedCafeId;
+          console.log(
+            "🔍 SCANNER DEBUG - User data:",
+            JSON.stringify(userData, null, 2)
+          );
 
-            // Get cafe details
-            const cafeDoc = await getDoc(doc(db, "cafes", cafeId));
-            if (cafeDoc.exists()) {
-              cafeName = cafeDoc.data().businessName || cafeName;
-            }
+          // First, try to get cafe name from user's own business data
+          if (userData.businessName) {
+            cafeName = userData.businessName;
+            cafeId = user.uid;
+            console.log(
+              `✅ SCANNER: Using businessName from user: ${cafeName}`
+            );
+          } else if (userData.displayName) {
+            cafeName = userData.displayName;
+            cafeId = user.uid;
+            console.log(`✅ SCANNER: Using displayName from user: ${cafeName}`);
+          } else {
+            console.log(
+              "⚠️ SCANNER: No businessName or displayName found in user data"
+            );
           }
+
+          // Check if there's an associated cafe ID and try to get more specific data
+          if (userData.associatedCafeId) {
+            const associatedCafeId = userData.associatedCafeId;
+            console.log(
+              `🔍 SCANNER: Found associatedCafeId: ${associatedCafeId}`
+            );
+
+            // Try to get cafe details from cafes collection
+            try {
+              const cafeDoc = await getDoc(doc(db, "cafes", associatedCafeId));
+              if (cafeDoc.exists()) {
+                const cafeData = cafeDoc.data();
+                console.log(
+                  "🔍 SCANNER DEBUG - Cafe data:",
+                  JSON.stringify(cafeData, null, 2)
+                );
+                if (cafeData.businessName) {
+                  cafeName = cafeData.businessName;
+                  cafeId = associatedCafeId;
+                  console.log(
+                    `✅ SCANNER: Using businessName from cafes collection: ${cafeName}`
+                  );
+                } else {
+                  console.log(
+                    "⚠️ SCANNER: No businessName found in cafe document"
+                  );
+                }
+              } else {
+                console.log(
+                  `❌ SCANNER: Cafe document ${associatedCafeId} does not exist`
+                );
+              }
+            } catch (cafeDocError) {
+              console.log(
+                "❌ SCANNER: Error fetching cafe document:",
+                cafeDocError
+              );
+            }
+          } else {
+            console.log("⚠️ SCANNER: No associatedCafeId found in user data");
+          }
+        } else {
+          console.log(`❌ SCANNER: User document ${user.uid} does not exist`);
         }
       } catch (cafeError) {
-        console.warn("Could not fetch cafe info, using defaults:", cafeError);
+        console.warn(
+          "❌ SCANNER: Could not fetch cafe info, using defaults:",
+          cafeError
+        );
       }
+
+      console.log(
+        `🎯 SCANNER FINAL RESULT - Cafe ID: ${cafeId}, Cafe Name: ${cafeName}`
+      );
 
       console.log("🔍 Processing QR token with partner analytics...");
 

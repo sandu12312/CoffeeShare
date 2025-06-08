@@ -22,7 +22,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { useFirebase } from "../../context/FirebaseContext";
 import SubscriptionCard from "../../components/SubscriptionCard";
 import RecentActivityCard from "../../components/RecentActivityCard";
-import QuickStatsCard from "../../components/QuickStatsCard";
+
 import FavoriteCafesCard from "../../components/FavoriteCafesCard";
 import { formatDate } from "../../utils/dateUtils";
 import { ActivityType } from "../../types";
@@ -35,6 +35,10 @@ import { useSubscriptionStatus } from "../../hooks/useSubscriptionStatus";
 import cartService from "../../services/cartService";
 import notificationService from "../../services/notificationService";
 import wishlistService, { WishlistItem } from "../../services/wishlistService";
+import userTransactionsService, {
+  UserTransaction,
+} from "../../services/userTransactionsService";
+import TransactionHistoryModal from "../../components/TransactionHistoryModal";
 import { ErrorModal, Toast } from "../../components/ErrorComponents";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 
@@ -83,11 +87,15 @@ export default function Dashboard() {
     useErrorHandler();
   const scrollOffsetY = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
-  const [activityLogs, setActivityLogs] = useState<any[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<
+    UserTransaction[]
+  >([]);
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [favoriteCafes, setFavoriteCafes] = useState<WishlistItem[]>([]);
+  const [showTransactionHistory, setShowTransactionHistory] = useState(false);
 
   // Use the new subscription status hook
   const subscriptionStatus = useSubscriptionStatus(user?.uid);
@@ -105,7 +113,7 @@ export default function Dashboard() {
       } else {
         setLoading(true);
       }
-      await fetchUserActivities();
+      await fetchUserTransactions();
       await initializeNotifications();
       await loadUnreadNotifications();
       await loadFavoriteCafes();
@@ -139,21 +147,28 @@ export default function Dashboard() {
     }
   }, [user?.uid, subscriptionStatus]);
 
-  const fetchUserActivities = useCallback(async () => {
+  const fetchUserTransactions = useCallback(async () => {
+    if (!user?.uid) return;
+
     try {
-      const logs = await getActivityLogs(10, ActivityType.COFFEE_REDEMPTION);
-      setActivityLogs(logs);
+      const transactions = await userTransactionsService.getUserTransactions(
+        user.uid,
+        5
+      );
+      setRecentTransactions(transactions);
     } catch (error: any) {
-      __DEV__ && console.error("Error fetching activity logs:", error);
+      __DEV__ && console.error("Error fetching user transactions:", error);
       // Check if error is due to index building
       if (
         error.message &&
         error.message.includes("index is currently building")
       ) {
-        showInfo(t("cafe.indexBuildingMessage"));
+        showInfo(
+          "Firebase se actualizează. Te rugăm să aștepți câteva minute pentru statistici."
+        );
       }
     }
-  }, [getActivityLogs, showInfo, t]);
+  }, [user?.uid, showInfo, t]);
 
   const initializeNotifications = useCallback(async () => {
     if (!user?.uid || !subscriptionStatus.subscription) return;
@@ -236,51 +251,24 @@ export default function Dashboard() {
     };
   };
 
-  // Get recent activity from user logs
+  // Get recent activity from user transactions
   const getRecentActivity = () => {
-    if (activityLogs.length === 0) {
+    if (recentTransactions.length === 0) {
       return [
         {
           id: "no-activity",
           cafe: t("dashboard.noRecentActivity"),
           date: t("dashboard.getActivityPrompt"),
-          qrTokenId: null, // Add missing property
+          qrTokenId: null,
         },
       ];
     }
 
-    return activityLogs
-      .filter((log) => log.type === ActivityType.COFFEE_REDEMPTION)
+    return recentTransactions
       .slice(0, 3)
-      .map((activity) => formatActivityForDisplay(activity, t));
-  };
-
-  // Get weekly stats data
-  const getWeeklyStats = () => {
-    if (!userProfile || !userProfile.stats) {
-      return {
-        coffeesThisWeek: 0,
-        comparison: "+0%",
-        favoriteCafe: t("dashboard.noFavoriteCafe"),
-      };
-    }
-
-    const weeklyCount = userProfile.stats.weeklyCount || 0;
-    // Calculate comparison (placeholder logic - replace with actual comparison later)
-    const lastWeekCount = weeklyCount - 1; // This is a placeholder
-    const comparison =
-      lastWeekCount > 0
-        ? `+${Math.round(
-            ((weeklyCount - lastWeekCount) / lastWeekCount) * 100
-          )}%`
-        : "+0%";
-
-    return {
-      coffeesThisWeek: weeklyCount,
-      comparison: comparison,
-      favoriteCafe:
-        userProfile.stats.favoriteCafe?.name || t("dashboard.noFavoriteCafe"),
-    };
+      .map((transaction) =>
+        userTransactionsService.formatTransactionForDisplay(transaction, t)
+      );
   };
 
   // Handler functions
@@ -294,12 +282,15 @@ export default function Dashboard() {
   };
 
   const handleViewFullHistory = () => {
-    router.push("/(mainUsers)/profile");
+    setShowTransactionHistory(true);
   };
 
-  const handleActivityPress = (activity: any) => {
-    console.log("Activity pressed:", activity);
-    // Navigate to activity details
+  const handleActivityPress = (transaction: any) => {
+    console.log("Transaction pressed:", transaction);
+    // Could navigate to transaction details or cafe details
+    if (transaction.cafeId) {
+      router.push(`/(mainUsers)/cafeDetails?cafeId=${transaction.cafeId}`);
+    }
   };
 
   const handleProfilePress = () => {
@@ -350,7 +341,6 @@ export default function Dashboard() {
 
   const subscriptionData = getSubscriptionData();
   const recentActivity = getRecentActivity();
-  const quickStats = getWeeklyStats();
 
   const displayName =
     userProfile?.displayName || user?.displayName || t("profile.coffeeLover");
@@ -477,13 +467,6 @@ export default function Dashboard() {
             onViewAll={handleViewFullHistory}
             onActivityPress={handleActivityPress}
           />
-
-          {/* Quick Stats Card - Using Real User Data */}
-          <QuickStatsCard
-            coffeesThisWeek={quickStats.coffeesThisWeek}
-            comparison={quickStats.comparison}
-            favoriteCafe={quickStats.favoriteCafe}
-          />
         </Animated.ScrollView>
 
         {/* Bottom Navigation Bar */}
@@ -506,6 +489,13 @@ export default function Dashboard() {
           onDismiss={hideModal}
           primaryAction={errorState.modal.primaryAction}
           secondaryAction={errorState.modal.secondaryAction}
+        />
+
+        {/* Transaction History Modal */}
+        <TransactionHistoryModal
+          visible={showTransactionHistory}
+          onClose={() => setShowTransactionHistory(false)}
+          userId={user?.uid || ""}
         />
       </SafeAreaView>
     </ImageBackground>

@@ -426,18 +426,25 @@ class CartService {
    */
   async clearCartAfterRedemption(userId: string): Promise<void> {
     try {
+      console.log(`🛒 CART CLEARING: Starting cart clear for user ${userId}`);
       const result = await this.clearCart(userId);
       if (result.success) {
         console.log(
-          `✅ Cart cleared for user ${userId} after successful QR redemption`
+          `✅ CART CLEARED: Successfully cleared cart for user ${userId} after QR redemption`
         );
+
+        // Clear cached state to ensure fresh data on next load
+        this.lastLoggedCartState.delete(userId);
       } else {
         console.log(
-          `⚠️ Cart clear skipped for user ${userId}: ${result.message}`
+          `⚠️ CART CLEAR SKIPPED: Cart clear skipped for user ${userId}: ${result.message}`
         );
       }
     } catch (error) {
-      console.error("❌ Error clearing cart after redemption:", error);
+      console.error(
+        "❌ CART CLEAR ERROR: Error clearing cart after redemption:",
+        error
+      );
       // Don't throw error - this is not critical
     }
   }

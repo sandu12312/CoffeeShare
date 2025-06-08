@@ -5,6 +5,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
+import { AppState, AppStateStatus } from "react-native";
 import { useFirebase } from "./FirebaseContext";
 import cartService from "../services/cartService";
 
@@ -39,6 +40,23 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     } else {
       setCartItemCount(0);
     }
+  }, [user]);
+
+  // Refresh cart count when app becomes active (helps after QR redemption)
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === "active" && user?.uid) {
+        // Refresh cart count when app becomes active
+        refreshCartCount();
+      }
+    };
+
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
+
+    return () => subscription?.remove();
   }, [user]);
 
   const refreshCartCount = async () => {

@@ -8,9 +8,11 @@ import {
   ScrollView,
   Image,
   Dimensions,
+  AppState,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, usePathname } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { useFirebase } from "../context/FirebaseContext";
 import { useCart } from "../context/CartContext";
 import cartService from "../services/cartService";
@@ -34,7 +36,32 @@ export default function BottomTabBar() {
     return currentBaseRoute === path;
   };
 
-  // Cart count is now managed by CartContext, no need for polling
+  // Refresh cart count when this component comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user?.uid) {
+        __DEV__ && console.log("BottomTabBar: Refreshing cart count on focus");
+        refreshCartCount();
+      }
+    }, [user, refreshCartCount])
+  );
+
+  // Additional refresh when app becomes active
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === "active" && user?.uid) {
+        __DEV__ &&
+          console.log("BottomTabBar: Refreshing cart count on app active");
+        setTimeout(() => refreshCartCount(), 500); // Small delay to ensure data is fresh
+      }
+    };
+
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
+    return () => subscription?.remove();
+  }, [user, refreshCartCount]);
 
   // Load recent products for quick order
   const loadQuickProducts = async () => {
