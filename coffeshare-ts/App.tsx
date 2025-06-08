@@ -1,3 +1,8 @@
 // Fallback App.tsx for EAS builds
-// This re-exports the root layout as the default App component
-export { default } from "./app/_layout";
+// This imports and renders the Expo Router root component
+import React from "react";
+import RootLayout from "./app/_layout";
+
+export default function App() {
+  return <RootLayout />;
+}
