@@ -3,19 +3,19 @@ import {
   StyleSheet,
   View,
   Text,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Image,
   ActivityIndicator,
   RefreshControl,
-  ImageBackground,
   Alert,
+  Dimensions,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import BottomTabBar from "../../components/BottomTabBar";
+import ScreenWrapper from "../../components/ScreenWrapper";
 import { useLanguage, TranslationKey } from "../../context/LanguageContext";
 import { useFirebase } from "../../context/FirebaseContext";
 import { useSubscriptionStatus } from "../../hooks/useSubscriptionStatus";
@@ -246,198 +246,184 @@ export default function ProfileScreen() {
 
   if (!userProfile) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8B4513" />
-        <Text style={styles.loadingText}>{t("profile.loading")}</Text>
-      </SafeAreaView>
+      <ScreenWrapper>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8B4513" />
+          <Text style={styles.loadingText}>{t("profile.loading")}</Text>
+        </View>
+      </ScreenWrapper>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <ScreenWrapper
+      bg={require("../../assets/images/coffee-beans-textured-background.jpg")}
+      style={styles.fullScreen}
+    >
       <Stack.Screen options={{ headerShown: false }} />
 
-      <ImageBackground
-        source={require("../../assets/images/coffee-beans-textured-background.jpg")}
-        style={styles.backgroundImage}
-        resizeMode="cover"
-      >
-        <View style={styles.overlay}>
-          <View style={styles.customHeader}>
-            <Text style={styles.customHeaderTitle}>{t("profile")}</Text>
+      <View style={styles.overlay}>
+        <View style={styles.customHeader}>
+          <Text style={styles.customHeaderTitle}>{t("profile")}</Text>
+        </View>
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          <View style={styles.profileHeader}>
+            <TouchableOpacity
+              style={styles.avatarContainer}
+              onPress={handleChangeProfilePhoto}
+              disabled={uploadingPhoto}
+            >
+              {userProfile.photoURL ? (
+                <Image
+                  source={{ uri: userProfile.photoURL }}
+                  style={styles.avatar}
+                />
+              ) : (
+                <View style={styles.placeholderAvatar}>
+                  <Text style={styles.placeholderText}>
+                    {userProfile.displayName
+                      ? userProfile.displayName.charAt(0).toUpperCase()
+                      : t("profile.initialPlaceholder")}
+                  </Text>
+                </View>
+              )}
+              <View style={styles.editPhotoOverlay}>
+                {uploadingPhoto ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Ionicons name="camera" size={20} color="#FFFFFF" />
+                )}
+              </View>
+            </TouchableOpacity>
+            <Text style={styles.userName}>{userProfile.displayName}</Text>
+            <Text style={styles.userEmail}>{userProfile.email}</Text>
+            <Text style={styles.memberSince}>
+              {t("memberSince")} {formatDate(userProfile.createdAt)}
+            </Text>
           </View>
 
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-          >
-            <View style={styles.profileHeader}>
-              <TouchableOpacity
-                style={styles.avatarContainer}
-                onPress={handleChangeProfilePhoto}
-                disabled={uploadingPhoto}
-              >
-                {userProfile.photoURL ? (
-                  <Image
-                    source={{ uri: userProfile.photoURL }}
-                    style={styles.avatar}
-                  />
-                ) : (
-                  <View style={styles.placeholderAvatar}>
-                    <Text style={styles.placeholderText}>
-                      {userProfile.displayName
-                        ? userProfile.displayName.charAt(0).toUpperCase()
-                        : t("profile.initialPlaceholder")}
+          <View style={styles.subscriptionCard}>
+            <Text style={styles.sectionTitle}>
+              {t("profile.subscriptionTitle")}
+            </Text>
+            <View style={styles.subscriptionDetails}>
+              <View style={styles.subscriptionRow}>
+                <Text style={styles.subscriptionLabel}>
+                  {t("profile.planLabel")}
+                </Text>
+                <Text style={styles.subscriptionValue}>
+                  {subscriptionStatus.subscriptionName ||
+                    t("profile.noSubscriptionPlan")}
+                </Text>
+              </View>
+
+              {subscriptionStatus.isActive && (
+                <>
+                  <View style={styles.subscriptionRow}>
+                    <Text style={styles.subscriptionLabel}>
+                      {t("profile.statusLabel")}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.subscriptionValue,
+                        subscriptionStatus.isActive
+                          ? styles.activeText
+                          : styles.inactiveText,
+                      ]}
+                    >
+                      {subscriptionStatus.isActive
+                        ? t("profile.statusActive")
+                        : t("profile.statusInactive")}
                     </Text>
                   </View>
-                )}
-                <View style={styles.editPhotoOverlay}>
-                  {uploadingPhoto ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <Ionicons name="camera" size={20} color="#FFFFFF" />
-                  )}
-                </View>
-              </TouchableOpacity>
-              <Text style={styles.userName}>{userProfile.displayName}</Text>
-              <Text style={styles.userEmail}>{userProfile.email}</Text>
-              <Text style={styles.memberSince}>
-                {t("memberSince")} {formatDate(userProfile.createdAt)}
-              </Text>
-            </View>
 
-            <View style={styles.subscriptionCard}>
-              <Text style={styles.sectionTitle}>
-                {t("profile.subscriptionTitle")}
-              </Text>
-              <View style={styles.subscriptionDetails}>
-                <View style={styles.subscriptionRow}>
-                  <Text style={styles.subscriptionLabel}>
-                    {t("profile.planLabel")}
-                  </Text>
-                  <Text style={styles.subscriptionValue}>
-                    {subscriptionStatus.subscriptionName ||
-                      t("profile.noSubscriptionPlan")}
-                  </Text>
-                </View>
-
-                {subscriptionStatus.isActive && (
-                  <>
-                    <View style={styles.subscriptionRow}>
-                      <Text style={styles.subscriptionLabel}>
-                        {t("profile.statusLabel")}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.subscriptionValue,
-                          subscriptionStatus.isActive
-                            ? styles.activeText
-                            : styles.inactiveText,
-                        ]}
-                      >
-                        {subscriptionStatus.isActive
-                          ? t("profile.statusActive")
-                          : t("profile.statusInactive")}
-                      </Text>
-                    </View>
-
-                    <View style={styles.subscriptionRow}>
-                      <Text style={styles.subscriptionLabel}>
-                        Beans Remaining
-                      </Text>
-                      <Text
-                        style={[styles.subscriptionValue, styles.beansValue]}
-                      >
-                        {subscriptionStatus.beansLeft || 0} /{" "}
-                        {subscriptionStatus.beansTotal || 0} beans
-                      </Text>
-                    </View>
-
-                    {subscriptionStatus.expiresAt && (
-                      <View style={styles.subscriptionRow}>
-                        <Text style={styles.subscriptionLabel}>
-                          {t("profile.expiresLabel")}
-                        </Text>
-                        <Text style={styles.subscriptionValue}>
-                          {formatDate(subscriptionStatus.expiresAt)}
-                        </Text>
-                      </View>
-                    )}
-                  </>
-                )}
-              </View>
-            </View>
-
-            <View style={styles.settingsCard}>
-              <View style={styles.menuContainer}>
-                {menuItems.map((item, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.menuItem}
-                    onPress={item.onPress}
-                  >
-                    <View style={styles.menuItemLeft}>
-                      <Ionicons name={item.icon} size={24} color="#8B4513" />
-                      <Text style={styles.menuItemText}>{item.title}</Text>
-                    </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={24}
-                      color="#CCCCCC"
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <TouchableOpacity
-                style={styles.settingItem}
-                onPress={handleLogout}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator size="small" color="#C0392B" />
-                ) : (
-                  <>
-                    <Ionicons
-                      name="log-out-outline"
-                      size={22}
-                      color="#C0392B"
-                    />
-                    <Text style={[styles.settingText, styles.logoutText]}>
-                      {t("logout")}
+                  <View style={styles.subscriptionRow}>
+                    <Text style={styles.subscriptionLabel}>
+                      Beans Remaining
                     </Text>
-                  </>
-                )}
-              </TouchableOpacity>
+                    <Text style={[styles.subscriptionValue, styles.beansValue]}>
+                      {subscriptionStatus.beansLeft || 0} /{" "}
+                      {subscriptionStatus.beansTotal || 0} beans
+                    </Text>
+                  </View>
+
+                  {subscriptionStatus.expiresAt && (
+                    <View style={styles.subscriptionRow}>
+                      <Text style={styles.subscriptionLabel}>
+                        {t("profile.expiresLabel")}
+                      </Text>
+                      <Text style={styles.subscriptionValue}>
+                        {formatDate(subscriptionStatus.expiresAt)}
+                      </Text>
+                    </View>
+                  )}
+                </>
+              )}
             </View>
-          </ScrollView>
+          </View>
 
-          <BottomTabBar />
+          <View style={styles.settingsCard}>
+            <View style={styles.menuContainer}>
+              {menuItems.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.menuItem}
+                  onPress={item.onPress}
+                >
+                  <View style={styles.menuItemLeft}>
+                    <Ionicons name={item.icon} size={24} color="#8B4513" />
+                    <Text style={styles.menuItemText}>{item.title}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={24} color="#CCCCCC" />
+                </TouchableOpacity>
+              ))}
+            </View>
 
-          {/* Error Components */}
-          <Toast
-            visible={errorState.toast.visible}
-            message={errorState.toast.message}
-            type={errorState.toast.type}
-            onHide={hideToast}
-          />
-        </View>
-      </ImageBackground>
-    </SafeAreaView>
+            <TouchableOpacity
+              style={styles.settingItem}
+              onPress={handleLogout}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#C0392B" />
+              ) : (
+                <>
+                  <Ionicons name="log-out-outline" size={22} color="#C0392B" />
+                  <Text style={[styles.settingText, styles.logoutText]}>
+                    {t("logout")}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+
+        <BottomTabBar />
+
+        {/* Error Components */}
+        <Toast
+          visible={errorState.toast.visible}
+          message={errorState.toast.message}
+          type={errorState.toast.type}
+          onHide={hideToast}
+        />
+      </View>
+    </ScreenWrapper>
   );
 }
 
+const { width, height } = Dimensions.get("screen");
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F5F5F5",
-  },
-  backgroundImage: {
-    flex: 1,
-    width: "100%",
-    height: "100%",
+  fullScreen: {
+    width: width,
+    height: height,
   },
   overlay: {
     flex: 1,
@@ -448,7 +434,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
   },
   loadingText: {
     marginTop: 10,
