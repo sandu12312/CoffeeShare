@@ -12,8 +12,6 @@ interface CartContextType {
   cartItemCount: number;
   refreshCartCount: () => Promise<void>;
   updateCartCount: (count: number) => void;
-  incrementCartCount: (amount?: number) => void;
-  decrementCartCount: (amount?: number) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -58,20 +56,10 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setCartItemCount(Math.max(0, count));
   };
 
-  const incrementCartCount = (amount: number = 1) => {
-    setCartItemCount((prev) => prev + amount);
-  };
-
-  const decrementCartCount = (amount: number = 1) => {
-    setCartItemCount((prev) => Math.max(0, prev - amount));
-  };
-
   const value: CartContextType = {
     cartItemCount,
     refreshCartCount,
     updateCartCount,
-    incrementCartCount,
-    decrementCartCount,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

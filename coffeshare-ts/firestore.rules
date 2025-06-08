@@ -470,5 +470,49 @@ service cloud.firestore {
       // Only admins can delete profiles
       allow delete: if isAdmin();
     }
+
+    // Global Statistics - system-wide analytics and statistics
+    match /globalStatistics/{statsId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
+      // Admins can read and write global statistics
+      allow read, write: if isAdmin();
+      
+      // Authenticated users can read global statistics (for dashboard display)
+      allow read: if isAuth();
+      
+      // System can create/update statistics (via cloud functions or admin operations)
+      allow create: if isAuth();
+      allow update: if isAuth();
+    }
+
+    // Daily Statistics - daily aggregated statistics
+    match /dailyStatistics/{dateId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
+      // Admins can read and write daily statistics
+      allow read, write: if isAdmin();
+      
+      // Authenticated users can read daily statistics (for charts and trends)
+      allow read: if isAuth();
+      
+      // System can create/update daily statistics
+      allow create: if isAuth();
+      allow update: if isAuth();
+    }
+
+    // Statistics Update Logs - for debugging statistics calculations
+    match /statisticsUpdateLogs/{logId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
+      // Only admins can read/write update logs
+      allow read, write: if isAdmin();
+      
+      // System can create logs
+      allow create: if isAuth();
+    }
   }
 } 

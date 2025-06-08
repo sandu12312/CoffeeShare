@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useLanguage } from "../../context/LanguageContext";
+import { useCart } from "../../context/CartContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
 import BottomTabBar from "../../components/BottomTabBar";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,6 +27,7 @@ export default function CartScreen() {
   const { t } = useLanguage();
   const router = useRouter();
   const { user } = useFirebase();
+  const { refreshCartCount } = useCart();
   const { errorState, showConfirmModal, hideModal } = useErrorHandler();
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
@@ -126,6 +128,9 @@ export default function CartScreen() {
           text1: t("common.error"),
           text2: result.message,
         });
+      } else {
+        // Update cart context count after successful quantity update
+        refreshCartCount();
       }
     } catch (error) {
       // Revert optimistic update on error
@@ -186,6 +191,8 @@ export default function CartScreen() {
               text1: t("cart.removed"),
               text2: t("cart.itemRemovedFromCart"),
             });
+            // Update cart context count after successful removal
+            refreshCartCount();
           } else {
             // Revert optimistic update on failure
             setCart(cart);

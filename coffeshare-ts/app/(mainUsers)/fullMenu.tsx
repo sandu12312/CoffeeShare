@@ -16,6 +16,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useFirebase } from "../../context/FirebaseContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { useCart } from "../../context/CartContext";
 import coffeePartnerService, {
   Product,
 } from "../../services/coffeePartnerService";
@@ -29,11 +30,11 @@ export default function FullMenu() {
   const { t } = useLanguage();
   const router = useRouter();
   const { user } = useFirebase();
+  const { cartItemCount, refreshCartCount } = useCart();
   const params = useLocalSearchParams();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cartItemCount, setCartItemCount] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [cafeCategories, setCafeCategories] = useState<string[]>([
@@ -48,7 +49,6 @@ export default function FullMenu() {
 
   useEffect(() => {
     loadProducts();
-    loadCartCount();
     loadCafeCategories();
   }, [cafeId]);
 
@@ -63,13 +63,6 @@ export default function FullMenu() {
       console.error("Error loading products:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadCartCount = async () => {
-    if (user?.uid) {
-      const count = await cartService.getCartItemCount(user.uid);
-      setCartItemCount(count);
     }
   };
 
@@ -109,7 +102,7 @@ export default function FullMenu() {
         text1: t("fullMenu.success"),
         text2: t("fullMenu.addedToCart", { productName: product.name }),
       });
-      loadCartCount();
+      refreshCartCount();
     } else {
       Toast.show({
         type: "error",

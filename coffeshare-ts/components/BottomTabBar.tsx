@@ -22,7 +22,7 @@ import Toast from "react-native-toast-message";
 export default function BottomTabBar() {
   const pathname = usePathname();
   const { user } = useFirebase();
-  const { cartItemCount, incrementCartCount } = useCart();
+  const { cartItemCount, refreshCartCount } = useCart();
   const [showQuickOrder, setShowQuickOrder] = useState(false);
   const [quickProducts, setQuickProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -79,8 +79,8 @@ export default function BottomTabBar() {
         text2: `${product.name} added to cart`,
       });
 
-      // Increment cart count immediately
-      incrementCartCount(1);
+      // Refresh cart count to reflect the new item
+      refreshCartCount();
     } else {
       Toast.show({
         type: "error",

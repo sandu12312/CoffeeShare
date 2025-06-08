@@ -55,7 +55,7 @@ interface Cafe {
 export default function MapScreen() {
   const { t } = useLanguage();
   const { user } = useFirebase();
-  const { cartItemCount, incrementCartCount } = useCart();
+  const { cartItemCount, refreshCartCount } = useCart();
   const { errorState, showInfo, hideToast } = useErrorHandler();
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [loading, setLoading] = useState(true);
@@ -229,9 +229,6 @@ export default function MapScreen() {
 
     setAddingToCart(product.id);
 
-    // Optimistic UI update - immediately increment cart count
-    incrementCartCount(1);
-
     try {
       const result = await cartService.addToCart(
         user.uid,
@@ -247,10 +244,9 @@ export default function MapScreen() {
           text1: "Added!",
           text2: `${product.name}`,
         });
-        // Count already updated optimistically, no need to fetch again
+        // Refresh cart count to show accurate count
+        refreshCartCount();
       } else {
-        // Revert optimistic update on failure - decrement the count we just added
-        incrementCartCount(-1);
         Toast.show({
           type: "error",
           text1: "Error",
@@ -258,8 +254,6 @@ export default function MapScreen() {
         });
       }
     } catch (error) {
-      // Revert optimistic update on error - decrement the count we just added
-      incrementCartCount(-1);
       Toast.show({
         type: "error",
         text1: "Error",
