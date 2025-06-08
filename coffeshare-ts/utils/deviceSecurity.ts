@@ -1,6 +1,6 @@
-import DeviceInfo from "react-native-device-info";
 import { Platform } from "react-native";
-import * as Crypto from "expo-crypto";
+import CryptoJS from "crypto-js";
+import { getDeviceInfo, isExpoGo } from "./expoGoUtils";
 
 export interface SecurityThreat {
   type: "root" | "jailbreak" | "emulator" | "debug" | "tamper";
@@ -100,6 +100,7 @@ export class DeviceSecurity {
    */
   private static async isEmulatorDetected(): Promise<boolean> {
     try {
+      const DeviceInfo = getDeviceInfo();
       return await DeviceInfo.isEmulator();
     } catch (error) {
       return false;
@@ -112,6 +113,7 @@ export class DeviceSecurity {
   private static async isDeviceCompromised(): Promise<boolean> {
     try {
       if (Platform.OS === "android") {
+        const DeviceInfo = getDeviceInfo();
         const buildTags = await DeviceInfo.getBuildNumber();
         return buildTags?.includes("test-keys") || false;
       }
@@ -133,8 +135,10 @@ export class DeviceSecurity {
    */
   private static async hasGenymotionDetected(): Promise<boolean> {
     try {
-      const manufacturer = await DeviceInfo.getManufacturer();
-      return manufacturer.toLowerCase().includes("genymotion");
+      const DeviceInfo = getDeviceInfo();
+      // Use getModel since getManufacturer doesn't exist in our fallback
+      const model = await DeviceInfo.getModel();
+      return model.toLowerCase().includes("genymotion");
     } catch (error) {
       return false;
     }

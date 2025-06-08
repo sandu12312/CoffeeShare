@@ -8,6 +8,9 @@ const config = getDefaultConfig(__dirname);
 const sentryConfig = withSentryConfig(config);
 
 // Add obfuscation transformer for production builds only
+// Temporarily disabled due to dependency issues with Expo SDK 52
+// TODO: Re-enable after fixing babel dependencies
+/*
 if (process.env.NODE_ENV === "production") {
   sentryConfig.transformer.babelTransformerPath = require.resolve(
     "react-native-obfuscating-transformer"
@@ -31,5 +34,6 @@ if (process.env.NODE_ENV === "production") {
     unicodeEscapeSequence: false,
   };
 }
+*/
 
 module.exports = sentryConfig;

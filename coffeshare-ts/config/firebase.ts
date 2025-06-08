@@ -1,8 +1,9 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getAuth, initializeAuth, Auth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -17,7 +18,23 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+
+// Initialize Auth with AsyncStorage persistence
+let auth: Auth;
+try {
+  auth = initializeAuth(app, {
+    persistence: AsyncStorage as any,
+  });
+} catch (error: any) {
+  // If already initialized, just get the existing instance
+  if (error.code === "auth/already-initialized") {
+    auth = getAuth(app);
+  } else {
+    // Fallback to basic auth for Expo Go compatibility
+    auth = getAuth(app);
+  }
+}
+
 const db = getFirestore(app);
 const storage = getStorage(app);
 

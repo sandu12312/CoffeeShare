@@ -20,8 +20,8 @@ import {
 import { getAuth, updateProfile } from "firebase/auth";
 import { Platform } from "react-native";
 import { v4 as uuidv4 } from "uuid";
-import * as Device from "expo-device";
 import Constants from "expo-constants";
+import { getDeviceInfo } from "../utils/expoGoUtils";
 import { app } from "../config/firebase";
 
 import {
@@ -583,9 +583,10 @@ class UserProfileService {
 
     try {
       // Get device info
+      const DeviceInfo = getDeviceInfo();
       const deviceInfo = {
         platform: Platform.OS,
-        deviceModel: Device.modelName || undefined,
+        deviceModel: await DeviceInfo.getModel(),
         appVersion: Constants.expoConfig?.version || "1.0.0",
       };
 

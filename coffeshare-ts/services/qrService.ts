@@ -18,7 +18,7 @@ import { db } from "../config/firebase";
 import { SubscriptionService } from "./subscriptionService";
 import cartService from "./cartService";
 import partnerAnalyticsService from "./partnerAnalyticsService";
-import * as Crypto from "expo-crypto";
+import CryptoJS from "crypto-js";
 
 export interface QRToken {
   id?: string;
@@ -97,10 +97,7 @@ export class QRService {
       const timestamp = Date.now().toString();
       const random = Math.random().toString(36).substring(2);
       const tokenString = `${userId}_${timestamp}_${random}`;
-      const hashedToken = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        tokenString
-      );
+      const hashedToken = CryptoJS.SHA256(tokenString).toString();
 
       const now = Timestamp.now();
       const expiresAt = Timestamp.fromDate(
@@ -585,10 +582,7 @@ export class QRService {
       const timestamp = Date.now().toString();
       const random = Math.random().toString(36).substring(2);
       const tokenString = `${userId}_${cafeId}_${timestamp}_${random}`;
-      const hashedToken = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        tokenString
-      );
+      const hashedToken = CryptoJS.SHA256(tokenString).toString();
 
       const now = Timestamp.now();
       const expiresAt = Timestamp.fromDate(

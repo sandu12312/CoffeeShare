@@ -1,61 +1,14 @@
 # Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
+# By default, the flags in this file are appended to flags specified
+# in /usr/local/Cellar/android-sdk/24.3.3/tools/proguard/proguard-android.txt
+# You can edit the include path and order by changing the proguardFiles
+# directive in build.gradle.
+#
+# For more details, see
+#   http://developer.android.com/guide/developing/tools/proguard.html
 
-# Basic obfuscation
--obfuscationdictionary dictionary.txt
--packageobfuscationdictionary dictionary.txt
--classobfuscationdictionary dictionary.txt
+# react-native-reanimated
+-keep class com.swmansion.reanimated.** { *; }
+-keep class com.facebook.react.turbomodule.** { *; }
 
-# Remove debug information
--assumenosideeffects class android.util.Log {
-    public static boolean isLoggable(java.lang.String, int);
-    public static int v(...);
-    public static int i(...);
-    public static int w(...);
-    public static int d(...);
-    public static int e(...);
-}
-
-# Keep React Native classes
--keep class com.facebook.react.** { *; }
--keep class com.facebook.hermes.** { *; }
--keep class com.facebook.jni.** { *; }
-
-# Keep Expo classes
--keep class expo.modules.** { *; }
-
-# Keep Firebase classes
--keep class com.google.firebase.** { *; }
--keep class com.google.android.gms.** { *; }
-
-# Keep Stripe classes
--keep class com.stripe.** { *; }
-
-# Keep native methods
--keepclasseswithmembernames class * {
-    native <methods>;
-}
-
-# Keep serializable classes
--keepnames class * implements java.io.Serializable
--keepclassmembers class * implements java.io.Serializable {
-    static final long serialVersionUID;
-    private static final java.io.ObjectStreamField[] serialPersistentFields;
-    private void writeObject(java.io.ObjectOutputStream);
-    private void readObject(java.io.ObjectInputStream);
-    java.lang.Object writeReplace();
-    java.lang.Object readResolve();
-}
-
-# Anti-tampering and security
--keepattributes *Annotation*
--keepattributes Signature
--keepattributes InnerClasses
--keepattributes EnclosingMethod
-
-# Optimize and shrink
--optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
--optimizationpasses 5
--allowaccessmodification
--dontpreverify 
+# Add any project specific keep options here:

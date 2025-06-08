@@ -404,8 +404,10 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
     name: string
   ): Promise<{ success: boolean; verificationSent: boolean }> => {
     try {
+      // Explicitly import and use the typed 'auth' from the firebase config
+      // (Assuming 'auth' is imported from '../config/firebase')
       const userCredential = await createUserWithEmailAndPassword(
-        auth,
+        auth as import("firebase/auth").Auth,
         email,
         password
       );
