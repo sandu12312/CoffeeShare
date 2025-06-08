@@ -6,15 +6,15 @@
     "runtimeVersion": "1.0.0",
     "orientation": "portrait",
     "main": "expo-router/entry",
-    "icon": "./coffeshare-ts/assets/icon.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./coffeshare-ts/assets/splash.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["coffeshare-ts/**/*"],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.coffeshare.app",
@@ -35,7 +35,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./coffeshare-ts/assets/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "config": {
@@ -60,7 +60,7 @@
       "permissions": ["CAMERA"]
     },
     "web": {
-      "favicon": "./coffeshare-ts/assets/favicon.png"
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
@@ -93,7 +93,7 @@
     "scheme": "coffeshare",
     "extra": {
       "eas": {
-        "projectId": "c7f7499a-394e-4381-8455-8d6a9c03628c"
+        "projectId": "947075506777"
       }
     },
     "sdkVersion": "52.0.0"
