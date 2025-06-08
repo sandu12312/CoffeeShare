@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "c7f7499a-394e-4381-8455-8d6a9c03628c"
+      }
+    },
+    "android": {
+      "package": "com.sandu123412.licentaa"
+    }
+  }
+}
