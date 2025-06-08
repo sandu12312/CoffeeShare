@@ -3,6 +3,7 @@
     "name": "CoffeeShare",
     "slug": "coffeshare",
     "version": "1.0.0",
+    "runtimeVersion": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -78,7 +79,15 @@
           "cameraPermission": "Allow CoffeShare to use your camera to scan QR codes."
         }
       ],
-      "expo-barcode-scanner"
+      "expo-barcode-scanner",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "coffeeshare"
+        }
+      ]
     ],
     "scheme": "coffeshare",
     "extra": {

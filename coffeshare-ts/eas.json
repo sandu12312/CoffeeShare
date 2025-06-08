@@ -1,0 +1,55 @@
+{
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk",
+        "env": {
+          "NODE_ENV": "development"
+        }
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle",
+        "env": {
+          "NODE_ENV": "production"
+        },
+        "gradleCommand": ":app:bundleRelease",
+        "cache": {
+          "disabled": false
+        }
+      },
+      "ios": {
+        "buildConfiguration": "Release",
+        "env": {
+          "NODE_ENV": "production"
+        },
+        "cache": {
+          "disabled": false
+        },
+        "autoIncrement": true
+      },
+      "channel": "production"
+    },
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "NODE_ENV": "development"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "../path/to/api-key.json",
+        "track": "internal"
+      },
+      "ios": {
+        "appleId": "your.apple.id@email.com",
+        "ascAppId": "1234567890",
+        "appleTeamId": "ABCD123456"
+      }
+    }
+  }
+}
