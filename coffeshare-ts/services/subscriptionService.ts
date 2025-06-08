@@ -271,17 +271,33 @@ export class SubscriptionService {
       where("status", "==", "active")
     );
 
-    return onSnapshot(q, (snapshot) => {
-      if (snapshot.empty) {
-        callback(null);
-      } else {
-        const doc = snapshot.docs[0];
-        callback({
-          id: doc.id,
-          ...doc.data(),
-        } as UserSubscription);
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        if (snapshot.empty) {
+          callback(null);
+        } else {
+          const doc = snapshot.docs[0];
+          callback({
+            id: doc.id,
+            ...doc.data(),
+          } as UserSubscription);
+        }
+      },
+      (error) => {
+        console.error("Error in subscription listener:", error);
+        // Handle permission denied gracefully
+        if (error.code === "permission-denied") {
+          console.log(
+            "Permission denied for subscription access, user may have been deleted"
+          );
+          callback(null);
+        } else {
+          console.error("Subscription listener error:", error);
+          callback(null);
+        }
       }
-    });
+    );
   }
 
   // Use credits from user subscription (beans)

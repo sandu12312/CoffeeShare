@@ -28,6 +28,7 @@ export const useSubscriptionStatus = (
     if (!userId) {
       setLoading(false);
       setSubscription(null);
+      setError(null);
       return;
     }
 
@@ -45,7 +46,9 @@ export const useSubscriptionStatus = (
     );
 
     return () => {
-      unsubscribe();
+      if (unsubscribe) {
+        unsubscribe();
+      }
     };
   }, [userId]);
 

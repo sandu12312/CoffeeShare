@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -19,6 +19,16 @@ import { useLanguage } from "../../../context/LanguageContext";
 import { useFirebase } from "../../../context/FirebaseContext";
 import { useErrorHandler } from "../../../hooks/useErrorHandler";
 import { Toast } from "../../../components/ErrorComponents";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, updateDoc, deleteDoc } from "firebase/firestore";
+import {
+  sendPasswordResetEmail,
+  deleteUser,
+  getAuth,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+} from "firebase/auth";
+import { db } from "../../../config/firebase";
 
 export default function EditProfileScreen() {
   const { t } = useLanguage();
@@ -36,9 +46,24 @@ export default function EditProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
+  // Update state when userProfile changes
+  useEffect(() => {
+    if (userProfile) {
+      setDisplayName(userProfile.displayName || "");
+      setEmail(userProfile.email || "");
+      setPhoneNumber(userProfile.phoneNumber || "");
+      setBio(userProfile.bio || "");
+    }
+  }, [userProfile]);
+
   const handleSaveProfile = async () => {
     if (!displayName.trim()) {
-      showError("Display name is required");
+      showError(t("editProfile.displayNameRequired"));
+      return;
+    }
+
+    if (!user?.uid) {
+      showError("User not found");
       return;
     }
 
@@ -52,13 +77,14 @@ export default function EditProfileScreen() {
         updatedAt: new Date(),
       };
 
-      // TODO: Implement profile update in Firebase context
-      console.log("Updating profile:", profileData);
+      // Update user profile in Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      await updateDoc(userDocRef, profileData);
 
       Alert.alert(
-        "Profile Updated",
-        "Your profile has been updated successfully.",
-        [{ text: "OK" }]
+        t("editProfile.profileUpdated"),
+        t("editProfile.profileUpdatedMessage"),
+        [{ text: t("common.ok") }]
       );
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -146,10 +172,29 @@ export default function EditProfileScreen() {
 
   const uploadPhoto = async (uri: string) => {
     try {
+      if (!user?.uid) return;
+
       setUploadingPhoto(true);
 
-      // TODO: Implement photo upload to Firebase Storage
-      console.log("Uploading photo:", uri);
+      // Upload photo to Firebase Storage
+      const response = await fetch(uri);
+      const blob = await response.blob();
+
+      // Create a unique filename
+      const filename = `profile_photos/${user.uid}_${Date.now()}.jpg`;
+
+      // Upload to Firebase Storage
+      const storage = getStorage();
+      const storageRef = ref(storage, filename);
+
+      await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(storageRef);
+
+      // Update user profile with new photo URL in Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      await updateDoc(userDocRef, {
+        photoURL: downloadURL,
+      });
 
       Alert.alert(
         "Photo Updated",
@@ -157,9 +202,177 @@ export default function EditProfileScreen() {
       );
     } catch (error) {
       console.error("Error uploading photo:", error);
-      showError("Failed to upload photo");
+      showError(t("editProfile.photoUploadFailed"));
     } finally {
       setUploadingPhoto(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!user?.email) {
+      showError("No email found for this account");
+      return;
+    }
+
+    Alert.alert(
+      "Change Password",
+      "You will receive an email with instructions to reset your password.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Send Email",
+          onPress: async () => {
+            try {
+              const auth = getAuth();
+              await sendPasswordResetEmail(auth, user.email!);
+              Alert.alert(
+                "Email Sent",
+                "Password reset email has been sent to your email address."
+              );
+            } catch (error) {
+              console.error("Error sending password reset email:", error);
+              showError("Failed to send password reset email");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      "Delete Account",
+      "This action cannot be undone. All your data will be permanently deleted.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            // Second confirmation
+            Alert.alert(
+              "Confirm Delete",
+              "Are you absolutely sure you want to delete your account? This cannot be undone.",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Delete Forever",
+                  style: "destructive",
+                  onPress: confirmDeleteAccount,
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
+  };
+
+  const reauthenticateUser = async (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      Alert.prompt(
+        "Re-authentication Required",
+        "For security reasons, please enter your password to confirm account deletion:",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => resolve(false),
+          },
+          {
+            text: "Confirm",
+            onPress: async (password) => {
+              if (!password || !user?.email) {
+                showError("Password is required");
+                resolve(false);
+                return;
+              }
+
+              try {
+                const auth = getAuth();
+                const currentUser = auth.currentUser;
+
+                if (!currentUser) {
+                  showError("No authenticated user found");
+                  resolve(false);
+                  return;
+                }
+
+                const credential = EmailAuthProvider.credential(
+                  user.email,
+                  password
+                );
+                await reauthenticateWithCredential(currentUser, credential);
+                resolve(true);
+              } catch (error: any) {
+                console.error("Re-authentication failed:", error);
+                if (error.code === "auth/wrong-password") {
+                  showError("Incorrect password. Please try again.");
+                } else {
+                  showError("Re-authentication failed. Please try again.");
+                }
+                resolve(false);
+              }
+            },
+          },
+        ],
+        "secure-text"
+      );
+    });
+  };
+
+  const confirmDeleteAccount = async () => {
+    if (!user) return;
+
+    try {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+
+      if (!currentUser) {
+        showError("No authenticated user found");
+        return;
+      }
+
+      // First delete user data from Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      await deleteDoc(userDocRef);
+
+      // Then delete related data (subscriptions, notifications, etc.)
+      // Note: In a real production app, you might want to do this server-side
+      // for better cleanup of all user-related data
+
+      // Finally delete the Firebase Auth user
+      await deleteUser(currentUser);
+
+      Alert.alert(
+        "Account Deleted",
+        "Your account has been successfully deleted.",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              // Navigate to login screen after account deletion
+              // Since the user is deleted, they'll be automatically logged out
+            },
+          },
+        ]
+      );
+    } catch (error: any) {
+      console.error("Error deleting account:", error);
+
+      // Provide more specific error messages
+      if (error.code === "auth/requires-recent-login") {
+        // Try to re-authenticate
+        const reauthed = await reauthenticateUser();
+        if (reauthed) {
+          // Try deletion again after successful re-authentication
+          confirmDeleteAccount();
+        }
+      } else {
+        showError(
+          `Failed to delete account: ${error.message || error.toString()}`
+        );
+      }
     }
   };
 
@@ -168,9 +381,11 @@ export default function EditProfileScreen() {
       <Stack.Screen
         options={{
           headerTitle: t("editProfile"),
+          headerBackTitle: t("profile"),
           headerStyle: styles.headerStyle,
           headerTitleStyle: styles.headerTitleStyle,
           headerTintColor: "#321E0E",
+          headerBackVisible: true,
           headerRight: () => (
             <TouchableOpacity
               style={styles.saveButton}
@@ -180,7 +395,7 @@ export default function EditProfileScreen() {
               {saving ? (
                 <ActivityIndicator size="small" color="#8B4513" />
               ) : (
-                <Text style={styles.saveButtonText}>Save</Text>
+                <Text style={styles.saveButtonText}>{t("common.save")}</Text>
               )}
             </TouchableOpacity>
           ),
@@ -304,23 +519,29 @@ export default function EditProfileScreen() {
           </View>
         </View>
 
+        {/* Save Button Section */}
+        <View style={styles.saveSection}>
+          <TouchableOpacity
+            style={[
+              styles.saveButtonLarge,
+              saving && styles.saveButtonDisabled,
+            ]}
+            onPress={handleSaveProfile}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.saveButtonLargeText}>{t("common.save")}</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
         {/* Actions Section */}
         <View style={styles.actionsSection}>
           <TouchableOpacity
             style={styles.actionItem}
-            onPress={() => {
-              Alert.alert(
-                "Change Password",
-                "You will receive an email with instructions to reset your password.",
-                [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Send Email",
-                    onPress: () => console.log("Password reset requested"),
-                  },
-                ]
-              );
-            }}
+            onPress={handleChangePassword}
           >
             <Ionicons name="key-outline" size={24} color="#8B4513" />
             <Text style={styles.actionText}>Change Password</Text>
@@ -329,20 +550,7 @@ export default function EditProfileScreen() {
 
           <TouchableOpacity
             style={styles.actionItem}
-            onPress={() => {
-              Alert.alert(
-                "Delete Account",
-                "This action cannot be undone. All your data will be permanently deleted.",
-                [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Delete",
-                    style: "destructive",
-                    onPress: () => console.log("Account deletion requested"),
-                  },
-                ]
-              );
-            }}
+            onPress={handleDeleteAccount}
           >
             <Ionicons name="trash-outline" size={24} color="#E74C3C" />
             <Text style={[styles.actionText, styles.dangerText]}>
@@ -512,6 +720,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#321E0E",
     fontWeight: "500",
+  },
+  saveSection: {
+    backgroundColor: "#FFFFFF",
+    marginTop: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  saveButtonLarge: {
+    backgroundColor: "#8B4513",
+    paddingVertical: 15,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  saveButtonDisabled: {
+    backgroundColor: "#CCCCCC",
+  },
+  saveButtonLargeText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
   actionsSection: {
     backgroundColor: "#FFFFFF",

@@ -71,8 +71,8 @@ service cloud.firestore {
         isAdmin()
       );
       
-      // Only admins can delete profiles
-      allow delete: if isAdmin();
+      // Users can delete their own profile, admins can delete any profile
+      allow delete: if isOwner(userId) || isAdmin();
     }
     
     // Admins collection - for admin users in new structure

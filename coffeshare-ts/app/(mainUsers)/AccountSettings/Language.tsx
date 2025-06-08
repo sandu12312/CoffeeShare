@@ -22,13 +22,14 @@ export default function LanguageScreen() {
     <SafeAreaView style={styles.container}>
       <Stack.Screen
         options={{
-          headerShown: false,
+          headerTitle: t("language"),
+          headerBackTitle: t("profile"),
+          headerStyle: styles.headerStyle,
+          headerTitleStyle: styles.headerTitleStyle,
+          headerTintColor: "#321E0E",
+          headerBackVisible: true,
         }}
       />
-
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t("language")}</Text>
-      </View>
 
       <View style={styles.content}>
         <Text style={styles.sectionTitle}>{t("selectLanguage")}</Text>
@@ -67,19 +68,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F5F5F5",
   },
-  header: {
+  headerStyle: {
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
   },
-  headerTitle: {
-    fontSize: 24,
+  headerTitleStyle: {
+    color: "#321E0E",
+    fontSize: 18,
     fontWeight: "600",
-    color: "#1A1A1A",
-    textAlign: "center",
   },
   content: {
     flex: 1,

@@ -19,6 +19,12 @@ service firebase.storage {
       allow write: if isAuth() && request.auth.uid == userId; // Users can only upload their own images
     }
 
+    // Profile photos directory - secure rules
+    match /profile_photos/{filename} {
+      allow read: if true; // Anyone can read profile images
+      allow write: if isAuth() && resource == null; // Authenticated users can upload new files
+    }
+
     // Product images - Allow authenticated users to upload
     match /products/{imageId} {
       allow read: if true; // Anyone can read product images

@@ -158,9 +158,11 @@ Address: CoffeeShare Ltd., Bucharest, Romania
       <Stack.Screen
         options={{
           headerTitle: t("privacySecurity"),
+          headerBackTitle: t("profile"),
           headerStyle: styles.headerStyle,
           headerTitleStyle: styles.headerTitleStyle,
           headerTintColor: "#321E0E",
+          headerBackVisible: true,
         }}
       />
 

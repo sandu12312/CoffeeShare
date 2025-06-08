@@ -41,10 +41,12 @@ export default function AboutScreen() {
     <SafeAreaView style={styles.container}>
       <Stack.Screen
         options={{
-          headerTitle: "About CoffeeShare",
+          headerTitle: t("about.title"),
+          headerBackTitle: t("profile"),
           headerStyle: styles.headerStyle,
           headerTitleStyle: styles.headerTitleStyle,
           headerTintColor: "#321E0E",
+          headerBackVisible: true,
         }}
       />
 

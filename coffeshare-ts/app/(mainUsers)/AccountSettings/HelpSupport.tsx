@@ -162,9 +162,11 @@ Additional details:
       <Stack.Screen
         options={{
           headerTitle: t("helpSupport"),
+          headerBackTitle: t("profile"),
           headerStyle: styles.headerStyle,
           headerTitleStyle: styles.headerTitleStyle,
           headerTintColor: "#321E0E",
+          headerBackVisible: true,
         }}
       />
 

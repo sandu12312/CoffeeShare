@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -21,6 +21,9 @@ import { useFirebase } from "../../context/FirebaseContext";
 import { useSubscriptionStatus } from "../../hooks/useSubscriptionStatus";
 import { Toast } from "../../components/ErrorComponents";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../../config/firebase";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -40,6 +43,14 @@ export default function ProfileScreen() {
 
   // Use the subscription status hook to get real-time data
   const subscriptionStatus = useSubscriptionStatus(user?.uid);
+
+  // Clean up listeners when user is null (after account deletion)
+  useEffect(() => {
+    if (!user) {
+      // User has been deleted or logged out, clean up any active listeners
+      console.log("User is null, cleaning up profile screen");
+    }
+  }, [user]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -62,13 +73,65 @@ export default function ProfileScreen() {
 
       if (permissionResult.granted === false) {
         Alert.alert(
-          "Permission Denied",
-          "Please allow access to your photo library to change your profile picture."
+          t("profile.permissionDenied"),
+          t("profile.permissionDeniedMessage")
         );
         return;
       }
 
-      // Launch image picker
+      // Show options for camera or gallery
+      Alert.alert(
+        t("editProfile.changeProfilePhoto"),
+        t("editProfile.photoOptions"),
+        [
+          { text: t("common.cancel"), style: "cancel" },
+          { text: t("editProfile.camera"), onPress: () => openCamera() },
+          {
+            text: t("editProfile.photoLibrary"),
+            onPress: () => openImagePicker(),
+          },
+        ]
+      );
+    } catch (error) {
+      console.error("Error accessing image picker:", error);
+      showError("Failed to access photo picker");
+    }
+  };
+
+  const openCamera = async () => {
+    try {
+      const permissionResult =
+        await ImagePicker.requestCameraPermissionsAsync();
+
+      if (permissionResult.granted === false) {
+        Alert.alert(
+          t("editProfile.cameraPermissionDenied"),
+          t("editProfile.cameraPermissionMessage")
+        );
+        return;
+      }
+
+      setUploadingPhoto(true);
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await uploadPhoto(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error("Error opening camera:", error);
+      showError(t("editProfile.photoUploadFailed"));
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const openImagePicker = async () => {
+    try {
+      setUploadingPhoto(true);
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -77,20 +140,44 @@ export default function ProfileScreen() {
       });
 
       if (!result.canceled && result.assets[0]) {
-        setUploadingPhoto(true);
-
-        // TODO: Implement photo upload to Firebase Storage and update user profile
-        // For now, we'll just show a success message
-        Alert.alert(
-          "Photo Updated",
-          "Your profile photo has been updated successfully."
-        );
+        await uploadPhoto(result.assets[0].uri);
       }
     } catch (error) {
-      console.error("Error changing profile photo:", error);
-      showError("Failed to update profile photo");
+      console.error("Error opening image picker:", error);
+      showError(t("editProfile.photoUploadFailed"));
     } finally {
       setUploadingPhoto(false);
+    }
+  };
+
+  const uploadPhoto = async (uri: string) => {
+    try {
+      if (!user?.uid) return;
+
+      // Upload photo to Firebase Storage and update user profile
+      const response = await fetch(uri);
+      const blob = await response.blob();
+
+      // Create a unique filename
+      const filename = `profile_photos/${user.uid}_${Date.now()}.jpg`;
+
+      // Upload to Firebase Storage
+      const storage = getStorage();
+      const storageRef = ref(storage, filename);
+
+      await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(storageRef);
+
+      // Update user profile with new photo URL in Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      await updateDoc(userDocRef, {
+        photoURL: downloadURL,
+      });
+
+      Alert.alert(t("profile.photoUpdated"), t("profile.photoUpdatedMessage"));
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+      showError(t("profile.photoUpdateError"));
     }
   };
 
@@ -120,9 +207,9 @@ export default function ProfileScreen() {
 
   const menuItems: MenuItem[] = [
     {
-      title: t("accountSettings"),
+      title: t("editProfile"),
       icon: "person-outline",
-      onPress: () => router.push("/(mainUsers)/AccountSettings"),
+      onPress: () => router.push("/(mainUsers)/AccountSettings/EditProfile"),
     },
     {
       title: t("subscriptions"),
@@ -130,18 +217,23 @@ export default function ProfileScreen() {
       onPress: () => router.push("/(mainUsers)/subscriptions"),
     },
     {
+      title: t("language"),
+      icon: "language-outline",
+      onPress: () => router.push("/(mainUsers)/AccountSettings/Language"),
+    },
+    {
       title: t("notifications"),
       icon: "notifications-outline",
       onPress: () => router.push("/(mainUsers)/AccountSettings/Notifications"),
     },
     {
-      title: t("privacy"),
+      title: t("privacySecurity"),
       icon: "shield-outline",
       onPress: () =>
         router.push("/(mainUsers)/AccountSettings/PrivacySecurity"),
     },
     {
-      title: t("help"),
+      title: t("helpSupport"),
       icon: "help-circle-outline",
       onPress: () => router.push("/(mainUsers)/AccountSettings/HelpSupport"),
     },

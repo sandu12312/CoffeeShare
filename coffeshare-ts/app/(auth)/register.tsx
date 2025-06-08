@@ -62,17 +62,105 @@ export default function Register() {
     return true;
   };
 
-  const validatePassword = (password: string) => {
+  const validatePasswordStrength = (password: string) => {
     if (!password) {
       setPasswordError("Password is required");
       return false;
     }
-    if (password.length < 6) {
-      setPasswordError("Password must be at least 6 characters");
+
+    // Check minimum length
+    if (password.length < 8) {
+      setPasswordError("Password must be at least 8 characters long");
       return false;
     }
+
+    // Check for uppercase letter
+    if (!/[A-Z]/.test(password)) {
+      setPasswordError("Password must contain at least one uppercase letter");
+      return false;
+    }
+
+    // Check for lowercase letter
+    if (!/[a-z]/.test(password)) {
+      setPasswordError("Password must contain at least one lowercase letter");
+      return false;
+    }
+
+    // Check for number
+    if (!/[0-9]/.test(password)) {
+      setPasswordError("Password must contain at least one number");
+      return false;
+    }
+
+    // Check for special character
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      setPasswordError(
+        "Password must contain at least one special character (!@#$%^&*...)"
+      );
+      return false;
+    }
+
     setPasswordError("");
     return true;
+  };
+
+  const validatePassword = (password: string) => {
+    return validatePasswordStrength(password);
+  };
+
+  const getPasswordStrengthInfo = (password: string) => {
+    if (!password) return { strength: 0, message: "Enter a password" };
+
+    let strength = 0;
+    const requirements = [];
+
+    // Length check
+    if (password.length >= 8) {
+      strength += 20;
+    } else {
+      requirements.push("8+ characters");
+    }
+
+    // Uppercase check
+    if (/[A-Z]/.test(password)) {
+      strength += 20;
+    } else {
+      requirements.push("uppercase letter");
+    }
+
+    // Lowercase check
+    if (/[a-z]/.test(password)) {
+      strength += 20;
+    } else {
+      requirements.push("lowercase letter");
+    }
+
+    // Number check
+    if (/[0-9]/.test(password)) {
+      strength += 20;
+    } else {
+      requirements.push("number");
+    }
+
+    // Special character check
+    if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      strength += 20;
+    } else {
+      requirements.push("special character");
+    }
+
+    let message = "";
+    if (strength === 100) {
+      message = "Strong password! ✓";
+    } else if (strength >= 80) {
+      message = `Missing: ${requirements.join(", ")}`;
+    } else if (strength >= 60) {
+      message = `Needs: ${requirements.join(", ")}`;
+    } else {
+      message = `Required: ${requirements.join(", ")}`;
+    }
+
+    return { strength, message };
   };
 
   const validateConfirmPassword = (
@@ -311,6 +399,40 @@ export default function Register() {
               </View>
               {passwordError ? (
                 <Text style={styles.errorText}>{passwordError}</Text>
+              ) : password ? (
+                <View style={styles.passwordStrengthContainer}>
+                  <View style={styles.passwordStrengthBar}>
+                    <View
+                      style={[
+                        styles.passwordStrengthFill,
+                        {
+                          width: `${
+                            getPasswordStrengthInfo(password).strength
+                          }%`,
+                          backgroundColor:
+                            getPasswordStrengthInfo(password).strength === 100
+                              ? "#4CAF50"
+                              : getPasswordStrengthInfo(password).strength >= 60
+                              ? "#FF9800"
+                              : "#F44336",
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      styles.passwordStrengthText,
+                      {
+                        color:
+                          getPasswordStrengthInfo(password).strength === 100
+                            ? "#4CAF50"
+                            : "#8B4513",
+                      },
+                    ]}
+                  >
+                    {getPasswordStrengthInfo(password).message}
+                  </Text>
+                </View>
               ) : null}
             </View>
 
@@ -512,5 +634,22 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginLeft: 10,
     fontSize: 16,
+  },
+  passwordStrengthContainer: {
+    marginTop: 8,
+  },
+  passwordStrengthBar: {
+    height: 4,
+    backgroundColor: "rgba(139, 69, 19, 0.2)",
+    borderRadius: 2,
+    marginBottom: 4,
+  },
+  passwordStrengthFill: {
+    height: "100%",
+    borderRadius: 2,
+  },
+  passwordStrengthText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
 });

@@ -43,6 +43,7 @@ export type TranslationKey =
   | "privacy"
   | "help"
   | "about"
+  | "about.title"
   | "smartSubscriptions"
   | "smartSubscriptionsDesc"
   | "easyAccess"
@@ -1254,6 +1255,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     // Account Settings Index
     "accountSettings.description":
       "Gestionează setările contului, preferințele de confidențialitate și configurația aplicației din opțiunile de mai jos.",
+    "about.title": "Despre CoffeeShare",
   },
   en: {
     // Auth
@@ -1929,6 +1931,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     // Account Settings Index
     "accountSettings.description":
       "Manage your account settings, privacy preferences, and app configuration from the options below.",
+    "about.title": "About CoffeeShare",
   },
 };
 

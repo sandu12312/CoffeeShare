@@ -214,9 +214,11 @@ export default function NotificationsScreen() {
           headerTitle: `${t("notifications")} ${
             unreadCount > 0 ? `(${unreadCount})` : ""
           }`,
+          headerBackTitle: t("profile"),
           headerStyle: styles.headerStyle,
           headerTitleStyle: styles.headerTitleStyle,
           headerTintColor: "#321E0E",
+          headerBackVisible: true,
           headerRight: () => (
             <View style={styles.headerButtons}>
               {notifications.length > 0 && unreadCount > 0 && (
