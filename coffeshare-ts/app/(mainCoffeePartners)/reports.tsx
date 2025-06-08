@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Dimensions,
   ImageBackground,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { useLanguage } from "../../context/LanguageContext";
 import { useFirebase } from "../../context/FirebaseContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
@@ -70,13 +71,7 @@ export default function ReportsScreen() {
     },
   ];
 
-  useEffect(() => {
-    if (user) {
-      loadReportData();
-    }
-  }, [user, selectedDateRange]);
-
-  const loadReportData = async () => {
+  const loadReportData = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -101,18 +96,33 @@ export default function ReportsScreen() {
 
       setReportData(reportsData);
     } catch (error) {
-      console.error("Error loading report data:", error);
+      __DEV__ && console.error("Error loading report data:", error);
       showError("Failed to load report data");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [user?.uid, selectedDateRange, showError]);
 
-  const onRefresh = () => {
+  // Add useFocusEffect to refresh reports when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.uid) {
+        loadReportData();
+      }
+    }, [user?.uid, loadReportData])
+  );
+
+  useEffect(() => {
+    if (user) {
+      loadReportData();
+    }
+  }, [user, loadReportData]);
+
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
     loadReportData();
-  };
+  }, [loadReportData]);
 
   // Prepare chart data from the analytics with different granularities
   const prepareChartData = () => {

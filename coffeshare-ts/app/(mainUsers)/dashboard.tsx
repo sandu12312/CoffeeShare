@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import {
   StyleSheet,
   Text,
@@ -12,7 +12,9 @@ import {
   StatusBar,
   Animated,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import BottomTabBar from "../../components/BottomTabBar";
@@ -81,6 +83,7 @@ export default function Dashboard() {
   const lastScrollY = useRef(0);
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   // Use the new subscription status hook
@@ -92,22 +95,38 @@ export default function Dashboard() {
     extrapolate: "clamp",
   });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
+  const fetchData = useCallback(async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
         setLoading(true);
-        await fetchUserActivities();
-        await initializeNotifications();
-        await loadUnreadNotifications();
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchData();
+      await fetchUserActivities();
+      await initializeNotifications();
+      await loadUnreadNotifications();
+    } catch (error) {
+      __DEV__ && console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
+
+  // Add useFocusEffect to refresh data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.uid) {
+        fetchData(false);
+      }
+    }, [user?.uid, fetchData])
+  );
+
+  useEffect(() => {
+    if (user?.uid) {
+      fetchData(false);
+    }
+  }, [user?.uid, fetchData]);
 
   useEffect(() => {
     // Initialize notifications when subscription status changes
@@ -116,12 +135,12 @@ export default function Dashboard() {
     }
   }, [user?.uid, subscriptionStatus]);
 
-  const fetchUserActivities = async () => {
+  const fetchUserActivities = useCallback(async () => {
     try {
       const logs = await getActivityLogs(10, ActivityType.COFFEE_REDEMPTION);
       setActivityLogs(logs);
     } catch (error: any) {
-      console.error("Error fetching activity logs:", error);
+      __DEV__ && console.error("Error fetching activity logs:", error);
       // Check if error is due to index building
       if (
         error.message &&
@@ -130,9 +149,9 @@ export default function Dashboard() {
         showInfo(t("cafe.indexBuildingMessage"));
       }
     }
-  };
+  }, [getActivityLogs, showInfo, t]);
 
-  const initializeNotifications = async () => {
+  const initializeNotifications = useCallback(async () => {
     if (!user?.uid || !subscriptionStatus.subscription) return;
 
     try {
@@ -142,20 +161,20 @@ export default function Dashboard() {
       );
       await loadUnreadNotifications();
     } catch (error) {
-      console.error("Error initializing notifications:", error);
+      __DEV__ && console.error("Error initializing notifications:", error);
     }
-  };
+  }, [user?.uid, subscriptionStatus.subscription]);
 
-  const loadUnreadNotifications = async () => {
+  const loadUnreadNotifications = useCallback(async () => {
     if (!user?.uid) return;
 
     try {
       const count = await notificationService.getUnreadCount(user.uid);
       setUnreadNotifications(count);
     } catch (error) {
-      console.error("Error loading unread notifications:", error);
+      __DEV__ && console.error("Error loading unread notifications:", error);
     }
-  };
+  }, [user?.uid]);
 
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollOffsetY } } }],
@@ -168,15 +187,15 @@ export default function Dashboard() {
     }
   );
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await logout();
       router.replace("/(auth)/login");
     } catch (error) {
-      console.error("Logout error:", error);
+      __DEV__ && console.error("Logout error:", error);
       showError(t("dashboard.logoutError"));
     }
-  };
+  }, [logout, router, showError, t]);
 
   // Get subscription data for display
   const getSubscriptionData = () => {
@@ -371,6 +390,14 @@ export default function Dashboard() {
           onScroll={handleScroll}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => fetchData(true)}
+              colors={["#8B4513"]}
+              tintColor="#8B4513"
+            />
+          }
         >
           {/* User Welcome Section */}
           <View style={styles.welcomeContainer}>

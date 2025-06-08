@@ -8,6 +8,10 @@ import { LanguageProvider } from "../context/LanguageContext";
 import { FirebaseProvider } from "../context/FirebaseContext";
 import { CartProvider } from "../context/CartContext";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { enableScreens } from "react-native-screens";
+
+// Enable screens for better performance
+enableScreens();
 
 SplashScreen.preventAutoHideAsync();
 

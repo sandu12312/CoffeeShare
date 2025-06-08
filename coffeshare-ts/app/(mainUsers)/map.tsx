@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import {
   StyleSheet,
   View,
@@ -14,7 +20,10 @@ import {
   Modal,
   ScrollView,
   FlatList,
+  RefreshControl,
 } from "react-native";
+import { FlashList } from "@shopify/flash-list";
+import { useFocusEffect } from "@react-navigation/native";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from "react-native-maps";
@@ -52,6 +61,168 @@ interface Cafe {
   imageUrl?: string; // Added for café image
 }
 
+interface RomanianCity {
+  name: string;
+  latitude: number;
+  longitude: number;
+  region: string;
+}
+
+// Major Romanian cities with their coordinates
+const ROMANIAN_CITIES: RomanianCity[] = [
+  {
+    name: "București",
+    latitude: 44.4268,
+    longitude: 26.1025,
+    region: "București",
+  },
+  {
+    name: "Bucharest",
+    latitude: 44.4268,
+    longitude: 26.1025,
+    region: "București",
+  },
+  {
+    name: "Cluj-Napoca",
+    latitude: 46.7712,
+    longitude: 23.6236,
+    region: "Cluj",
+  },
+  { name: "Cluj", latitude: 46.7712, longitude: 23.6236, region: "Cluj" },
+  { name: "Timișoara", latitude: 45.7489, longitude: 21.2087, region: "Timiș" },
+  { name: "Timisoara", latitude: 45.7489, longitude: 21.2087, region: "Timiș" },
+  { name: "Iași", latitude: 47.1585, longitude: 27.6014, region: "Iași" },
+  { name: "Iasi", latitude: 47.1585, longitude: 27.6014, region: "Iași" },
+  {
+    name: "Constanța",
+    latitude: 44.1598,
+    longitude: 28.6348,
+    region: "Constanța",
+  },
+  {
+    name: "Constanta",
+    latitude: 44.1598,
+    longitude: 28.6348,
+    region: "Constanța",
+  },
+  { name: "Craiova", latitude: 44.3302, longitude: 23.7949, region: "Dolj" },
+  { name: "Brașov", latitude: 45.6427, longitude: 25.5887, region: "Brașov" },
+  { name: "Brasov", latitude: 45.6427, longitude: 25.5887, region: "Brașov" },
+  { name: "Galați", latitude: 45.4353, longitude: 28.008, region: "Galați" },
+  { name: "Galati", latitude: 45.4353, longitude: 28.008, region: "Galați" },
+  {
+    name: "Ploiești",
+    latitude: 44.9322,
+    longitude: 26.0183,
+    region: "Prahova",
+  },
+  {
+    name: "Ploiesti",
+    latitude: 44.9322,
+    longitude: 26.0183,
+    region: "Prahova",
+  },
+  { name: "Brăila", latitude: 45.2692, longitude: 27.9574, region: "Brăila" },
+  { name: "Braila", latitude: 45.2692, longitude: 27.9574, region: "Brăila" },
+  { name: "Oradea", latitude: 47.0465, longitude: 21.9189, region: "Bihor" },
+  { name: "Bacău", latitude: 46.567, longitude: 26.9146, region: "Bacău" },
+  { name: "Bacau", latitude: 46.567, longitude: 26.9146, region: "Bacău" },
+  { name: "Pitești", latitude: 44.8565, longitude: 24.8692, region: "Argeș" },
+  { name: "Pitesti", latitude: 44.8565, longitude: 24.8692, region: "Argeș" },
+  { name: "Sibiu", latitude: 45.7983, longitude: 24.1256, region: "Sibiu" },
+  { name: "Arad", latitude: 46.1866, longitude: 21.3123, region: "Arad" },
+  {
+    name: "Târgu Mureș",
+    latitude: 46.5427,
+    longitude: 24.5574,
+    region: "Mureș",
+  },
+  {
+    name: "Targu Mures",
+    latitude: 46.5427,
+    longitude: 24.5574,
+    region: "Mureș",
+  },
+  {
+    name: "Baia Mare",
+    latitude: 47.6593,
+    longitude: 23.5683,
+    region: "Maramureș",
+  },
+  { name: "Buzău", latitude: 45.15, longitude: 26.8207, region: "Buzău" },
+  { name: "Buzau", latitude: 45.15, longitude: 26.8207, region: "Buzău" },
+  {
+    name: "Satu Mare",
+    latitude: 47.7925,
+    longitude: 22.8875,
+    region: "Satu Mare",
+  },
+  {
+    name: "Botoșani",
+    latitude: 47.7322,
+    longitude: 26.6656,
+    region: "Botoșani",
+  },
+  {
+    name: "Botosani",
+    latitude: 47.7322,
+    longitude: 26.6656,
+    region: "Botoșani",
+  },
+  {
+    name: "Piatra Neamț",
+    latitude: 46.9281,
+    longitude: 26.3811,
+    region: "Neamț",
+  },
+  {
+    name: "Piatra Neamt",
+    latitude: 46.9281,
+    longitude: 26.3811,
+    region: "Neamț",
+  },
+  {
+    name: "Râmnicu Vâlcea",
+    latitude: 45.1167,
+    longitude: 24.3667,
+    region: "Vâlcea",
+  },
+  {
+    name: "Ramnicu Valcea",
+    latitude: 45.1167,
+    longitude: 24.3667,
+    region: "Vâlcea",
+  },
+  { name: "Suceava", latitude: 47.6514, longitude: 26.254, region: "Suceava" },
+  { name: "Tulcea", latitude: 45.1644, longitude: 28.8059, region: "Tulcea" },
+  {
+    name: "Târgoviște",
+    latitude: 44.9336,
+    longitude: 25.456,
+    region: "Dâmbovița",
+  },
+  {
+    name: "Targoviste",
+    latitude: 44.9336,
+    longitude: 25.456,
+    region: "Dâmbovița",
+  },
+  { name: "Focșani", latitude: 45.6953, longitude: 27.1836, region: "Vrancea" },
+  { name: "Focsani", latitude: 45.6953, longitude: 27.1836, region: "Vrancea" },
+  {
+    name: "Bistrița",
+    latitude: 47.1333,
+    longitude: 24.5,
+    region: "Bistrița-Năsăud",
+  },
+  {
+    name: "Bistrita",
+    latitude: 47.1333,
+    longitude: 24.5,
+    region: "Bistrița-Năsăud",
+  },
+];
+
 export default function MapScreen() {
   const { t } = useLanguage();
   const { user } = useFirebase();
@@ -66,6 +237,8 @@ export default function MapScreen() {
     longitude: number;
   } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [mapRegion, setMapRegion] = useState<Region>(DEFAULT_REGION);
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
@@ -78,6 +251,10 @@ export default function MapScreen() {
   // Animation value for sliding in bottom sheet
   const slideAnim = useRef(new Animated.Value(-200)).current;
   const { height: screenHeight } = Dimensions.get("window");
+
+  // Refs for search functionality
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const mapRef = useRef<MapView | null>(null);
 
   const fetchCafes = async () => {
     setFetchError(null);
@@ -140,15 +317,45 @@ export default function MapScreen() {
     }
   };
 
-  useEffect(() => {
-    const loadMapData = async () => {
-      setLoading(true);
-      await getLocationAsync();
-      await fetchCafes();
-      setLoading(false);
-    };
-    loadMapData();
+  const loadMapData = useCallback(async () => {
+    setLoading(true);
+    await getLocationAsync();
+    await fetchCafes();
+    setLoading(false);
   }, []);
+
+  // Add useFocusEffect to refresh map data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadMapData();
+    }, [loadMapData])
+  );
+
+  useEffect(() => {
+    loadMapData();
+  }, [loadMapData]);
+
+  // Debounce search query
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  // Handle search suggestions visibility
+  useEffect(() => {
+    setShowSearchSuggestions(searchQuery.length > 0);
+  }, [searchQuery]);
 
   // Cart count is now managed by CartContext
 
@@ -285,9 +492,66 @@ export default function MapScreen() {
     });
   };
 
-  const filteredCafes = cafes.filter((cafe) =>
-    cafe.businessName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Search for Romanian cities matching the query
+  const searchCitySuggestions = useMemo(() => {
+    if (searchQuery.length < 2) return [];
+
+    return ROMANIAN_CITIES.filter((city) =>
+      city.name.toLowerCase().includes(searchQuery.toLowerCase())
+    ).slice(0, 5); // Limit to 5 suggestions
+  }, [searchQuery]);
+
+  // Filter cafes based on search query
+  const filteredCafes = useMemo(() => {
+    if (debouncedSearchQuery.length === 0) return cafes;
+
+    return cafes.filter(
+      (cafe) =>
+        cafe.businessName
+          .toLowerCase()
+          .includes(debouncedSearchQuery.toLowerCase()) ||
+        cafe.address.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+    );
+  }, [cafes, debouncedSearchQuery]);
+
+  // Handle city selection
+  const handleCitySelect = useCallback((city: RomanianCity) => {
+    const newRegion: Region = {
+      latitude: city.latitude,
+      longitude: city.longitude,
+      latitudeDelta: 0.05,
+      longitudeDelta: 0.05,
+    };
+
+    setMapRegion(newRegion);
+    setSearchQuery(city.name);
+    setShowSearchSuggestions(false);
+
+    // Animate map to new region
+    if (mapRef.current) {
+      mapRef.current.animateToRegion(newRegion, 1000);
+    }
+
+    // Show info toast
+    Toast.show({
+      type: "info",
+      text1: `Navigated to ${city.name}`,
+      text2: `Showing ${city.region} region`,
+      visibilityTime: 2000,
+    });
+  }, []);
+
+  // Handle search input change
+  const handleSearchChange = useCallback((text: string) => {
+    setSearchQuery(text);
+  }, []);
+
+  // Clear search
+  const clearSearch = useCallback(() => {
+    setSearchQuery("");
+    setDebouncedSearchQuery("");
+    setShowSearchSuggestions(false);
+  }, []);
 
   // Default cafe image
   const defaultCafeImage =
@@ -299,6 +563,7 @@ export default function MapScreen() {
 
       {/* Map View */}
       <MapView
+        ref={mapRef}
         provider={Platform.OS === "ios" ? undefined : PROVIDER_GOOGLE}
         style={styles.map}
         initialRegion={mapRegion}
@@ -306,6 +571,7 @@ export default function MapScreen() {
         showsMyLocationButton={true}
         showsCompass={true}
         onRegionChangeComplete={setMapRegion}
+        onPress={() => setShowSearchSuggestions(false)}
       >
         {filteredCafes.map((cafe) => (
           <Marker
@@ -321,21 +587,66 @@ export default function MapScreen() {
 
       {/* Header/Search Bar Overlay */}
       <View style={styles.headerOverlay}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder={t("map.searchPlaceholder")}
-          placeholderTextColor="#A08C7D"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          clearButtonMode="while-editing"
-        />
+        <View style={styles.searchContainer}>
+          <Ionicons
+            name="search"
+            size={20}
+            color="#8B4513"
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search cafes or cities in Romania..."
+            placeholderTextColor="#A08C7D"
+            value={searchQuery}
+            onChangeText={handleSearchChange}
+            clearButtonMode="while-editing"
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearSearchButton}
+              onPress={clearSearch}
+            >
+              <Ionicons name="close-circle" size={20} color="#8B4513" />
+            </TouchableOpacity>
+          )}
+        </View>
         <TouchableOpacity
           style={styles.filterButton}
-          onPress={() => showInfo(t("map.filterAlertMessage"))}
+          onPress={() =>
+            showInfo(
+              "Search for cities like 'București', 'Cluj', 'Timișoara' or cafe names"
+            )
+          }
         >
-          <Ionicons name="options-outline" size={24} color="#8B4513" />
+          <Ionicons
+            name="information-circle-outline"
+            size={24}
+            color="#8B4513"
+          />
         </TouchableOpacity>
       </View>
+
+      {/* Search Suggestions Dropdown */}
+      {showSearchSuggestions && searchCitySuggestions.length > 0 && (
+        <View style={styles.searchSuggestions}>
+          <Text style={styles.suggestionsHeader}>Cities in Romania</Text>
+          {searchCitySuggestions.map((city, index) => (
+            <TouchableOpacity
+              key={`${city.name}-${index}`}
+              style={styles.suggestionItem}
+              onPress={() => handleCitySelect(city)}
+            >
+              <Ionicons name="location" size={16} color="#8B4513" />
+              <View style={styles.suggestionText}>
+                <Text style={styles.cityName}>{city.name}</Text>
+                <Text style={styles.regionName}>{city.region} Region</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       {/* Bottom Sheet for Selected Cafe */}
       {bottomSheetVisible && (
@@ -513,7 +824,7 @@ export default function MapScreen() {
                   {loadingProducts ? (
                     <ActivityIndicator size="small" color="#8B4513" />
                   ) : products.length > 0 ? (
-                    <FlatList
+                    <FlashList
                       data={products}
                       keyExtractor={(item) => item.id}
                       renderItem={({ item, index }) => (
@@ -555,6 +866,7 @@ export default function MapScreen() {
                       )}
                       contentContainerStyle={styles.productsList}
                       showsVerticalScrollIndicator={false}
+                      estimatedItemSize={80}
                     />
                   ) : (
                     <Text style={styles.noProductsText}>
@@ -626,16 +938,25 @@ export default function MapScreen() {
       )}
 
       {/* No Results Message */}
-      {!loading && filteredCafes.length === 0 && cafes.length > 0 && (
-        <View style={styles.noResultsOverlay}>
-          <Text style={styles.noResultsText}>
-            {t("map.noResultsFound", { searchQuery: searchQuery })}
-          </Text>
-        </View>
-      )}
+      {!loading &&
+        filteredCafes.length === 0 &&
+        cafes.length > 0 &&
+        debouncedSearchQuery.length > 0 && (
+          <View style={styles.noResultsOverlay}>
+            <Text style={styles.noResultsText}>
+              No cafes found for "{debouncedSearchQuery}"
+            </Text>
+            <Text style={styles.noResultsSubtext}>
+              Try searching for a Romanian city or a different cafe name
+            </Text>
+          </View>
+        )}
       {!loading && cafes.length === 0 && !fetchError && (
         <View style={styles.noResultsOverlay}>
-          <Text style={styles.noResultsText}>{t("map.noCafesNearby")}</Text>
+          <Text style={styles.noResultsText}>No cafes found in this area</Text>
+          <Text style={styles.noResultsSubtext}>
+            Try searching for a major Romanian city
+          </Text>
         </View>
       )}
 
@@ -696,14 +1017,81 @@ const styles = StyleSheet.create({
     borderColor: "rgba(139, 69, 19, 0.1)",
     zIndex: 5, // Above map, below loading/error overlays
   },
+  searchContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: "#E0D6C7",
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
   searchInput: {
     flex: 1,
     fontSize: 16,
     color: "#321E0E", // Dark brown text
-    marginRight: 8,
+    paddingVertical: 4,
+  },
+  clearSearchButton: {
+    padding: 4,
+    marginLeft: 8,
   },
   filterButton: {
     padding: 5,
+  },
+  // Search suggestions styles
+  searchSuggestions: {
+    position: "absolute",
+    top: Platform.OS === "android" ? 95 : 115,
+    left: 15,
+    right: 15,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: "#E0D6C7",
+    zIndex: 10,
+    maxHeight: 250,
+  },
+  suggestionsHeader: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#8B4513",
+    padding: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F5E6D3",
+  },
+  suggestionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F5E6D3",
+  },
+  suggestionText: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  cityName: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#321E0E",
+    marginBottom: 2,
+  },
+  regionName: {
+    fontSize: 12,
+    color: "#8B4513",
   },
   refreshButton: {
     position: "absolute",
@@ -777,6 +1165,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     fontWeight: "500",
+  },
+  noResultsSubtext: {
+    color: "#A08C7D",
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 4,
+    fontStyle: "italic",
   },
   // Bottom sheet styles
   bottomSheet: {

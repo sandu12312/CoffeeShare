@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,11 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  ScrollView,
+  RefreshControl,
 } from "react-native";
+import { FlashList } from "@shopify/flash-list";
+import { useFocusEffect } from "@react-navigation/native";
 import { useLanguage } from "../../context/LanguageContext";
 import { useCart } from "../../context/CartContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
@@ -38,86 +42,131 @@ export default function CartScreen() {
   // Get real-time subscription status
   const subscriptionStatus = useSubscriptionStatus(user?.uid);
 
+  const loadCart = useCallback(
+    async (isRefreshing = false) => {
+      if (!user?.uid) {
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
+      try {
+        if (isRefreshing) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
+
+        const userCart = await cartService.getUserCart(user.uid);
+        setCart(userCart);
+
+        // Only log in development
+        if (__DEV__) {
+          console.log(
+            `Loaded cart for user ${user.uid}:`,
+            userCart
+              ? `${userCart.totalBeans} beans, ${userCart.items.length} items`
+              : "empty cart"
+          );
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.error("Error loading cart:", error);
+        }
+        Toast.show({
+          type: "error",
+          text1: t("common.error"),
+          text2: t("cart.failedToLoadCart"),
+        });
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [user?.uid, t]
+  );
+
+  // Refresh handler for pull-to-refresh
+  const handleRefresh = useCallback(() => {
+    loadCart(true);
+  }, [loadCart]);
+
+  // Load cart on component mount
   useEffect(() => {
     loadCart();
-  }, [user]);
+  }, [loadCart]);
 
-  const loadCart = async () => {
-    if (!user?.uid) {
-      setLoading(false);
-      return;
-    }
+  // Refresh cart data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.uid) {
+        loadCart(false);
+      }
+    }, [user?.uid, loadCart])
+  );
 
-    try {
-      setLoading(true);
-      const userCart = await cartService.getUserCart(user.uid);
-      setCart(userCart);
-      console.log(
-        `Loaded cart for user ${user.uid}:`,
-        userCart
-          ? `${userCart.totalBeans} beans, ${userCart.items.length} items`
-          : "empty cart"
-      );
-    } catch (error) {
-      console.error("Error loading cart:", error);
-      Toast.show({
-        type: "error",
-        text1: t("common.error"),
-        text2: t("cart.failedToLoadCart"),
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleUpdateQuantity = useCallback(
+    async (productId: string, newQuantity: number) => {
+      if (!user?.uid || !cart) return;
 
-  const handleUpdateQuantity = async (
-    productId: string,
-    newQuantity: number
-  ) => {
-    if (!user?.uid || !cart) return;
+      // Prevent multiple rapid updates on the same item
+      if (updatingItems.has(productId)) return;
 
-    // Prevent multiple rapid updates on the same item
-    if (updatingItems.has(productId)) return;
+      // Add to updating set
+      setUpdatingItems((prev) => new Set(prev).add(productId));
 
-    // Add to updating set
-    setUpdatingItems((prev) => new Set(prev).add(productId));
-
-    // Optimistic UI update - immediately update the cart state
-    const updatedCart = { ...cart };
-    const itemIndex = updatedCart.items.findIndex(
-      (item) => item.product.id === productId
-    );
-
-    if (itemIndex === -1) {
-      setUpdatingItems((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(productId);
-        return newSet;
-      });
-      return;
-    }
-
-    const oldQuantity = updatedCart.items[itemIndex].quantity;
-    const quantityDiff = newQuantity - oldQuantity;
-    const beansDiff =
-      updatedCart.items[itemIndex].product.beansValue * quantityDiff;
-
-    // Update quantity and total beans optimistically
-    updatedCart.items[itemIndex].quantity = newQuantity;
-    updatedCart.totalBeans += beansDiff;
-
-    // Update UI immediately
-    setCart(updatedCart);
-
-    try {
-      const result = await cartService.updateQuantity(
-        user.uid,
-        productId,
-        newQuantity
+      // Optimistic UI update - immediately update the cart state
+      const updatedCart = { ...cart };
+      const itemIndex = updatedCart.items.findIndex(
+        (item) => item.product.id === productId
       );
 
-      if (!result.success) {
-        // Revert optimistic update on failure
+      if (itemIndex === -1) {
+        setUpdatingItems((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(productId);
+          return newSet;
+        });
+        return;
+      }
+
+      const oldQuantity = updatedCart.items[itemIndex].quantity;
+      const quantityDiff = newQuantity - oldQuantity;
+      const beansDiff =
+        updatedCart.items[itemIndex].product.beansValue * quantityDiff;
+
+      // Update quantity and total beans optimistically
+      updatedCart.items[itemIndex].quantity = newQuantity;
+      updatedCart.totalBeans += beansDiff;
+
+      // Update UI immediately
+      setCart(updatedCart);
+
+      try {
+        const result = await cartService.updateQuantity(
+          user.uid,
+          productId,
+          newQuantity
+        );
+
+        if (!result.success) {
+          // Revert optimistic update on failure
+          const revertedCart = { ...updatedCart };
+          revertedCart.items[itemIndex].quantity = oldQuantity;
+          revertedCart.totalBeans -= beansDiff;
+          setCart(revertedCart);
+
+          Toast.show({
+            type: "error",
+            text1: t("common.error"),
+            text2: result.message,
+          });
+        } else {
+          // Update cart context count after successful quantity update
+          refreshCartCount();
+        }
+      } catch (error) {
+        // Revert optimistic update on error
         const revertedCart = { ...updatedCart };
         revertedCart.items[itemIndex].quantity = oldQuantity;
         revertedCart.totalBeans -= beansDiff;
@@ -126,96 +175,88 @@ export default function CartScreen() {
         Toast.show({
           type: "error",
           text1: t("common.error"),
-          text2: result.message,
+          text2: t("cart.failedToUpdateQuantity"),
         });
-      } else {
-        // Update cart context count after successful quantity update
-        refreshCartCount();
+      } finally {
+        // Remove from updating set
+        setUpdatingItems((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(productId);
+          return newSet;
+        });
       }
-    } catch (error) {
-      // Revert optimistic update on error
-      const revertedCart = { ...updatedCart };
-      revertedCart.items[itemIndex].quantity = oldQuantity;
-      revertedCart.totalBeans -= beansDiff;
-      setCart(revertedCart);
+    },
+    [user?.uid, cart, updatingItems, refreshCartCount, t]
+  );
 
-      Toast.show({
-        type: "error",
-        text1: t("common.error"),
-        text2: t("cart.failedToUpdateQuantity"),
-      });
-    } finally {
-      // Remove from updating set
-      setUpdatingItems((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(productId);
-        return newSet;
-      });
-    }
-  };
+  const handleRemoveItem = useCallback(
+    async (productId: string) => {
+      if (!user?.uid || !cart) return;
 
-  const handleRemoveItem = async (productId: string) => {
-    if (!user?.uid || !cart) return;
+      showConfirmModal(
+        t("cart.removeItem"),
+        t("cart.removeItemConfirm"),
+        async () => {
+          // Find the item to remove for optimistic update
+          const itemToRemove = cart.items.find(
+            (item) => item.product.id === productId
+          );
+          if (!itemToRemove) return;
 
-    showConfirmModal(
-      t("cart.removeItem"),
-      t("cart.removeItemConfirm"),
-      async () => {
-        // Find the item to remove for optimistic update
-        const itemToRemove = cart.items.find(
-          (item) => item.product.id === productId
-        );
-        if (!itemToRemove) return;
+          // Optimistic UI update - immediately remove the item
+          const updatedCart = { ...cart };
+          updatedCart.items = updatedCart.items.filter(
+            (item) => item.product.id !== productId
+          );
+          updatedCart.totalBeans -=
+            itemToRemove.product.beansValue * itemToRemove.quantity;
 
-        // Optimistic UI update - immediately remove the item
-        const updatedCart = { ...cart };
-        updatedCart.items = updatedCart.items.filter(
-          (item) => item.product.id !== productId
-        );
-        updatedCart.totalBeans -=
-          itemToRemove.product.beansValue * itemToRemove.quantity;
-
-        // If cart becomes empty, set to null
-        if (updatedCart.items.length === 0) {
-          setCart(null);
-        } else {
-          setCart(updatedCart);
-        }
-
-        try {
-          const result = await cartService.removeFromCart(user.uid, productId);
-
-          if (result.success) {
-            Toast.show({
-              type: "success",
-              text1: t("cart.removed"),
-              text2: t("cart.itemRemovedFromCart"),
-            });
-            // Update cart context count after successful removal
-            refreshCartCount();
+          // If cart becomes empty, set to null
+          if (updatedCart.items.length === 0) {
+            setCart(null);
           } else {
-            // Revert optimistic update on failure
+            setCart(updatedCart);
+          }
+
+          try {
+            const result = await cartService.removeFromCart(
+              user.uid,
+              productId
+            );
+
+            if (result.success) {
+              Toast.show({
+                type: "success",
+                text1: t("cart.removed"),
+                text2: t("cart.itemRemovedFromCart"),
+              });
+              // Update cart context count after successful removal
+              refreshCartCount();
+            } else {
+              // Revert optimistic update on failure
+              setCart(cart);
+              Toast.show({
+                type: "error",
+                text1: t("common.error"),
+                text2: result.message,
+              });
+            }
+          } catch (error) {
+            // Revert optimistic update on error
             setCart(cart);
             Toast.show({
               type: "error",
               text1: t("common.error"),
-              text2: result.message,
+              text2: t("cart.failedToRemoveItem"),
             });
           }
-        } catch (error) {
-          // Revert optimistic update on error
-          setCart(cart);
-          Toast.show({
-            type: "error",
-            text1: t("common.error"),
-            text2: t("cart.failedToRemoveItem"),
-          });
         }
-      }
-    );
-  };
+      );
+    },
+    [user?.uid, cart, showConfirmModal, refreshCartCount, t]
+  );
 
-  const handleCheckout = async () => {
+  const handleCheckout = useCallback(async () => {
     if (!user?.uid || !cart || !cart.cafeId) return;
 
     // Check if user has enough beans
@@ -268,85 +309,84 @@ export default function CartScreen() {
     } finally {
       setProcessingCheckout(false);
     }
-  };
+  }, [user?.uid, cart, subscriptionStatus.beansLeft, router, t]);
 
-  const renderCartItem = ({
-    item,
-    index,
-  }: {
-    item: CartItem;
-    index: number;
-  }) => (
-    <Animatable.View
-      animation="fadeInUp"
-      delay={index * 100}
-      style={styles.cartItem}
-    >
-      <Image
-        source={{ uri: item.product.imageUrl }}
-        style={styles.productImage}
-        resizeMode="cover"
-      />
-      <View style={styles.productInfo}>
-        <Text style={styles.productName}>{item.product.name}</Text>
-        <View style={styles.priceInfo}>
-          <Ionicons
-            name="ellipse"
-            size={10}
-            color="#8B4513"
-            style={styles.beansIcon}
-          />
-          <Text style={styles.productPrice}>
-            {item.product.beansValue} {t("cart.beans")}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.quantityContainer}>
-        <TouchableOpacity
-          style={[
-            styles.quantityButton,
-            updatingItems.has(item.product.id) && styles.quantityButtonDisabled,
-          ]}
-          onPress={() =>
-            handleUpdateQuantity(item.product.id, item.quantity - 1)
-          }
-          disabled={updatingItems.has(item.product.id)}
-        >
-          {updatingItems.has(item.product.id) ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Ionicons name="remove" size={16} color="#FFFFFF" />
-          )}
-        </TouchableOpacity>
-
-        <Text style={styles.quantityText}>{item.quantity}</Text>
-
-        <TouchableOpacity
-          style={[
-            styles.quantityButton,
-            updatingItems.has(item.product.id) && styles.quantityButtonDisabled,
-          ]}
-          onPress={() =>
-            handleUpdateQuantity(item.product.id, item.quantity + 1)
-          }
-          disabled={updatingItems.has(item.product.id)}
-        >
-          {updatingItems.has(item.product.id) ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Ionicons name="add" size={16} color="#FFFFFF" />
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity
-        style={styles.removeButton}
-        onPress={() => handleRemoveItem(item.product.id)}
+  const renderCartItem = useCallback(
+    ({ item, index }: { item: CartItem; index: number }) => (
+      <Animatable.View
+        animation="fadeInUp"
+        delay={index * 100}
+        style={styles.cartItem}
       >
-        <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
-      </TouchableOpacity>
-    </Animatable.View>
+        <Image
+          source={{ uri: item.product.imageUrl }}
+          style={styles.productImage}
+          resizeMode="cover"
+        />
+        <View style={styles.productInfo}>
+          <Text style={styles.productName}>{item.product.name}</Text>
+          <View style={styles.priceInfo}>
+            <Ionicons
+              name="ellipse"
+              size={10}
+              color="#8B4513"
+              style={styles.beansIcon}
+            />
+            <Text style={styles.productPrice}>
+              {item.product.beansValue} {t("cart.beans")}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.quantityContainer}>
+          <TouchableOpacity
+            style={[
+              styles.quantityButton,
+              updatingItems.has(item.product.id) &&
+                styles.quantityButtonDisabled,
+            ]}
+            onPress={() =>
+              handleUpdateQuantity(item.product.id, item.quantity - 1)
+            }
+            disabled={updatingItems.has(item.product.id)}
+          >
+            {updatingItems.has(item.product.id) ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Ionicons name="remove" size={16} color="#FFFFFF" />
+            )}
+          </TouchableOpacity>
+
+          <Text style={styles.quantityText}>{item.quantity}</Text>
+
+          <TouchableOpacity
+            style={[
+              styles.quantityButton,
+              updatingItems.has(item.product.id) &&
+                styles.quantityButtonDisabled,
+            ]}
+            onPress={() =>
+              handleUpdateQuantity(item.product.id, item.quantity + 1)
+            }
+            disabled={updatingItems.has(item.product.id)}
+          >
+            {updatingItems.has(item.product.id) ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Ionicons name="add" size={16} color="#FFFFFF" />
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          style={styles.removeButton}
+          onPress={() => handleRemoveItem(item.product.id)}
+        >
+          <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
+        </TouchableOpacity>
+      </Animatable.View>
+    ),
+    [handleUpdateQuantity, handleRemoveItem, updatingItems, t]
   );
 
   if (loading) {
@@ -396,13 +436,21 @@ export default function CartScreen() {
           </View>
         </View>
 
-        <FlatList
+        <FlashList
           data={cart.items}
           renderItem={renderCartItem}
           keyExtractor={(item) => item.product.id}
           contentContainerStyle={styles.listContent}
-          refreshing={refreshing}
-          onRefresh={loadCart}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={["#8B4513"]}
+              tintColor="#8B4513"
+            />
+          }
+          estimatedItemSize={120}
+          removeClippedSubviews={true}
         />
 
         <View style={styles.bottomContainer}>

@@ -10,6 +10,7 @@ import {
   Animated,
   Dimensions,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLanguage } from "../../context/LanguageContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
@@ -264,6 +265,17 @@ export default function QRScreen() {
       previousCreditsRef.current = subscription.creditsLeft;
     }
   }, [subscription]);
+
+  // Add useFocusEffect to refresh QR state when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.uid) {
+        checkCanGenerate();
+        const cleanup = setupTokenMonitoring();
+        return cleanup;
+      }
+    }, [user?.uid, checkCanGenerate, setupTokenMonitoring])
+  );
 
   // Setup monitoring (separate from subscription dependency)
   useEffect(() => {
