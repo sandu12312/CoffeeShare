@@ -4,6 +4,7 @@ export interface UserProfile {
   displayName: string;
   email: string;
   photoURL?: string;
+  bio?: string;
   role: UserRole;
   subscription?: Subscription;
   createdAt?: Date | number;

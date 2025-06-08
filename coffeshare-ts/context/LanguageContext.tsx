@@ -384,7 +384,177 @@ export type TranslationKey =
   | "subscriptions.twoBeans"
   | "subscriptions.threeBeans"
   | "subscriptions.modalDescription1"
-  | "subscriptions.modalDescription2";
+  | "subscriptions.modalDescription2"
+  // Profile Screen Updates
+  | "profile.permissionDenied"
+  | "profile.permissionDeniedMessage"
+  | "profile.photoUpdated"
+  | "profile.photoUpdatedMessage"
+  | "profile.photoUpdateError"
+  // Edit Profile Screen
+  | "editProfile.displayName"
+  | "editProfile.displayNamePlaceholder"
+  | "editProfile.phoneNumber"
+  | "editProfile.phoneNumberPlaceholder"
+  | "editProfile.bio"
+  | "editProfile.bioPlaceholder"
+  | "editProfile.save"
+  | "editProfile.tapToChangePhoto"
+  | "editProfile.emailCannotBeChanged"
+  | "editProfile.displayNameRequired"
+  | "editProfile.profileUpdated"
+  | "editProfile.profileUpdatedMessage"
+  | "editProfile.profileUpdateFailed"
+  | "editProfile.accountInformation"
+  | "editProfile.memberSince"
+  | "editProfile.userId"
+  | "editProfile.accountType"
+  | "editProfile.standardUser"
+  | "editProfile.changePassword"
+  | "editProfile.changePasswordMessage"
+  | "editProfile.deleteAccount"
+  | "editProfile.deleteAccountWarning"
+  | "editProfile.photoPermissionDenied"
+  | "editProfile.photoPermissionMessage"
+  | "editProfile.changeProfilePhoto"
+  | "editProfile.photoOptions"
+  | "editProfile.camera"
+  | "editProfile.photoLibrary"
+  | "editProfile.cameraPermissionDenied"
+  | "editProfile.cameraPermissionMessage"
+  | "editProfile.photoUploadFailed"
+  | "editProfile.characterCount"
+  // Help Support Screen
+  | "helpSupport.quickHelp"
+  | "helpSupport.reportBug"
+  | "helpSupport.reportBugDesc"
+  | "helpSupport.featureRequest"
+  | "helpSupport.featureRequestDesc"
+  | "helpSupport.appInformation"
+  | "helpSupport.appInformationDesc"
+  | "helpSupport.appVersion"
+  | "helpSupport.appVersionInfo"
+  | "helpSupport.faq"
+  | "helpSupport.faqQuestion1"
+  | "helpSupport.faqAnswer1"
+  | "helpSupport.faqQuestion2"
+  | "helpSupport.faqAnswer2"
+  | "helpSupport.faqQuestion3"
+  | "helpSupport.faqAnswer3"
+  | "helpSupport.faqQuestion4"
+  | "helpSupport.faqAnswer4"
+  | "helpSupport.faqQuestion5"
+  | "helpSupport.faqAnswer5"
+  | "helpSupport.faqQuestion6"
+  | "helpSupport.faqAnswer6"
+  | "helpSupport.faqQuestion7"
+  | "helpSupport.faqAnswer7"
+  | "helpSupport.faqQuestion8"
+  | "helpSupport.faqAnswer8"
+  | "helpSupport.contactSupport"
+  | "helpSupport.contactSupportDesc"
+  | "helpSupport.emailSupport"
+  | "helpSupport.emailSupportDesc"
+  | "helpSupport.liveChat"
+  | "helpSupport.liveChatDesc"
+  | "helpSupport.liveChatComingSoon"
+  | "helpSupport.callSupport"
+  | "helpSupport.callSupportNumber"
+  | "helpSupport.visitWebsite"
+  | "helpSupport.websiteUrl"
+  | "helpSupport.supportHours"
+  | "helpSupport.mondayFriday"
+  | "helpSupport.mondayFridayHours"
+  | "helpSupport.saturday"
+  | "helpSupport.saturdayHours"
+  | "helpSupport.sunday"
+  | "helpSupport.sundayHours"
+  | "helpSupport.timezoneNote"
+  | "helpSupport.additionalResources"
+  | "helpSupport.termsOfService"
+  | "helpSupport.privacyPolicy"
+  | "helpSupport.coffeeBlog"
+  // Privacy Security Screen
+  | "privacySecurity.privacySettings"
+  | "privacySecurity.locationTracking"
+  | "privacySecurity.locationTrackingDesc"
+  | "privacySecurity.analyticsData"
+  | "privacySecurity.analyticsDataDesc"
+  | "privacySecurity.crashReports"
+  | "privacySecurity.crashReportsDesc"
+  | "privacySecurity.dataSharing"
+  | "privacySecurity.dataSharingDesc"
+  | "privacySecurity.marketingEmails"
+  | "privacySecurity.marketingEmailsDesc"
+  | "privacySecurity.dataManagement"
+  | "privacySecurity.dataManagementDesc"
+  | "privacySecurity.downloadData"
+  | "privacySecurity.downloadDataDesc"
+  | "privacySecurity.downloadDataTitle"
+  | "privacySecurity.downloadDataMessage"
+  | "privacySecurity.requestSubmitted"
+  | "privacySecurity.downloadRequestMessage"
+  | "privacySecurity.exportData"
+  | "privacySecurity.exportDataDesc"
+  | "privacySecurity.dataPortability"
+  | "privacySecurity.dataPortabilityMessage"
+  | "privacySecurity.deleteAllData"
+  | "privacySecurity.deleteAllDataDesc"
+  | "privacySecurity.deleteDataTitle"
+  | "privacySecurity.deleteDataMessage"
+  | "privacySecurity.finalConfirmation"
+  | "privacySecurity.finalConfirmationMessage"
+  | "privacySecurity.yesDeleteEverything"
+  | "privacySecurity.security"
+  | "privacySecurity.changePasswordDesc"
+  | "privacySecurity.activeSessions"
+  | "privacySecurity.activeSessionsDesc"
+  | "privacySecurity.activeSessionsMessage"
+  | "privacySecurity.legalDocuments"
+  | "privacySecurity.gdprCompliance"
+  | "privacySecurity.gdprComplianceDesc"
+  | "privacySecurity.privacyPolicyTitle"
+  // About Screen
+  | "about.appName"
+  | "about.tagline"
+  | "about.version"
+  | "about.build"
+  | "about.ourMission"
+  | "about.missionStatement"
+  | "about.whatWeOffer"
+  | "about.flexibleSubscriptions"
+  | "about.flexibleSubscriptionsDesc"
+  | "about.partnerNetwork"
+  | "about.partnerNetworkDesc"
+  | "about.easyRedemption"
+  | "about.easyRedemptionDesc"
+  | "about.smartTracking"
+  | "about.smartTrackingDesc"
+  | "about.meetTheTeam"
+  | "about.founderName"
+  | "about.founderRole"
+  | "about.founderDesc"
+  | "about.teamName"
+  | "about.teamRole"
+  | "about.teamDesc"
+  | "about.companyInformation"
+  | "about.companyName"
+  | "about.location"
+  | "about.founded"
+  | "about.email"
+  | "about.website"
+  | "about.specialThanks"
+  | "about.specialThanksDesc"
+  | "about.reactNativeCommunity"
+  | "about.expoFramework"
+  | "about.firebaseTeam"
+  | "about.coffeeLovers"
+  | "about.legal"
+  | "about.openSourceLicenses"
+  | "about.copyright"
+  | "about.madeWithLove"
+  // Account Settings Index
+  | "accountSettings.description";
 
 // Exportă și interfața contextului dacă e necesar în altă parte
 export interface LanguageContextType {
@@ -860,6 +1030,230 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
       "Abonează-te la un pachet lunar de boabe și folosește-le la orice cafenea parteneră. Boabele se reînnoiesc la fiecare ciclu de facturare. Boabele nefolosite nu se reportează.",
     "subscriptions.modalDescription2":
       "Doar arată codul QR la checkout și boabele vor fi deduse automat.",
+
+    // Profile Screen Updates
+    "profile.permissionDenied": "Permisiune Refuzată",
+    "profile.permissionDeniedMessage":
+      "Te rog permite accesul la galeria foto pentru a schimba poza de profil.",
+    "profile.photoUpdated": "Poză Actualizată",
+    "profile.photoUpdatedMessage":
+      "Poza de profil a fost actualizată cu succes.",
+    "profile.photoUpdateError": "Eroare actualizare poză de profil",
+
+    // Edit Profile Screen
+    "editProfile.displayName": "Nume Afișat *",
+    "editProfile.displayNamePlaceholder": "Introdu numele tău",
+    "editProfile.phoneNumber": "Număr de Telefon",
+    "editProfile.phoneNumberPlaceholder": "Introdu numărul de telefon",
+    "editProfile.bio": "Biografie",
+    "editProfile.bioPlaceholder": "Spune-ne despre tine...",
+    "editProfile.save": "Salvează",
+    "editProfile.tapToChangePhoto": "Apasă pentru a schimba poza",
+    "editProfile.emailCannotBeChanged":
+      "Emailul nu poate fi modificat din acest ecran",
+    "editProfile.displayNameRequired": "Numele afișat este obligatoriu",
+    "editProfile.profileUpdated": "Profil Actualizat",
+    "editProfile.profileUpdatedMessage":
+      "Profilul tău a fost actualizat cu succes.",
+    "editProfile.profileUpdateFailed":
+      "Actualizarea profilului a eșuat. Te rog încearcă din nou.",
+    "editProfile.accountInformation": "Informații Cont",
+    "editProfile.memberSince": "Membru din",
+    "editProfile.userId": "ID Utilizator",
+    "editProfile.accountType": "Tip Cont",
+    "editProfile.standardUser": "Utilizator Standard",
+    "editProfile.changePassword": "Schimbă Parola",
+    "editProfile.changePasswordMessage":
+      "Vei primi un email cu instrucțiuni pentru resetarea parolei.",
+    "editProfile.deleteAccount": "Șterge Contul",
+    "editProfile.deleteAccountWarning":
+      "Această acțiune nu poate fi anulată. Toate datele tale vor fi șterse permanent.",
+    "editProfile.photoPermissionDenied": "Permisiune Refuzată",
+    "editProfile.photoPermissionMessage":
+      "Te rog permite accesul la galeria foto pentru a schimba poza de profil.",
+    "editProfile.changeProfilePhoto": "Schimbă Poza de Profil",
+    "editProfile.photoOptions":
+      "Alege modalitatea de schimbare a pozei de profil",
+    "editProfile.camera": "Cameră",
+    "editProfile.photoLibrary": "Galerie Foto",
+    "editProfile.cameraPermissionDenied": "Permisiune Refuzată",
+    "editProfile.cameraPermissionMessage":
+      "Te rog permite accesul la cameră pentru a face o poză.",
+    "editProfile.photoUploadFailed": "Încărcarea pozei a eșuat",
+    "editProfile.characterCount": "{count}/200 caractere",
+
+    // Help Support Screen
+    "helpSupport.quickHelp": "Ajutor Rapid",
+    "helpSupport.reportBug": "Raportează o Problemă",
+    "helpSupport.reportBugDesc": "Ai găsit o problemă? Spune-ne",
+    "helpSupport.featureRequest": "Solicitare Funcționalitate",
+    "helpSupport.featureRequestDesc": "Sugerează funcționalități noi",
+    "helpSupport.appInformation": "Informații Aplicație",
+    "helpSupport.appInformationDesc": "Versiune și informații build",
+    "helpSupport.appVersion": "Versiunea Aplicației",
+    "helpSupport.appVersionInfo":
+      "CoffeeShare v1.0.0\nBuild 1001\n\nDezvoltat cu ❤️ pentru iubitorii de cafea",
+    "helpSupport.faq": "Întrebări Frecvente",
+    "helpSupport.faqQuestion1": "Cum cumpăr un abonament de cafea?",
+    "helpSupport.faqAnswer1":
+      "Poți cumpăra un abonament de cafea mergând la tab-ul Abonamente din profilul tău. Alege din planurile noastre disponibile și finalizează procesul de plată.",
+    "helpSupport.faqQuestion2": "Cum răscumpăr boabele de cafea?",
+    "helpSupport.faqAnswer2":
+      "Pentru a răscumpăra boabele de cafea, vizitează orice cafenea parteneră și arată codul QR din aplicație. Personalul cafenelei îl va scana și va deduce boabele corespunzătoare din contul tău.",
+    "helpSupport.faqQuestion3": "Ce se întâmplă dacă abonamentul îmi expiră?",
+    "helpSupport.faqAnswer3":
+      "Când abonamentul îți expiră, nu vei mai putea răscumpăra boabele rămase. Cu toate acestea, poți reînnoi abonamentul pentru a continua să folosești serviciul.",
+    "helpSupport.faqQuestion4": "Pot schimba planul de abonament?",
+    "helpSupport.faqAnswer4":
+      "Da, poți face upgrade sau downgrade la planul de abonament oricând. Modificările vor intra în vigoare la următorul ciclu de facturare.",
+    "helpSupport.faqQuestion5": "Cum găsesc cafenelele partenere?",
+    "helpSupport.faqAnswer5":
+      "Folosește tab-ul Hartă pentru a găsi toate cafenelele partenere din apropierea ta. Poți căuta și cafenele specifice sau naviga după oraș.",
+    "helpSupport.faqQuestion6": "Ce fac dacă am probleme cu codul QR?",
+    "helpSupport.faqAnswer6":
+      "Dacă codul QR nu funcționează, încearcă să reîmprospătezi ecranul cu codul QR sau verifică conexiunea la internet. Dacă problema persistă, contactează echipa noastră de suport.",
+    "helpSupport.faqQuestion7": "Cum actualizez informațiile profilului?",
+    "helpSupport.faqAnswer7":
+      "Mergi la Setări Cont și selectează Editează Profilul. Poți actualiza numele, numărul de telefon și poza de profil de acolo.",
+    "helpSupport.faqQuestion8": "Pot obține o rambursare pentru abonament?",
+    "helpSupport.faqAnswer8":
+      "Rambursările sunt disponibile în 7 zile de la cumpărare dacă nu ai folosit nicio boabă de cafea. Te rog contactează echipa noastră de suport pentru solicitări de rambursare.",
+    "helpSupport.contactSupport": "Contactează Suportul",
+    "helpSupport.contactSupportDesc":
+      "Nu găsești ce cauți? Echipa noastră de suport este aici să te ajute!",
+    "helpSupport.emailSupport": "Suport Email",
+    "helpSupport.emailSupportDesc": "Primește ajutor prin email",
+    "helpSupport.liveChat": "Chat Live",
+    "helpSupport.liveChatDesc": "Discută cu echipa noastră de suport",
+    "helpSupport.liveChatComingSoon":
+      "Funcționalitatea chat live va fi disponibilă în curând! Te rog folosește suportul email pentru moment.",
+    "helpSupport.callSupport": "Suport Telefonic",
+    "helpSupport.callSupportNumber": "+40 123 456 789",
+    "helpSupport.visitWebsite": "Vizitează Site-ul Nostru",
+    "helpSupport.websiteUrl": "www.coffeeshare.ro",
+    "helpSupport.supportHours": "Ore de Suport",
+    "helpSupport.mondayFriday": "Luni - Vineri",
+    "helpSupport.mondayFridayHours": "9:00 - 18:00",
+    "helpSupport.saturday": "Sâmbătă",
+    "helpSupport.saturdayHours": "10:00 - 16:00",
+    "helpSupport.sunday": "Duminică",
+    "helpSupport.sundayHours": "Închis",
+    "helpSupport.timezoneNote": "Toate orele în România (EET/EEST)",
+    "helpSupport.additionalResources": "Resurse Adiționale",
+    "helpSupport.termsOfService": "Termeni și Condiții",
+    "helpSupport.privacyPolicy": "Politica de Confidențialitate",
+    "helpSupport.coffeeBlog": "Blogul de Cafea",
+
+    // Privacy Security Screen
+    "privacySecurity.privacySettings": "Setări Confidențialitate",
+    "privacySecurity.locationTracking": "Urmărire Locație",
+    "privacySecurity.locationTrackingDesc":
+      "Permite-ne să folosim locația ta pentru a găsi cafenele din apropiere",
+    "privacySecurity.analyticsData": "Date Analitice",
+    "privacySecurity.analyticsDataDesc":
+      "Ajută-ne să îmbunătățim aplicația prin partajarea analitice de utilizare",
+    "privacySecurity.crashReports": "Rapoarte Erori",
+    "privacySecurity.crashReportsDesc":
+      "Trimite rapoarte de erori pentru a ne ajuta să remediem problemele",
+    "privacySecurity.dataSharing": "Partajare Date",
+    "privacySecurity.dataSharingDesc":
+      "Partajează date anonimizate cu cafenelele partenere",
+    "privacySecurity.marketingEmails": "Email-uri Marketing",
+    "privacySecurity.marketingEmailsDesc":
+      "Primește oferte promoționale și actualizări",
+    "privacySecurity.dataManagement": "Gestionare Date",
+    "privacySecurity.dataManagementDesc":
+      "Gestionează datele personale și informațiile contului",
+    "privacySecurity.downloadData": "Descarcă Datele Mele",
+    "privacySecurity.downloadDataDesc":
+      "Obține o copie a tuturor datelor stocate în sistemul nostru",
+    "privacySecurity.downloadDataTitle": "Descarcă Datele Tale",
+    "privacySecurity.downloadDataMessage":
+      "Vom pregăti un link de descărcare cu toate datele tale și îl vom trimite la adresa de email înregistrată în 48 de ore.",
+    "privacySecurity.requestSubmitted": "Solicitare Trimisă",
+    "privacySecurity.downloadRequestMessage":
+      "Vei primi un email cu linkul de descărcare a datelor în 48 de ore.",
+    "privacySecurity.exportData": "Exportă Date",
+    "privacySecurity.exportDataDesc":
+      "Exportă datele pentru a le folosi cu alte servicii",
+    "privacySecurity.dataPortability": "Portabilitate Date",
+    "privacySecurity.dataPortabilityMessage":
+      "Poți exporta datele în format JSON. Aceasta include profilul, istoricul abonamentelor și preferințele.",
+    "privacySecurity.deleteAllData": "Șterge Toate Datele",
+    "privacySecurity.deleteAllDataDesc":
+      "Șterge permanent contul și toate datele",
+    "privacySecurity.deleteDataTitle": "Șterge Toate Datele",
+    "privacySecurity.deleteDataMessage":
+      "Aceasta va șterge permanent toate datele tale incluzând:\n\n• Informații profil\n• Istoric abonamente\n• Istoric răscumpărări cafea\n• Preferințe aplicație\n\nAceastă acțiune nu poate fi anulată.",
+    "privacySecurity.finalConfirmation": "Confirmare Finală",
+    "privacySecurity.finalConfirmationMessage":
+      "Ești absolut sigur? Aceasta va șterge permanent contul și toate datele asociate.",
+    "privacySecurity.yesDeleteEverything": "Da, Șterge Tot",
+    "privacySecurity.security": "Securitate",
+    "privacySecurity.changePasswordDesc": "Actualizează parola contului",
+    "privacySecurity.activeSessions": "Sesiuni Active",
+    "privacySecurity.activeSessionsDesc":
+      "Vezi dispozitivele pe care ești autentificat",
+    "privacySecurity.activeSessionsMessage":
+      "Ești autentificat în prezent doar pe acest dispozitiv. Dacă observi activitate suspectă, te rog schimbă parola imediat.",
+    "privacySecurity.legalDocuments": "Documente Legale",
+    "privacySecurity.gdprCompliance": "Conformitate GDPR",
+    "privacySecurity.gdprComplianceDesc":
+      "Află despre conformitatea noastră GDPR",
+    "privacySecurity.privacyPolicyTitle": "Politica de Confidențialitate",
+
+    // About Screen
+    "about.appName": "CoffeeShare",
+    "about.tagline": "Cafeaua Ta, Modalitatea Ta, În Fiecare Zi",
+    "about.version": "Versiunea 1.0.0",
+    "about.build": "Build 1001 • Ianuarie 2024",
+    "about.ourMission": "Misiunea Noastră",
+    "about.missionStatement":
+      "CoffeeShare s-a născut dintr-o idee simplă: să facem cafeaua excelentă mai accesibilă și mai ieftină pentru toată lumea. Credem că o ceașcă perfectă de cafea nu ar trebui să fie un lux, ci o plăcere zilnică care conectează comunitățile și alimentează visele.",
+    "about.whatWeOffer": "Ce Oferim",
+    "about.flexibleSubscriptions": "Abonamente Flexibile",
+    "about.flexibleSubscriptionsDesc":
+      "Alege din diverse planuri de cafea care se potrivesc stilului tău de viață",
+    "about.partnerNetwork": "Rețea de Parteneri",
+    "about.partnerNetworkDesc":
+      "Acces la sute de cafenele partenere din România",
+    "about.easyRedemption": "Răscumpărare Ușoară",
+    "about.easyRedemptionDesc":
+      "Sistem simplu cu cod QR pentru răscumpărare rapidă a cafelei",
+    "about.smartTracking": "Urmărire Inteligentă",
+    "about.smartTrackingDesc":
+      "Urmărește consumul de cafea și descoperă noi preferate",
+    "about.meetTheTeam": "Cunoaște Echipa",
+    "about.founderName": "Alexandru Gheorghita",
+    "about.founderRole": "Developer Principal & Fondator",
+    "about.founderDesc":
+      "Developer full-stack cu pasiune pentru cafea și tehnologie",
+    "about.teamName": "Echipa CoffeeShare",
+    "about.teamRole": "Echipa de Dezvoltare",
+    "about.teamDesc":
+      "Echipă dedicată care face cafeaua accesibilă pentru toată lumea",
+    "about.companyInformation": "Informații Companie",
+    "about.companyName": "CoffeeShare SRL",
+    "about.location": "București, România",
+    "about.founded": "Fondată în 2024",
+    "about.email": "info@coffeeshare.ro",
+    "about.website": "www.coffeeshare.ro",
+    "about.specialThanks": "Mulțumiri Speciale",
+    "about.specialThanksDesc":
+      "Această aplicație nu ar fi fost posibilă fără comunitatea open-source uimitoare și susținătorii noștri:",
+    "about.reactNativeCommunity": "Comunitatea React Native",
+    "about.expoFramework": "Framework-ul Expo",
+    "about.firebaseTeam": "Echipa Firebase",
+    "about.coffeeLovers":
+      "Toți iubitorii de cafea care au inspirat această aplicație",
+    "about.legal": "Legal",
+    "about.openSourceLicenses": "Licențe Open Source",
+    "about.copyright": "© 2024 CoffeeShare SRL. Toate drepturile rezervate.",
+    "about.madeWithLove": "Făcut cu ❤️ și multă ☕ în România",
+
+    // Account Settings Index
+    "accountSettings.description":
+      "Gestionează setările contului, preferințele de confidențialitate și configurația aplicației din opțiunile de mai jos.",
   },
   en: {
     // Auth
@@ -1316,6 +1710,225 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
       "Subscribe to a monthly bean pack and use your beans at any partner café. Beans refresh with each new billing cycle. Unused beans don't roll over.",
     "subscriptions.modalDescription2":
       "Just show your QR code at checkout and your beans will be automatically deducted.",
+
+    // Profile Screen Updates
+    "profile.permissionDenied": "Permission Denied",
+    "profile.permissionDeniedMessage":
+      "Please allow access to photo library to change profile picture.",
+    "profile.photoUpdated": "Photo Updated",
+    "profile.photoUpdatedMessage":
+      "Profile picture has been updated successfully.",
+    "profile.photoUpdateError": "Error updating profile photo",
+
+    // Edit Profile Screen
+    "editProfile.displayName": "Display Name *",
+    "editProfile.displayNamePlaceholder": "Enter your name",
+    "editProfile.phoneNumber": "Phone Number",
+    "editProfile.phoneNumberPlaceholder": "Enter phone number",
+    "editProfile.bio": "Bio",
+    "editProfile.bioPlaceholder": "Tell us about yourself...",
+    "editProfile.save": "Save",
+    "editProfile.tapToChangePhoto": "Tap to change photo",
+    "editProfile.emailCannotBeChanged":
+      "Email cannot be changed from this screen",
+    "editProfile.displayNameRequired": "Display name is required",
+    "editProfile.profileUpdated": "Profile Updated",
+    "editProfile.profileUpdatedMessage":
+      "Your profile has been updated successfully.",
+    "editProfile.profileUpdateFailed":
+      "Profile update failed. Please try again.",
+    "editProfile.accountInformation": "Account Information",
+    "editProfile.memberSince": "Member since",
+    "editProfile.userId": "User ID",
+    "editProfile.accountType": "Account Type",
+    "editProfile.standardUser": "Standard User",
+    "editProfile.changePassword": "Change Password",
+    "editProfile.changePasswordMessage":
+      "You will receive an email with password reset instructions.",
+    "editProfile.deleteAccount": "Delete Account",
+    "editProfile.deleteAccountWarning":
+      "This action cannot be undone. All your data will be permanently deleted.",
+    "editProfile.photoPermissionDenied": "Permission Denied",
+    "editProfile.photoPermissionMessage":
+      "Please allow access to photo library to change profile picture.",
+    "editProfile.changeProfilePhoto": "Change Profile Photo",
+    "editProfile.photoOptions": "Choose how to change your profile photo",
+    "editProfile.camera": "Camera",
+    "editProfile.photoLibrary": "Photo Library",
+    "editProfile.cameraPermissionDenied": "Permission Denied",
+    "editProfile.cameraPermissionMessage":
+      "Please allow camera access to take a photo.",
+    "editProfile.photoUploadFailed": "Photo upload failed",
+    "editProfile.characterCount": "{count}/200 characters",
+
+    // Help Support Screen
+    "helpSupport.quickHelp": "Quick Help",
+    "helpSupport.reportBug": "Report a Bug",
+    "helpSupport.reportBugDesc": "Found an issue? Let us know",
+    "helpSupport.featureRequest": "Feature Request",
+    "helpSupport.featureRequestDesc": "Suggest new features",
+    "helpSupport.appInformation": "App Information",
+    "helpSupport.appInformationDesc": "Version and build information",
+    "helpSupport.appVersion": "App Version",
+    "helpSupport.appVersionInfo":
+      "CoffeeShare v1.0.0\nBuild 1001\n\nBuilt with ❤️ for coffee lovers",
+    "helpSupport.faq": "Frequently Asked Questions",
+    "helpSupport.faqQuestion1": "How do I purchase a coffee subscription?",
+    "helpSupport.faqAnswer1":
+      "You can purchase a coffee subscription by going to the Subscriptions tab in your profile. Choose from our available plans and complete the payment process.",
+    "helpSupport.faqQuestion2": "How do I redeem coffee beans?",
+    "helpSupport.faqAnswer2":
+      "To redeem coffee beans, visit any partner cafe and show your QR code from the app. The cafe staff will scan it and deduct the appropriate beans from your account.",
+    "helpSupport.faqQuestion3": "What happens if my subscription expires?",
+    "helpSupport.faqAnswer3":
+      "When your subscription expires, you won't be able to redeem any remaining beans. However, you can renew your subscription to continue using the service.",
+    "helpSupport.faqQuestion4": "Can I change my subscription plan?",
+    "helpSupport.faqAnswer4":
+      "Yes, you can upgrade or downgrade your subscription plan at any time. Changes will take effect at your next billing cycle.",
+    "helpSupport.faqQuestion5": "How do I find partner cafes?",
+    "helpSupport.faqAnswer5":
+      "Use the Map tab to find all partner cafes near you. You can also search for specific cafes or browse by city.",
+    "helpSupport.faqQuestion6": "What do I do if I have QR code issues?",
+    "helpSupport.faqAnswer6":
+      "If your QR code isn't working, try refreshing the QR screen or check your internet connection. If the problem persists, contact our support team.",
+    "helpSupport.faqQuestion7": "How do I update my profile information?",
+    "helpSupport.faqAnswer7":
+      "Go to Account Settings and select Edit Profile. You can update your name, phone number, and profile photo from there.",
+    "helpSupport.faqQuestion8": "Can I get a refund for my subscription?",
+    "helpSupport.faqAnswer8":
+      "Refunds are available within 7 days of purchase if you haven't used any coffee beans. Please contact our support team for refund requests.",
+    "helpSupport.contactSupport": "Contact Support",
+    "helpSupport.contactSupportDesc":
+      "Can't find what you're looking for? Our support team is here to help!",
+    "helpSupport.emailSupport": "Email Support",
+    "helpSupport.emailSupportDesc": "Get help via email",
+    "helpSupport.liveChat": "Live Chat",
+    "helpSupport.liveChatDesc": "Chat with our support team",
+    "helpSupport.liveChatComingSoon":
+      "Live chat functionality coming soon! Please use email support for now.",
+    "helpSupport.callSupport": "Phone Support",
+    "helpSupport.callSupportNumber": "+40 123 456 789",
+    "helpSupport.visitWebsite": "Visit Our Website",
+    "helpSupport.websiteUrl": "www.coffeeshare.ro",
+    "helpSupport.supportHours": "Support Hours",
+    "helpSupport.mondayFriday": "Monday - Friday",
+    "helpSupport.mondayFridayHours": "9:00 AM - 6:00 PM",
+    "helpSupport.saturday": "Saturday",
+    "helpSupport.saturdayHours": "10:00 AM - 4:00 PM",
+    "helpSupport.sunday": "Sunday",
+    "helpSupport.sundayHours": "Closed",
+    "helpSupport.timezoneNote": "All times in Romania (EET/EEST)",
+    "helpSupport.additionalResources": "Additional Resources",
+    "helpSupport.termsOfService": "Terms of Service",
+    "helpSupport.privacyPolicy": "Privacy Policy",
+    "helpSupport.coffeeBlog": "Coffee Blog",
+
+    // Privacy Security Screen
+    "privacySecurity.privacySettings": "Privacy Settings",
+    "privacySecurity.locationTracking": "Location Tracking",
+    "privacySecurity.locationTrackingDesc":
+      "Allow us to use your location to find nearby cafes",
+    "privacySecurity.analyticsData": "Analytics Data",
+    "privacySecurity.analyticsDataDesc":
+      "Help us improve the app by sharing usage analytics",
+    "privacySecurity.crashReports": "Crash Reports",
+    "privacySecurity.crashReportsDesc":
+      "Send crash reports to help us fix issues",
+    "privacySecurity.dataSharing": "Data Sharing",
+    "privacySecurity.dataSharingDesc":
+      "Share anonymized data with partner cafes",
+    "privacySecurity.marketingEmails": "Marketing Emails",
+    "privacySecurity.marketingEmailsDesc":
+      "Receive promotional offers and updates",
+    "privacySecurity.dataManagement": "Data Management",
+    "privacySecurity.dataManagementDesc":
+      "Manage your personal data and account information",
+    "privacySecurity.downloadData": "Download My Data",
+    "privacySecurity.downloadDataDesc":
+      "Get a copy of all data stored in our system",
+    "privacySecurity.downloadDataTitle": "Download Your Data",
+    "privacySecurity.downloadDataMessage":
+      "We'll prepare a download link with all your data and send it to your registered email address within 48 hours.",
+    "privacySecurity.requestSubmitted": "Request Submitted",
+    "privacySecurity.downloadRequestMessage":
+      "You will receive an email with the data download link within 48 hours.",
+    "privacySecurity.exportData": "Export Data",
+    "privacySecurity.exportDataDesc":
+      "Export your data for use with other services",
+    "privacySecurity.dataPortability": "Data Portability",
+    "privacySecurity.dataPortabilityMessage":
+      "You can export your data in JSON format. This includes your profile, subscription history, and preferences.",
+    "privacySecurity.deleteAllData": "Delete All Data",
+    "privacySecurity.deleteAllDataDesc":
+      "Permanently delete your account and all data",
+    "privacySecurity.deleteDataTitle": "Delete All Data",
+    "privacySecurity.deleteDataMessage":
+      "This will permanently delete all your data including:\n\n• Profile information\n• Subscription history\n• Coffee redemption history\n• App preferences\n\nThis action cannot be undone.",
+    "privacySecurity.finalConfirmation": "Final Confirmation",
+    "privacySecurity.finalConfirmationMessage":
+      "Are you absolutely sure? This will permanently delete your account and all associated data.",
+    "privacySecurity.yesDeleteEverything": "Yes, Delete Everything",
+    "privacySecurity.security": "Security",
+    "privacySecurity.changePasswordDesc": "Update your account password",
+    "privacySecurity.activeSessions": "Active Sessions",
+    "privacySecurity.activeSessionsDesc": "View devices where you're logged in",
+    "privacySecurity.activeSessionsMessage":
+      "You're currently logged in on this device only. If you notice suspicious activity, please change your password immediately.",
+    "privacySecurity.legalDocuments": "Legal Documents",
+    "privacySecurity.gdprCompliance": "GDPR Compliance",
+    "privacySecurity.gdprComplianceDesc": "Learn about our GDPR compliance",
+    "privacySecurity.privacyPolicyTitle": "Privacy Policy",
+
+    // About Screen
+    "about.appName": "CoffeeShare",
+    "about.tagline": "Your Coffee, Your Way, Every Day",
+    "about.version": "Version 1.0.0",
+    "about.build": "Build 1001 • January 2024",
+    "about.ourMission": "Our Mission",
+    "about.missionStatement":
+      "CoffeeShare was born from a simple idea: to make great coffee more accessible and affordable for everyone. We believe that a perfect cup of coffee shouldn't be a luxury, but a daily pleasure that connects communities and fuels dreams.",
+    "about.whatWeOffer": "What We Offer",
+    "about.flexibleSubscriptions": "Flexible Subscriptions",
+    "about.flexibleSubscriptionsDesc":
+      "Choose from various coffee plans that fit your lifestyle",
+    "about.partnerNetwork": "Partner Network",
+    "about.partnerNetworkDesc":
+      "Access to hundreds of partner cafes across Romania",
+    "about.easyRedemption": "Easy Redemption",
+    "about.easyRedemptionDesc":
+      "Simple QR code system for quick coffee redemption",
+    "about.smartTracking": "Smart Tracking",
+    "about.smartTrackingDesc":
+      "Track your coffee consumption and discover new favorites",
+    "about.meetTheTeam": "Meet the Team",
+    "about.founderName": "Alexandru Gheorghita",
+    "about.founderRole": "Lead Developer & Founder",
+    "about.founderDesc":
+      "Full-stack developer with a passion for coffee and technology",
+    "about.teamName": "CoffeeShare Team",
+    "about.teamRole": "Development Team",
+    "about.teamDesc": "Dedicated team making coffee accessible for everyone",
+    "about.companyInformation": "Company Information",
+    "about.companyName": "CoffeeShare SRL",
+    "about.location": "Bucharest, Romania",
+    "about.founded": "Founded in 2024",
+    "about.email": "info@coffeeshare.ro",
+    "about.website": "www.coffeeshare.ro",
+    "about.specialThanks": "Special Thanks",
+    "about.specialThanksDesc":
+      "This app wouldn't be possible without the amazing open-source community and our supporters:",
+    "about.reactNativeCommunity": "React Native Community",
+    "about.expoFramework": "Expo Framework",
+    "about.firebaseTeam": "Firebase Team",
+    "about.coffeeLovers": "All the coffee lovers who inspired this app",
+    "about.legal": "Legal",
+    "about.openSourceLicenses": "Open Source Licenses",
+    "about.copyright": "© 2024 CoffeeShare SRL. All rights reserved.",
+    "about.madeWithLove": "Made with ❤️ and lots of ☕ in Romania",
+
+    // Account Settings Index
+    "accountSettings.description":
+      "Manage your account settings, privacy preferences, and app configuration from the options below.",
   },
 };
 

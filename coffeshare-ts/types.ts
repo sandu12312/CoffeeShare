@@ -189,6 +189,7 @@ export interface UserProfile {
   displayName: string;
   photoURL?: string | null;
   phoneNumber?: string | null;
+  bio?: string;
   createdAt: Timestamp | FieldValue | Date;
   updatedAt: Timestamp | FieldValue | Date;
   role: "user" | "admin" | "partner";

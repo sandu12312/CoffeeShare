@@ -47,27 +47,46 @@ export default function AccountSettingsScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.infoCard}>
+          <Text style={styles.infoText}>
+            Manage your account settings, privacy preferences, and app
+            configuration from the options below.
+          </Text>
+        </View>
+
         <View style={styles.settingsCard}>
           <SettingItem
             href="/(mainUsers)/AccountSettings/EditProfile"
             icon="person-outline"
             label={t("editProfile")}
           />
+        </View>
+
+        <View style={styles.settingsCard}>
           <SettingItem
             href="/(mainUsers)/AccountSettings/Language"
             icon="language-outline"
             label={t("language")}
           />
+        </View>
+
+        <View style={styles.settingsCard}>
           <SettingItem
             href="/(mainUsers)/AccountSettings/Notifications"
             icon="notifications-outline"
             label={t("notifications")}
           />
+        </View>
+
+        <View style={styles.settingsCard}>
           <SettingItem
             href="/(mainUsers)/AccountSettings/PrivacySecurity"
             icon="lock-closed-outline"
             label={t("privacySecurity")}
           />
+        </View>
+
+        <View style={styles.settingsCard}>
           <SettingItem
             href="/(mainUsers)/AccountSettings/HelpSupport"
             icon="help-circle-outline"
@@ -120,5 +139,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#321E0E",
     marginLeft: 15,
+  },
+  infoCard: {
+    backgroundColor: "#FFF8F0",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#E0D6C7",
+  },
+  infoText: {
+    fontSize: 14,
+    color: "#8B4513",
+    lineHeight: 20,
+    textAlign: "center",
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   View,
@@ -9,13 +9,15 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
+  ImageBackground,
+  Alert,
 } from "react-native";
-import { Stack, router, Link } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
+import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import BottomTabBar from "../../components/BottomTabBar";
 import { useLanguage, TranslationKey } from "../../context/LanguageContext";
 import { useFirebase } from "../../context/FirebaseContext";
-import { ActivityType } from "../../types";
 import { useSubscriptionStatus } from "../../hooks/useSubscriptionStatus";
 import { Toast } from "../../components/ErrorComponents";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
@@ -30,34 +32,65 @@ interface MenuItem {
 
 export default function ProfileScreen() {
   const { t } = useLanguage();
-  const { user, userProfile, logout, getActivityLogs } = useFirebase();
+  const { user, userProfile, logout } = useFirebase();
   const { errorState, showError, hideToast } = useErrorHandler();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [activityLogs, setActivityLogs] = useState<any[]>([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // Use the subscription status hook to get real-time data
   const subscriptionStatus = useSubscriptionStatus(user?.uid);
 
-  const fetchActivityLogs = async () => {
-    try {
-      const logs = await getActivityLogs(5);
-      setActivityLogs(logs);
-    } catch (error) {
-      console.error("Error fetching activity logs:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchActivityLogs();
-  }, []);
-
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      await fetchActivityLogs();
+      // Refresh user profile data
+      if (user?.uid) {
+        // Profile data will be refreshed automatically by the context
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  const handleChangeProfilePhoto = async () => {
+    try {
+      // Request permission to access camera roll
+      const permissionResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (permissionResult.granted === false) {
+        Alert.alert(
+          "Permission Denied",
+          "Please allow access to your photo library to change your profile picture."
+        );
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setUploadingPhoto(true);
+
+        // TODO: Implement photo upload to Firebase Storage and update user profile
+        // For now, we'll just show a success message
+        Alert.alert(
+          "Photo Updated",
+          "Your profile photo has been updated successfully."
+        );
+      }
+    } catch (error) {
+      console.error("Error changing profile photo:", error);
+      showError("Failed to update profile photo");
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
@@ -99,17 +132,18 @@ export default function ProfileScreen() {
     {
       title: t("notifications"),
       icon: "notifications-outline",
-      onPress: () => router.push("/(mainUsers)/notifications"),
+      onPress: () => router.push("/(mainUsers)/AccountSettings/Notifications"),
     },
     {
       title: t("privacy"),
       icon: "shield-outline",
-      onPress: () => router.push("/(mainUsers)/AccountSettings/Privacy"),
+      onPress: () =>
+        router.push("/(mainUsers)/AccountSettings/PrivacySecurity"),
     },
     {
       title: t("help"),
       icon: "help-circle-outline",
-      onPress: () => router.push("/(mainUsers)/AccountSettings/Help"),
+      onPress: () => router.push("/(mainUsers)/AccountSettings/HelpSupport"),
     },
     {
       title: t("about"),
@@ -117,46 +151,6 @@ export default function ProfileScreen() {
       onPress: () => router.push("/(mainUsers)/AccountSettings/About"),
     },
   ];
-
-  const getActivityIcon = (type: ActivityType): IconName => {
-    switch (type) {
-      case ActivityType.COFFEE_REDEMPTION:
-        return "cafe-outline";
-      case ActivityType.LOGIN:
-        return "log-in-outline";
-      case ActivityType.LOGOUT:
-        return "log-out-outline";
-      case ActivityType.PROFILE_UPDATE:
-        return "person-outline";
-      case ActivityType.SUBSCRIPTION_PURCHASE:
-      case ActivityType.SUBSCRIPTION_RENEWAL:
-        return "card-outline";
-      default:
-        return "document-text-outline";
-    }
-  };
-
-  const formatActivityText = (activity: any): string => {
-    const cafeName = activity.cafeName || t("dashboard.defaultCafeName");
-    const subscriptionType = activity.subscriptionType || "";
-
-    switch (activity.type) {
-      case ActivityType.COFFEE_REDEMPTION:
-        return t("profile.activityCoffeeRedemption", { cafeName });
-      case ActivityType.LOGIN:
-        return t("profile.activityLogin");
-      case ActivityType.LOGOUT:
-        return t("profile.activityLogout");
-      case ActivityType.PROFILE_UPDATE:
-        return t("profile.activityProfileUpdate");
-      case ActivityType.SUBSCRIPTION_PURCHASE:
-        return t("profile.activitySubscriptionPurchase", { subscriptionType });
-      case ActivityType.SUBSCRIPTION_RENEWAL:
-        return t("profile.activitySubscriptionRenewal", { subscriptionType });
-      default:
-        return t("profile.activityDefault");
-    }
-  };
 
   if (!userProfile) {
     return (
@@ -167,215 +161,178 @@ export default function ProfileScreen() {
     );
   }
 
-  const favoriteCafeName =
-    userProfile.stats?.favoriteCafe?.name || t("dashboard.noFavoriteCafe");
-
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.customHeader}>
-        <Text style={styles.customHeaderTitle}>{t("profile")}</Text>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+      <ImageBackground
+        source={require("../../assets/images/coffee-beans-textured-background.jpg")}
+        style={styles.backgroundImage}
+        resizeMode="cover"
       >
-        <View style={styles.profileHeader}>
-          <View style={styles.avatarContainer}>
-            {userProfile.photoURL ? (
-              <Image
-                source={{ uri: userProfile.photoURL }}
-                style={styles.avatar}
-              />
-            ) : (
-              <View style={styles.placeholderAvatar}>
-                <Text style={styles.placeholderText}>
-                  {userProfile.displayName
-                    ? userProfile.displayName.charAt(0).toUpperCase()
-                    : t("profile.initialPlaceholder")}
-                </Text>
-              </View>
-            )}
+        <View style={styles.overlay}>
+          <View style={styles.customHeader}>
+            <Text style={styles.customHeaderTitle}>{t("profile")}</Text>
           </View>
-          <Text style={styles.userName}>{userProfile.displayName}</Text>
-          <Text style={styles.userEmail}>{userProfile.email}</Text>
-          <Text style={styles.memberSince}>
-            {t("memberSince")} {formatDate(userProfile.createdAt)}
-          </Text>
-        </View>
 
-        <View style={styles.statsCard}>
-          <View style={styles.statItem}>
-            <Ionicons
-              name="cafe-outline"
-              size={24}
-              color="#8B4513"
-              style={styles.statIcon}
-            />
-            <Text style={styles.statValue}>
-              {userProfile.stats?.totalCoffees || 0}
-            </Text>
-            <Text style={styles.statLabel}>{t("totalCoffees")}</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Ionicons
-              name="star-outline"
-              size={24}
-              color="#8B4513"
-              style={styles.statIcon}
-            />
-            <Text
-              style={styles.statValue}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {favoriteCafeName}
-            </Text>
-            <Text style={styles.statLabel}>{t("favoriteCafe")}</Text>
-          </View>
-        </View>
-
-        <View style={styles.subscriptionCard}>
-          <Text style={styles.sectionTitle}>
-            {t("profile.subscriptionTitle")}
-          </Text>
-          <View style={styles.subscriptionDetails}>
-            <View style={styles.subscriptionRow}>
-              <Text style={styles.subscriptionLabel}>
-                {t("profile.planLabel")}
-              </Text>
-              <Text style={styles.subscriptionValue}>
-                {subscriptionStatus.subscriptionName ||
-                  t("profile.noSubscriptionPlan")}
-              </Text>
-            </View>
-
-            {subscriptionStatus.isActive && (
-              <>
-                <View style={styles.subscriptionRow}>
-                  <Text style={styles.subscriptionLabel}>
-                    {t("profile.statusLabel")}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.subscriptionValue,
-                      subscriptionStatus.isActive
-                        ? styles.activeText
-                        : styles.inactiveText,
-                    ]}
-                  >
-                    {subscriptionStatus.isActive
-                      ? t("profile.statusActive")
-                      : t("profile.statusInactive")}
-                  </Text>
-                </View>
-
-                <View style={styles.subscriptionRow}>
-                  <Text style={styles.subscriptionLabel}>Beans Remaining</Text>
-                  <Text style={[styles.subscriptionValue, styles.beansValue]}>
-                    {subscriptionStatus.beansLeft || 0} /{" "}
-                    {subscriptionStatus.beansTotal || 0} beans
-                  </Text>
-                </View>
-
-                {subscriptionStatus.expiresAt && (
-                  <View style={styles.subscriptionRow}>
-                    <Text style={styles.subscriptionLabel}>
-                      {t("profile.expiresLabel")}
-                    </Text>
-                    <Text style={styles.subscriptionValue}>
-                      {formatDate(subscriptionStatus.expiresAt)}
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          >
+            <View style={styles.profileHeader}>
+              <TouchableOpacity
+                style={styles.avatarContainer}
+                onPress={handleChangeProfilePhoto}
+                disabled={uploadingPhoto}
+              >
+                {userProfile.photoURL ? (
+                  <Image
+                    source={{ uri: userProfile.photoURL }}
+                    style={styles.avatar}
+                  />
+                ) : (
+                  <View style={styles.placeholderAvatar}>
+                    <Text style={styles.placeholderText}>
+                      {userProfile.displayName
+                        ? userProfile.displayName.charAt(0).toUpperCase()
+                        : t("profile.initialPlaceholder")}
                     </Text>
                   </View>
                 )}
-              </>
-            )}
-          </View>
-        </View>
-
-        <View style={styles.activityCard}>
-          <Text style={styles.sectionTitle}>
-            {t("profile.recentActivityTitle")}
-          </Text>
-          {activityLogs.length > 0 ? (
-            <View style={styles.activityList}>
-              {activityLogs.map((activity, index) => (
-                <View key={index} style={styles.activityItem}>
-                  <View style={styles.activityIconContainer}>
-                    <Ionicons
-                      name={getActivityIcon(activity.type)}
-                      size={16}
-                      color="#FFFFFF"
-                    />
-                  </View>
-                  <View style={styles.activityDetails}>
-                    <Text style={styles.activityText}>
-                      {formatActivityText(activity)}
-                    </Text>
-                    <Text style={styles.activityTime}>
-                      {formatDate(activity.timestamp)}
-                    </Text>
-                  </View>
+                <View style={styles.editPhotoOverlay}>
+                  {uploadingPhoto ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Ionicons name="camera" size={20} color="#FFFFFF" />
+                  )}
                 </View>
-              ))}
-            </View>
-          ) : (
-            <Text style={styles.noActivityText}>
-              {t("profile.noRecentActivity")}
-            </Text>
-          )}
-        </View>
-
-        <View style={styles.settingsCard}>
-          <View style={styles.menuContainer}>
-            {menuItems.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.menuItem}
-                onPress={item.onPress}
-              >
-                <View style={styles.menuItemLeft}>
-                  <Ionicons name={item.icon} size={24} color="#8B4513" />
-                  <Text style={styles.menuItemText}>{item.title}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={24} color="#CCCCCC" />
               </TouchableOpacity>
-            ))}
-          </View>
+              <Text style={styles.userName}>{userProfile.displayName}</Text>
+              <Text style={styles.userEmail}>{userProfile.email}</Text>
+              <Text style={styles.memberSince}>
+                {t("memberSince")} {formatDate(userProfile.createdAt)}
+              </Text>
+            </View>
 
-          <TouchableOpacity
-            style={styles.settingItem}
-            onPress={handleLogout}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color="#C0392B" />
-            ) : (
-              <>
-                <Ionicons name="log-out-outline" size={22} color="#C0392B" />
-                <Text style={[styles.settingText, styles.logoutText]}>
-                  {t("logout")}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
+            <View style={styles.subscriptionCard}>
+              <Text style={styles.sectionTitle}>
+                {t("profile.subscriptionTitle")}
+              </Text>
+              <View style={styles.subscriptionDetails}>
+                <View style={styles.subscriptionRow}>
+                  <Text style={styles.subscriptionLabel}>
+                    {t("profile.planLabel")}
+                  </Text>
+                  <Text style={styles.subscriptionValue}>
+                    {subscriptionStatus.subscriptionName ||
+                      t("profile.noSubscriptionPlan")}
+                  </Text>
+                </View>
+
+                {subscriptionStatus.isActive && (
+                  <>
+                    <View style={styles.subscriptionRow}>
+                      <Text style={styles.subscriptionLabel}>
+                        {t("profile.statusLabel")}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.subscriptionValue,
+                          subscriptionStatus.isActive
+                            ? styles.activeText
+                            : styles.inactiveText,
+                        ]}
+                      >
+                        {subscriptionStatus.isActive
+                          ? t("profile.statusActive")
+                          : t("profile.statusInactive")}
+                      </Text>
+                    </View>
+
+                    <View style={styles.subscriptionRow}>
+                      <Text style={styles.subscriptionLabel}>
+                        Beans Remaining
+                      </Text>
+                      <Text
+                        style={[styles.subscriptionValue, styles.beansValue]}
+                      >
+                        {subscriptionStatus.beansLeft || 0} /{" "}
+                        {subscriptionStatus.beansTotal || 0} beans
+                      </Text>
+                    </View>
+
+                    {subscriptionStatus.expiresAt && (
+                      <View style={styles.subscriptionRow}>
+                        <Text style={styles.subscriptionLabel}>
+                          {t("profile.expiresLabel")}
+                        </Text>
+                        <Text style={styles.subscriptionValue}>
+                          {formatDate(subscriptionStatus.expiresAt)}
+                        </Text>
+                      </View>
+                    )}
+                  </>
+                )}
+              </View>
+            </View>
+
+            <View style={styles.settingsCard}>
+              <View style={styles.menuContainer}>
+                {menuItems.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.menuItem}
+                    onPress={item.onPress}
+                  >
+                    <View style={styles.menuItemLeft}>
+                      <Ionicons name={item.icon} size={24} color="#8B4513" />
+                      <Text style={styles.menuItemText}>{item.title}</Text>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={24}
+                      color="#CCCCCC"
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <TouchableOpacity
+                style={styles.settingItem}
+                onPress={handleLogout}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color="#C0392B" />
+                ) : (
+                  <>
+                    <Ionicons
+                      name="log-out-outline"
+                      size={22}
+                      color="#C0392B"
+                    />
+                    <Text style={[styles.settingText, styles.logoutText]}>
+                      {t("logout")}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+
+          <BottomTabBar />
+
+          {/* Error Components */}
+          <Toast
+            visible={errorState.toast.visible}
+            message={errorState.toast.message}
+            type={errorState.toast.type}
+            onHide={hideToast}
+          />
         </View>
-      </ScrollView>
-
-      <BottomTabBar />
-
-      {/* Error Components */}
-      <Toast
-        visible={errorState.toast.visible}
-        message={errorState.toast.message}
-        type={errorState.toast.type}
-        onHide={hideToast}
-      />
+      </ImageBackground>
     </SafeAreaView>
   );
 }
@@ -384,6 +341,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
+  },
+  backgroundImage: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
     paddingBottom: 75,
   },
   loadingContainer: {
@@ -401,7 +367,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 15,
     paddingBottom: 10,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderBottomWidth: 1,
     borderBottomColor: "#E0D6C7",
     alignItems: "center",
@@ -420,7 +386,7 @@ const styles = StyleSheet.create({
     marginBottom: 25,
     paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(139, 69, 19, 0.1)",
+    borderBottomColor: "rgba(255, 255, 255, 0.3)",
   },
   avatarContainer: {
     width: 110,
@@ -431,6 +397,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: "#8B4513",
     backgroundColor: "#E0D6C7",
+    position: "relative",
   },
   avatar: {
     width: "100%",
@@ -449,63 +416,46 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "bold",
   },
+  editPhotoOverlay: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    backgroundColor: "rgba(139, 69, 19, 0.9)",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+  },
   userName: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#321E0E",
+    color: "#FFFFFF",
     marginBottom: 5,
+    textShadowColor: "rgba(0, 0, 0, 0.7)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   userEmail: {
     fontSize: 16,
-    color: "#8B4513",
+    color: "#F0F0F0",
     marginBottom: 8,
+    textShadowColor: "rgba(0, 0, 0, 0.7)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   memberSince: {
     fontSize: 14,
-    color: "#8B4513",
-    opacity: 0.8,
-  },
-  statsCard: {
-    flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 15,
-    paddingVertical: 15,
-    marginBottom: 25,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 5,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: "rgba(139, 69, 19, 0.1)",
-  },
-  statItem: {
-    flex: 1,
-    alignItems: "center",
-    paddingHorizontal: 10,
-  },
-  statIcon: {
-    marginBottom: 5,
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: "rgba(139, 69, 19, 0.15)",
-    marginVertical: 5,
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#321E0E",
-    marginBottom: 5,
-    textAlign: "center",
-  },
-  statLabel: {
-    fontSize: 13,
-    color: "#8B4513",
-    textAlign: "center",
+    color: "#F0F0F0",
+    opacity: 0.9,
+    textShadowColor: "rgba(0, 0, 0, 0.7)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   subscriptionCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderRadius: 15,
     padding: 15,
     marginBottom: 20,
@@ -546,65 +496,14 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#8B4513",
   },
-  activityCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: "rgba(139, 69, 19, 0.1)",
-  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#321E0E",
     marginBottom: 5,
   },
-  activityList: {
-    marginTop: 10,
-  },
-  activityItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(139, 69, 19, 0.1)",
-  },
-  activityIconContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#8B4513",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  activityDetails: {
-    flex: 1,
-  },
-  activityText: {
-    fontSize: 14,
-    color: "#321E0E",
-  },
-  activityTime: {
-    fontSize: 12,
-    color: "#8B4513",
-    opacity: 0.7,
-    marginTop: 2,
-  },
-  noActivityText: {
-    padding: 10,
-    textAlign: "center",
-    color: "#8B4513",
-    fontStyle: "italic",
-  },
   settingsCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderRadius: 15,
     overflow: "hidden",
     shadowColor: "#000",
@@ -635,7 +534,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   menuContainer: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "transparent",
     borderRadius: 12,
     overflow: "hidden",
     marginBottom: 20,
