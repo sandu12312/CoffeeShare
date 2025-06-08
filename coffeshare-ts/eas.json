@@ -1,12 +1,21 @@
 {
+  "cli": {
+    "version": ">= 16.9.0",
+    "appVersionSource": "remote"
+  },
   "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
     "preview": {
       "android": {
         "buildType": "apk",
         "env": {
           "NODE_ENV": "development"
         }
-      }
+      },
+      "distribution": "internal"
     },
     "production": {
       "android": {
@@ -30,26 +39,9 @@
         "autoIncrement": true
       },
       "channel": "production"
-    },
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "env": {
-        "NODE_ENV": "development"
-      }
     }
   },
   "submit": {
-    "production": {
-      "android": {
-        "serviceAccountKeyPath": "../path/to/api-key.json",
-        "track": "internal"
-      },
-      "ios": {
-        "appleId": "your.apple.id@email.com",
-        "ascAppId": "1234567890",
-        "appleTeamId": "ABCD123456"
-      }
-    }
+    "production": {}
   }
 }
