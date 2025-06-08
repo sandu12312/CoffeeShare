@@ -1,6 +1,8 @@
-apply plugin: "com.android.application"
-apply plugin: "org.jetbrains.kotlin.android"
-apply plugin: "com.facebook.react"
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("com.facebook.react")
+}
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
@@ -96,6 +98,16 @@ android {
         versionCode 1
         versionName "1.0.0"
     }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    
+    kotlinOptions {
+        jvmTarget = '11'
+    }
+    
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -147,9 +159,7 @@ android {
         }
     }
 }
-plugins {
-      id 'expo-module-gradle-plugin' version '1.10.0'
-}
+
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
