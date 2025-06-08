@@ -9,36 +9,10 @@
       "distribution": "internal"
     },
     "preview": {
-      "android": {
-        "buildType": "apk",
-        "env": {
-          "NODE_ENV": "development"
-        }
-      },
       "distribution": "internal"
     },
     "production": {
-      "android": {
-        "buildType": "app-bundle",
-        "env": {
-          "NODE_ENV": "production"
-        },
-        "gradleCommand": ":app:bundleRelease",
-        "cache": {
-          "disabled": false
-        }
-      },
-      "ios": {
-        "buildConfiguration": "Release",
-        "env": {
-          "NODE_ENV": "production"
-        },
-        "cache": {
-          "disabled": false
-        },
-        "autoIncrement": true
-      },
-      "channel": "production"
+      "autoIncrement": true
     }
   },
   "submit": {
