@@ -408,7 +408,6 @@ service cloud.firestore {
       
       // Partners can read orders for their cafes
       allow read: if isAuth() && isPartner() && 
-        resource.data.cafeId in 
         get(/databases/$(database)/documents/cafes/$(resource.data.cafeId)).data.ownerEmail == request.auth.token.email;
       
       // System can create orders (via QR validation)
@@ -469,6 +468,27 @@ service cloud.firestore {
       
       // Only admins can delete profiles
       allow delete: if isAdmin();
+    }
+
+    // Wishlist - user favorite cafes
+    match /wishlist/{wishlistId} {
+      // Migration super user gets full access
+      allow read, write: if isMigrationSuperUser();
+      
+      // Users can read/write their own wishlist items
+      allow read, write: if isAuth() && resource.data.userId == request.auth.uid;
+      
+      // Users can create wishlist items for themselves
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      
+      // Admins can read all wishlist items
+      allow read: if isAdmin();
+      
+      // Only users can delete their own wishlist items, admins can delete any
+      allow delete: if isAuth() && (
+        resource.data.userId == request.auth.uid || 
+        isAdmin()
+      );
     }
 
     // Global Statistics - system-wide analytics and statistics

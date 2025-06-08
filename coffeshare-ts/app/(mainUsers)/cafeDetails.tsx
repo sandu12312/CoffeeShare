@@ -16,7 +16,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import { useLanguage } from "../../context/LanguageContext";
+import { useFirebase } from "../../context/FirebaseContext";
 import BottomTabBar from "../../components/BottomTabBar";
+import wishlistService from "../../services/wishlistService";
+import { Toast } from "../../components/ErrorComponents";
+import { useErrorHandler } from "../../hooks/useErrorHandler";
 
 // Screen width to calculate image dimensions
 const { width } = Dimensions.get("window");
@@ -28,6 +32,8 @@ interface CafeDetails {
   address: string;
   description: string;
   mainImageUrl: string;
+  bannerImageUrl?: string;
+  imageUrl?: string;
   galleryImages: string[];
   openingHours: {
     [key: string]: {
@@ -106,9 +112,13 @@ const MOCK_CAFE_DETAILS: Record<string, CafeDetails> = {
 export default function CafeDetailsScreen() {
   const { cafeId } = useLocalSearchParams();
   const { t } = useLanguage();
+  const { user } = useFirebase();
+  const { errorState, showError, showSuccess, hideToast } = useErrorHandler();
   const [loading, setLoading] = useState(true);
   const [cafe, setCafe] = useState<CafeDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
 
   useEffect(() => {
     const fetchCafeDetails = async () => {
@@ -125,21 +135,31 @@ export default function CafeDetailsScreen() {
 
         if (cafeSnapshot.exists()) {
           const cafeData = cafeSnapshot.data();
-          setCafe({
+          const cafeDetails = {
             id: cafeSnapshot.id,
             businessName: cafeData.businessName || "Unnamed Cafe",
             address: cafeData.address || "No address provided",
             description: cafeData.description || "No description available",
             mainImageUrl:
+              cafeData.bannerImageUrl ||
               cafeData.mainImageUrl ||
+              cafeData.imageUrl ||
               "https://via.placeholder.com/400x200?text=No+Image+Available",
+            bannerImageUrl: cafeData.bannerImageUrl,
+            imageUrl: cafeData.imageUrl,
             galleryImages: cafeData.galleryImages || [],
             openingHours: cafeData.openingHours || DEFAULT_OPENING_HOURS,
             products: cafeData.products || [],
             phoneNumber: cafeData.phoneNumber,
             websiteUrl: cafeData.websiteUrl,
             coordinates: cafeData.location || { latitude: 0, longitude: 0 },
-          });
+          };
+          setCafe(cafeDetails);
+
+          // Check if cafe is in wishlist
+          if (user?.uid) {
+            checkWishlistStatus();
+          }
         } else {
           // If not in Firestore, try to use mock data
           const mockCafe = MOCK_CAFE_DETAILS[cafeId as string];
@@ -159,6 +179,41 @@ export default function CafeDetailsScreen() {
 
     fetchCafeDetails();
   }, [cafeId]);
+
+  const checkWishlistStatus = async () => {
+    if (!user?.uid || !cafeId) return;
+
+    try {
+      const inWishlist = await wishlistService.isInWishlist(
+        user.uid,
+        cafeId as string
+      );
+      setIsInWishlist(inWishlist);
+    } catch (error) {
+      console.error("Error checking wishlist status:", error);
+    }
+  };
+
+  const handleToggleWishlist = async () => {
+    if (!user?.uid || !cafeId || !cafe) return;
+
+    setWishlistLoading(true);
+    try {
+      if (isInWishlist) {
+        await wishlistService.removeFromWishlist(user.uid, cafeId as string);
+        setIsInWishlist(false);
+        showSuccess("Removed from favorites!");
+      } else {
+        await wishlistService.addToWishlist(user.uid, cafeId as string);
+        setIsInWishlist(true);
+        showSuccess("Added to favorites!");
+      }
+    } catch (error: any) {
+      showError(error.message || "Failed to update favorites");
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
 
   const openMaps = () => {
     if (!cafe) return;
@@ -374,9 +429,34 @@ export default function CafeDetailsScreen() {
               </TouchableOpacity>
             )}
 
-            <TouchableOpacity style={styles.actionButton}>
-              <Ionicons name="heart-outline" size={22} color="#8B4513" />
-              <Text style={styles.actionButtonText}>Save</Text>
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                isInWishlist && styles.actionButtonFavorite,
+              ]}
+              onPress={handleToggleWishlist}
+              disabled={wishlistLoading}
+            >
+              {wishlistLoading ? (
+                <ActivityIndicator
+                  size={22}
+                  color={isInWishlist ? "#FFFFFF" : "#8B4513"}
+                />
+              ) : (
+                <Ionicons
+                  name={isInWishlist ? "heart" : "heart-outline"}
+                  size={22}
+                  color={isInWishlist ? "#FFFFFF" : "#8B4513"}
+                />
+              )}
+              <Text
+                style={[
+                  styles.actionButtonText,
+                  isInWishlist && styles.actionButtonTextFavorite,
+                ]}
+              >
+                {isInWishlist ? "Saved" : "Save"}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -443,6 +523,15 @@ export default function CafeDetailsScreen() {
 
         <BottomTabBar />
       </View>
+
+      {/* Toast for feedback */}
+      <Toast
+        visible={errorState.toast.visible}
+        message={errorState.toast.message}
+        type={errorState.toast.type}
+        onHide={hideToast}
+        action={errorState.toast.action}
+      />
     </>
   );
 }
@@ -554,11 +643,20 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  actionButtonFavorite: {
+    backgroundColor: "#E74C3C",
   },
   actionButtonText: {
     fontSize: 12,
     marginTop: 4,
     color: "#8B4513",
+  },
+  actionButtonTextFavorite: {
+    color: "#FFFFFF",
   },
   section: {
     paddingVertical: 15,

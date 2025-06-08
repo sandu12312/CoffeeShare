@@ -70,8 +70,13 @@ export default function AddCafeLocationScreen() {
   >([]);
   const [loadingPartners, setLoadingPartners] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedBannerImage, setSelectedBannerImage] = useState<string | null>(
+    null
+  );
   const [showImagePicker, setShowImagePicker] = useState(false);
+  const [showBannerImagePicker, setShowBannerImagePicker] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingBannerImage, setUploadingBannerImage] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showHoursDropdown, setShowHoursDropdown] = useState(false);
   const [showPartnersDropdown, setShowPartnersDropdown] = useState(false);
@@ -160,7 +165,7 @@ export default function AddCafeLocationScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [16, 9],
+      aspect: [1, 1],
       quality: 0.8,
     });
 
@@ -170,7 +175,46 @@ export default function AddCafeLocationScreen() {
     }
   };
 
+  const pickBannerFromGallery = async () => {
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setSelectedBannerImage(result.assets[0].uri);
+      setShowBannerImagePicker(false);
+    }
+  };
+
   const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      showErrorModal(
+        "Permission needed",
+        "Please grant camera permissions to take photos."
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setSelectedImage(result.assets[0].uri);
+      setShowImagePicker(false);
+    }
+  };
+
+  const takeBannerPhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
       showErrorModal(
@@ -187,8 +231,8 @@ export default function AddCafeLocationScreen() {
     });
 
     if (!result.canceled && result.assets[0]) {
-      setSelectedImage(result.assets[0].uri);
-      setShowImagePicker(false);
+      setSelectedBannerImage(result.assets[0].uri);
+      setShowBannerImagePicker(false);
     }
   };
 
@@ -272,19 +316,35 @@ export default function AddCafeLocationScreen() {
 
     setLoading(true);
     try {
-      // Upload image if selected
+      // Upload profile image if selected
       let imageUrl = null;
       if (selectedImage) {
         setUploadingImage(true);
         try {
           imageUrl = await uploadImageToStorage(selectedImage);
         } catch (error) {
-          console.error("Error uploading image:", error);
+          console.error("Error uploading profile image:", error);
           showWarning(
-            "Failed to upload image, but cafe will be created without photo."
+            "Failed to upload profile image, but cafe will be created without photo."
           );
         } finally {
           setUploadingImage(false);
+        }
+      }
+
+      // Upload banner image if selected
+      let bannerImageUrl = null;
+      if (selectedBannerImage) {
+        setUploadingBannerImage(true);
+        try {
+          bannerImageUrl = await uploadImageToStorage(selectedBannerImage);
+        } catch (error) {
+          console.error("Error uploading banner image:", error);
+          showWarning(
+            "Failed to upload banner image, but cafe will be created without banner."
+          );
+        } finally {
+          setUploadingBannerImage(false);
         }
       }
 
@@ -293,6 +353,19 @@ export default function AddCafeLocationScreen() {
         (p) => p.email === formData.ownerEmail
       );
 
+      // Create opening hours object
+      const openingHoursData = formData.openingHours
+        ? {
+            monday: { open: "08:00", close: "20:00" },
+            tuesday: { open: "08:00", close: "20:00" },
+            wednesday: { open: "08:00", close: "20:00" },
+            thursday: { open: "08:00", close: "20:00" },
+            friday: { open: "08:00", close: "20:00" },
+            saturday: { open: "09:00", close: "20:00" },
+            sunday: { open: "09:00", close: "18:00" },
+          }
+        : null;
+
       // Create a new cafe document in Firestore
       const cafeData = {
         businessName: formData.businessName,
@@ -300,13 +373,16 @@ export default function AddCafeLocationScreen() {
         phoneNumber: formData.phoneNumber || null,
         website: formData.website || null,
         description: formData.description || null,
-        openingHours: formData.openingHours || null,
+        openingHours: openingHoursData,
         ownerEmail: formData.ownerEmail, // Connect cafe to coffee partner
         location: {
           latitude: selectedLocation?.latitude,
           longitude: selectedLocation?.longitude,
         },
-        imageUrl: imageUrl, // Add the uploaded image URL
+        imageUrl: imageUrl, // Profile image URL
+        bannerImageUrl: bannerImageUrl, // Banner image URL
+        mainImageUrl: bannerImageUrl || imageUrl, // For backward compatibility
+        galleryImages: [], // Initialize empty gallery
         menuCategories: selectedCategories, // Add selected product categories
         status: "active",
         createdAt: new Date(),
@@ -336,6 +412,7 @@ export default function AddCafeLocationScreen() {
       });
       setSelectedLocation(null);
       setSelectedImage(null);
+      setSelectedBannerImage(null);
       setSelectedCategories([]);
     } catch (error) {
       console.error("Error adding cafe:", error);
@@ -500,9 +577,45 @@ export default function AddCafeLocationScreen() {
             />
           </View>
 
-          {/* Photo Upload Section */}
+          {/* Banner Photo Upload Section */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Cafe Photo</Text>
+            <Text style={styles.label}>Banner Photo (16:9)</Text>
+            <Text style={styles.subLabel}>
+              This will be displayed as the main banner in cafe details
+            </Text>
+            <TouchableOpacity
+              style={styles.photoUploadContainer}
+              onPress={() => setShowBannerImagePicker(true)}
+            >
+              {selectedBannerImage ? (
+                <View style={styles.selectedImageContainer}>
+                  <Image
+                    source={{ uri: selectedBannerImage }}
+                    style={styles.selectedImage}
+                  />
+                  <View style={styles.imageOverlay}>
+                    <Ionicons name="camera" size={24} color="#FFFFFF" />
+                    <Text style={styles.imageOverlayText}>Tap to change</Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.photoPlaceholder}>
+                  <Ionicons name="image-outline" size={40} color="#999" />
+                  <Text style={styles.photoPlaceholderText}>
+                    Add banner photo
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color="#8B4513" />
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Profile Photo Upload Section */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Profile Photo (1:1)</Text>
+            <Text style={styles.subLabel}>
+              This will be used as the cafe's profile picture
+            </Text>
             <TouchableOpacity
               style={styles.photoUploadContainer}
               onPress={() => setShowImagePicker(true)}
@@ -522,7 +635,7 @@ export default function AddCafeLocationScreen() {
                 <View style={styles.photoPlaceholder}>
                   <Ionicons name="camera-outline" size={40} color="#999" />
                   <Text style={styles.photoPlaceholderText}>
-                    Add cafe photo
+                    Add profile photo
                   </Text>
                   <Ionicons name="chevron-down" size={20} color="#8B4513" />
                 </View>
@@ -625,9 +738,14 @@ export default function AddCafeLocationScreen() {
               !selectedLocation && styles.disabledButton,
             ]}
             onPress={handleAddCafe}
-            disabled={loading || !selectedLocation || uploadingImage}
+            disabled={
+              loading ||
+              !selectedLocation ||
+              uploadingImage ||
+              uploadingBannerImage
+            }
           >
-            {loading || uploadingImage ? (
+            {loading || uploadingImage || uploadingBannerImage ? (
               <ActivityIndicator size="small" color="#FFF" />
             ) : (
               <>
@@ -639,7 +757,7 @@ export default function AddCafeLocationScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Image Picker Modal */}
+      {/* Profile Image Picker Modal */}
       <Modal
         visible={showImagePicker}
         transparent={true}
@@ -649,7 +767,7 @@ export default function AddCafeLocationScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.bottomSheet}>
             <View style={styles.bottomSheetHeader}>
-              <Text style={styles.bottomSheetTitle}>Add Cafe Photo</Text>
+              <Text style={styles.bottomSheetTitle}>Add Profile Photo</Text>
               <TouchableOpacity onPress={() => setShowImagePicker(false)}>
                 <Ionicons name="close" size={24} color="#666" />
               </TouchableOpacity>
@@ -676,6 +794,53 @@ export default function AddCafeLocationScreen() {
             <TouchableOpacity
               style={[styles.bottomSheetOption, styles.cancelOption]}
               onPress={() => setShowImagePicker(false)}
+            >
+              <Ionicons name="close-circle" size={24} color="#FF6B6B" />
+              <Text style={[styles.bottomSheetOptionText, styles.cancelText]}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Banner Image Picker Modal */}
+      <Modal
+        visible={showBannerImagePicker}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowBannerImagePicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.bottomSheet}>
+            <View style={styles.bottomSheetHeader}>
+              <Text style={styles.bottomSheetTitle}>Add Banner Photo</Text>
+              <TouchableOpacity onPress={() => setShowBannerImagePicker(false)}>
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.bottomSheetOption}
+              onPress={takeBannerPhoto}
+            >
+              <Ionicons name="camera" size={24} color="#8B4513" />
+              <Text style={styles.bottomSheetOptionText}>Take Photo</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.bottomSheetOption}
+              onPress={pickBannerFromGallery}
+            >
+              <Ionicons name="images" size={24} color="#8B4513" />
+              <Text style={styles.bottomSheetOptionText}>
+                Choose from Gallery
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.bottomSheetOption, styles.cancelOption]}
+              onPress={() => setShowBannerImagePicker(false)}
             >
               <Ionicons name="close-circle" size={24} color="#FF6B6B" />
               <Text style={[styles.bottomSheetOptionText, styles.cancelText]}>

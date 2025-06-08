@@ -23,6 +23,7 @@ import { useFirebase } from "../../context/FirebaseContext";
 import SubscriptionCard from "../../components/SubscriptionCard";
 import RecentActivityCard from "../../components/RecentActivityCard";
 import QuickStatsCard from "../../components/QuickStatsCard";
+import FavoriteCafesCard from "../../components/FavoriteCafesCard";
 import { formatDate } from "../../utils/dateUtils";
 import { ActivityType } from "../../types";
 import { auth } from "../../config/firebase";
@@ -33,6 +34,7 @@ import {
 import { useSubscriptionStatus } from "../../hooks/useSubscriptionStatus";
 import cartService from "../../services/cartService";
 import notificationService from "../../services/notificationService";
+import wishlistService, { WishlistItem } from "../../services/wishlistService";
 import { ErrorModal, Toast } from "../../components/ErrorComponents";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 
@@ -85,6 +87,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [favoriteCafes, setFavoriteCafes] = useState<WishlistItem[]>([]);
 
   // Use the new subscription status hook
   const subscriptionStatus = useSubscriptionStatus(user?.uid);
@@ -105,6 +108,7 @@ export default function Dashboard() {
       await fetchUserActivities();
       await initializeNotifications();
       await loadUnreadNotifications();
+      await loadFavoriteCafes();
     } catch (error) {
       __DEV__ && console.error("Error fetching data:", error);
     } finally {
@@ -173,6 +177,19 @@ export default function Dashboard() {
       setUnreadNotifications(count);
     } catch (error) {
       __DEV__ && console.error("Error loading unread notifications:", error);
+    }
+  }, [user?.uid]);
+
+  const loadFavoriteCafes = useCallback(async () => {
+    if (!user?.uid) return;
+
+    try {
+      const favorites = await wishlistService.getFavoriteCafesForDashboard(
+        user.uid
+      );
+      setFavoriteCafes(favorites);
+    } catch (error) {
+      __DEV__ && console.error("Error loading favorite cafes:", error);
     }
   }, [user?.uid]);
 
@@ -291,6 +308,14 @@ export default function Dashboard() {
 
   const handleNotificationsPress = () => {
     router.push("/(mainUsers)/notifications");
+  };
+
+  const handleViewAllFavorites = () => {
+    router.push("/(mainUsers)/wishlist");
+  };
+
+  const handleFavoriteCafePress = (cafeId: string) => {
+    router.push(`/(mainUsers)/cafeDetails?cafeId=${cafeId}`);
   };
 
   if (loading || !userProfile) {
@@ -435,6 +460,13 @@ export default function Dashboard() {
                 <Text style={styles.qrCodeButtonText}>View Cart</Text>
               </TouchableOpacity>
             )}
+
+          {/* Favorite Cafes Card - Beautiful UI for favorite cafes */}
+          <FavoriteCafesCard
+            favoriteCafes={favoriteCafes}
+            onViewAll={handleViewAllFavorites}
+            onCafePress={handleFavoriteCafePress}
+          />
 
           {/* Recent Activity Card - Using Real User Data */}
           <RecentActivityCard
