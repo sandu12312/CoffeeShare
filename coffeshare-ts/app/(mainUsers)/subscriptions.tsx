@@ -3,7 +3,6 @@ import {
   StyleSheet,
   View,
   Text,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Animated,
@@ -14,6 +13,7 @@ import {
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import BottomTabBar from "../../components/BottomTabBar";
+import ScreenWrapper from "../../components/ScreenWrapper";
 import SubscriptionBox from "../../components/SubscriptionBox";
 import { useLanguage } from "../../context/LanguageContext";
 import { auth } from "../../config/firebase";
@@ -27,13 +27,13 @@ import { Toast as ErrorToast } from "../../components/ErrorComponents";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 
 const { width } = Dimensions.get("window");
+const { height: screenHeight } = Dimensions.get("screen");
 
 export default function SubscriptionsScreen() {
   const { t } = useLanguage();
   const { errorState, showError, hideToast } = useErrorHandler();
   const [howItWorksVisible, setHowItWorksVisible] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isMonthly, setIsMonthly] = useState(true);
   const [loading, setLoading] = useState(false);
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -107,10 +107,6 @@ export default function SubscriptionsScreen() {
     setActiveIndex(index);
   };
 
-  const toggleSubscriptionType = () => {
-    setIsMonthly(!isMonthly);
-  };
-
   // Subscribe to a plan
   const subscribeToPlan = async () => {
     if (!currentUser) {
@@ -157,262 +153,256 @@ export default function SubscriptionsScreen() {
 
   if (loadingPlans) {
     return (
-      <SafeAreaView style={styles.container}>
+      <ScreenWrapper
+        bg={require("../../assets/images/coffee-beans-textured-background.jpg")}
+        style={styles.fullScreen}
+      >
         <Stack.Screen options={{ headerShown: false }} />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8B4513" />
-          <Text style={styles.loadingText}>{t("common.loading")}</Text>
+        <View style={styles.overlay}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#8B4513" />
+            <Text style={styles.loadingText}>{t("common.loading")}</Text>
+          </View>
+          <BottomTabBar />
         </View>
-        <BottomTabBar />
-      </SafeAreaView>
+      </ScreenWrapper>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <ScreenWrapper
+      bg={require("../../assets/images/coffee-beans-textured-background.jpg")}
+      style={styles.fullScreen}
+    >
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          {t("subscriptions.chooseBeanPack")}
-        </Text>
-        <TouchableOpacity
-          style={styles.infoButton}
-          onPress={() => setHowItWorksVisible(true)}
-        >
-          <Ionicons
-            name="information-circle-outline"
-            size={24}
-            color="#8B4513"
-          />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.pageSubtitle}>
-          {t("subscriptions.beansCurrency")}
-        </Text>
-
-        {/* Subscription Type Toggle */}
-        <View style={styles.toggleContainer}>
+      <View style={styles.overlay}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>
+            {t("subscriptions.chooseBeanPack")}
+          </Text>
           <TouchableOpacity
-            style={[styles.toggleOption, isMonthly && styles.toggleActive]}
-            onPress={() => isMonthly || toggleSubscriptionType()}
+            style={styles.infoButton}
+            onPress={() => setHowItWorksVisible(true)}
           >
-            <Text
-              style={[styles.toggleText, isMonthly && styles.toggleActiveText]}
-            >
-              {t("subscriptions.monthlySubscription")}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.toggleOption, !isMonthly && styles.toggleActive]}
-            onPress={() => !isMonthly || toggleSubscriptionType()}
-          >
-            <Text
-              style={[styles.toggleText, !isMonthly && styles.toggleActiveText]}
-            >
-              {t("subscriptions.oneTimePurchase")}
-            </Text>
+            <Ionicons
+              name="information-circle-outline"
+              size={24}
+              color="#8B4513"
+            />
           </TouchableOpacity>
         </View>
 
-        {/* Bean Usage Tracker (only shown for subscribers) */}
-        {currentSubscription && (
-          <View style={styles.usageTrackerContainer}>
-            <Text style={styles.usageTitle}>
-              {t("subscriptions.usedBeansThisMonth", {
-                used:
-                  currentSubscription.creditsTotal -
-                  currentSubscription.creditsLeft,
-                total: currentSubscription.creditsTotal,
-              })}
-            </Text>
-            <View style={styles.progressBarBackground}>
-              <View
-                style={[
-                  styles.progressBarFill,
-                  {
-                    width: `${
-                      ((currentSubscription.creditsTotal -
-                        currentSubscription.creditsLeft) /
-                        currentSubscription.creditsTotal) *
-                      100
-                    }%`,
-                  },
-                ]}
-              />
-            </View>
-            <Text style={styles.remainingText}>
-              {t("subscriptions.beansLeft", {
-                beans: currentSubscription.creditsLeft,
-              })}
-            </Text>
-          </View>
-        )}
-
-        {/* Plan Cards */}
-        {subscriptionPlans.length > 0 ? (
-          <View style={styles.plansContainer}>
-            {subscriptionPlans.map((plan, index) => (
-              <SubscriptionBox
-                key={plan.id || index}
-                id={plan.id || index.toString()}
-                title={plan.name}
-                price={plan.price}
-                credits={plan.credits}
-                description={plan.description}
-                isPopular={plan.popular}
-                tag={plan.tag}
-                isSelected={index === activeIndex}
-                animatedScale={animatedScales[index]}
-                onSelect={() => selectPlan(index)}
-              />
-            ))}
-          </View>
-        ) : (
-          <View style={styles.noPlansContainer}>
-            <Ionicons name="cafe-outline" size={64} color="#CCC" />
-            <Text style={styles.noPlansText}>
-              {t("subscriptions.noPlansAvailable")}
-            </Text>
-          </View>
-        )}
-
-        {/* Subscribe Button */}
-        {subscriptionPlans.length > 0 && (
-          <TouchableOpacity
-            style={styles.subscribeButton}
-            onPress={subscribeToPlan}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text style={styles.subscribeButtonText}>
-                {currentSubscription
-                  ? t("subscriptions.changePlan")
-                  : t("subscriptions.startSipping")}
-              </Text>
-            )}
-          </TouchableOpacity>
-        )}
-
-        {/* Current Plan Note */}
-        {currentSubscription && (
-          <Text style={styles.currentPlanNote}>
-            {t("subscriptions.currentlyOnPlan", {
-              planName: currentSubscription.subscriptionName,
-              beansLeft: currentSubscription.creditsLeft,
-            })}
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <Text style={styles.pageSubtitle}>
+            {t("subscriptions.beansCurrency")}
           </Text>
-        )}
-      </ScrollView>
 
-      {/* How It Works Modal */}
-      <Modal
-        visible={howItWorksVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setHowItWorksVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {t("subscriptions.howBeansWork")}
+          {/* Bean Usage Tracker (only shown for subscribers) */}
+          {currentSubscription && (
+            <View style={styles.usageTrackerContainer}>
+              <Text style={styles.usageTitle}>
+                {t("subscriptions.usedBeansThisMonth", {
+                  used:
+                    currentSubscription.creditsTotal -
+                    currentSubscription.creditsLeft,
+                  total: currentSubscription.creditsTotal,
+                })}
               </Text>
-              <TouchableOpacity
-                onPress={() => setHowItWorksVisible(false)}
-                style={styles.modalCloseButton}
-              >
-                <Ionicons name="close" size={24} color="#8B4513" />
-              </TouchableOpacity>
+              <View style={styles.progressBarBackground}>
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    {
+                      width: `${
+                        ((currentSubscription.creditsTotal -
+                          currentSubscription.creditsLeft) /
+                          currentSubscription.creditsTotal) *
+                        100
+                      }%`,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.remainingText}>
+                {t("subscriptions.beansLeft", {
+                  beans: currentSubscription.creditsLeft,
+                })}
+              </Text>
             </View>
+          )}
 
-            <ScrollView style={styles.modalScrollContent}>
-              <Text style={styles.modalSubtitle}>
-                {t("subscriptions.beansWorkTitle")}
+          {/* Plan Cards */}
+          {subscriptionPlans.length > 0 ? (
+            <View style={styles.plansContainer}>
+              {subscriptionPlans.map((plan, index) => (
+                <SubscriptionBox
+                  key={plan.id || index}
+                  id={plan.id || index.toString()}
+                  title={plan.name}
+                  price={plan.price}
+                  credits={plan.credits}
+                  description={plan.description}
+                  isPopular={plan.popular}
+                  tag={plan.tag}
+                  isSelected={index === activeIndex}
+                  animatedScale={animatedScales[index]}
+                  onSelect={() => selectPlan(index)}
+                />
+              ))}
+            </View>
+          ) : (
+            <View style={styles.noPlansContainer}>
+              <Ionicons name="cafe-outline" size={64} color="#CCC" />
+              <Text style={styles.noPlansText}>
+                {t("subscriptions.noPlansAvailable")}
               </Text>
+            </View>
+          )}
 
-              <View style={styles.beanExchange}>
-                <View style={styles.beanExchangeItem}>
-                  <Ionicons name="cafe-outline" size={32} color="#8B4513" />
-                  <Text style={styles.beanExchangeTitle}>
-                    {t("subscriptions.espresso")}
-                  </Text>
-                  <Text style={styles.beanExchangeValue}>
-                    {t("subscriptions.oneBean")}
-                  </Text>
-                </View>
+          {/* Subscribe Button */}
+          {subscriptionPlans.length > 0 && (
+            <TouchableOpacity
+              style={styles.subscribeButton}
+              onPress={subscribeToPlan}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.subscribeButtonText}>
+                  {currentSubscription
+                    ? t("subscriptions.changePlan")
+                    : t("subscriptions.startSipping")}
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
 
-                <View style={styles.beanExchangeItem}>
-                  <Ionicons name="cafe" size={32} color="#8B4513" />
-                  <Text style={styles.beanExchangeTitle}>
-                    {t("subscriptions.cappuccino")}
-                  </Text>
-                  <Text style={styles.beanExchangeValue}>
-                    {t("subscriptions.twoBeans")}
-                  </Text>
-                </View>
+          {/* Current Plan Note */}
+          {currentSubscription && (
+            <Text style={styles.currentPlanNote}>
+              {t("subscriptions.currentlyOnPlan", {
+                planName: currentSubscription.subscriptionName,
+                beansLeft: currentSubscription.creditsLeft,
+              })}
+            </Text>
+          )}
+        </ScrollView>
 
-                <View style={styles.beanExchangeItem}>
-                  <Ionicons name="wine" size={32} color="#8B4513" />
-                  <Text style={styles.beanExchangeTitle}>
-                    {t("subscriptions.latte")}
-                  </Text>
-                  <Text style={styles.beanExchangeValue}>
-                    {t("subscriptions.twoBeans")}
-                  </Text>
-                </View>
-
-                <View style={styles.beanExchangeItem}>
-                  <Ionicons name="ice-cream" size={32} color="#8B4513" />
-                  <Text style={styles.beanExchangeTitle}>
-                    {t("subscriptions.frappe")}
-                  </Text>
-                  <Text style={styles.beanExchangeValue}>
-                    {t("subscriptions.threeBeans")}
-                  </Text>
-                </View>
+        {/* How It Works Modal */}
+        <Modal
+          visible={howItWorksVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setHowItWorksVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>
+                  {t("subscriptions.howBeansWork")}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setHowItWorksVisible(false)}
+                  style={styles.modalCloseButton}
+                >
+                  <Ionicons name="close" size={24} color="#8B4513" />
+                </TouchableOpacity>
               </View>
 
-              <Text style={styles.modalText}>
-                {t("subscriptions.modalDescription1")}
-              </Text>
+              <ScrollView style={styles.modalScrollContent}>
+                <Text style={styles.modalSubtitle}>
+                  {t("subscriptions.beansWorkTitle")}
+                </Text>
 
-              <Text style={styles.modalText}>
-                {t("subscriptions.modalDescription2")}
-              </Text>
-            </ScrollView>
+                <View style={styles.beanExchange}>
+                  <View style={styles.beanExchangeItem}>
+                    <Ionicons name="cafe-outline" size={32} color="#8B4513" />
+                    <Text style={styles.beanExchangeTitle}>
+                      {t("subscriptions.espresso")}
+                    </Text>
+                    <Text style={styles.beanExchangeValue}>
+                      {t("subscriptions.oneBean")}
+                    </Text>
+                  </View>
 
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => setHowItWorksVisible(false)}
-            >
-              <Text style={styles.modalButtonText}>
-                {t("subscriptions.gotIt")}
-              </Text>
-            </TouchableOpacity>
+                  <View style={styles.beanExchangeItem}>
+                    <Ionicons name="cafe" size={32} color="#8B4513" />
+                    <Text style={styles.beanExchangeTitle}>
+                      {t("subscriptions.cappuccino")}
+                    </Text>
+                    <Text style={styles.beanExchangeValue}>
+                      {t("subscriptions.twoBeans")}
+                    </Text>
+                  </View>
+
+                  <View style={styles.beanExchangeItem}>
+                    <Ionicons name="wine" size={32} color="#8B4513" />
+                    <Text style={styles.beanExchangeTitle}>
+                      {t("subscriptions.latte")}
+                    </Text>
+                    <Text style={styles.beanExchangeValue}>
+                      {t("subscriptions.twoBeans")}
+                    </Text>
+                  </View>
+
+                  <View style={styles.beanExchangeItem}>
+                    <Ionicons name="ice-cream" size={32} color="#8B4513" />
+                    <Text style={styles.beanExchangeTitle}>
+                      {t("subscriptions.frappe")}
+                    </Text>
+                    <Text style={styles.beanExchangeValue}>
+                      {t("subscriptions.threeBeans")}
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={styles.modalText}>
+                  {t("subscriptions.modalDescription1")}
+                </Text>
+
+                <Text style={styles.modalText}>
+                  {t("subscriptions.modalDescription2")}
+                </Text>
+              </ScrollView>
+
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setHowItWorksVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>
+                  {t("subscriptions.gotIt")}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
 
-      <BottomTabBar />
+        <BottomTabBar />
 
-      {/* Error Components */}
-      <ErrorToast
-        visible={errorState.toast.visible}
-        message={errorState.toast.message}
-        type={errorState.toast.type}
-        onHide={hideToast}
-      />
-    </SafeAreaView>
+        {/* Error Components */}
+        <ErrorToast
+          visible={errorState.toast.visible}
+          message={errorState.toast.message}
+          type={errorState.toast.type}
+          onHide={hideToast}
+        />
+      </View>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
+  fullScreen: {
+    height: screenHeight,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(248, 244, 239, 0.85)",
+    paddingBottom: 75,
+  },
   container: {
     flex: 1,
     backgroundColor: "#F8F4EF",
@@ -460,35 +450,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 20,
   },
-  toggleContainer: {
-    flexDirection: "row",
-    backgroundColor: "#F0E6D9",
-    borderRadius: 12,
-    marginBottom: 20,
-    padding: 4,
-  },
-  toggleOption: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: "center",
-    borderRadius: 8,
-  },
-  toggleActive: {
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  toggleText: {
-    fontSize: 14,
-    color: "#8B4513",
-  },
-  toggleActiveText: {
-    fontWeight: "600",
-    color: "#321E0E",
-  },
+
   usageTrackerContainer: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,

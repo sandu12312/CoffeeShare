@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from "react-native";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useLanguage } from "../../../context/LanguageContext";
 
@@ -23,15 +23,25 @@ export default function LanguageScreen() {
       <Stack.Screen
         options={{
           headerTitle: t("language"),
-          headerBackTitle: t("profile"),
           headerStyle: styles.headerStyle,
           headerTitleStyle: styles.headerTitleStyle,
           headerTintColor: "#321E0E",
-          headerBackVisible: true,
+          headerShown: true,
+          headerBackVisible: false,
+          presentation: "card",
         }}
       />
 
       <View style={styles.content}>
+        {/* Custom Back Button */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.push("/(mainUsers)/profile")}
+        >
+          <Ionicons name="arrow-back" size={20} color="#8B4513" />
+          <Text style={styles.backButtonText}>Înapoi la Profil</Text>
+        </TouchableOpacity>
+
         <Text style={styles.sectionTitle}>{t("selectLanguage")}</Text>
 
         <View style={styles.languageList}>
@@ -79,6 +89,18 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
+  },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+    paddingVertical: 8,
+  },
+  backButtonText: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: "#8B4513",
+    fontWeight: "500",
   },
   sectionTitle: {
     fontSize: 16,

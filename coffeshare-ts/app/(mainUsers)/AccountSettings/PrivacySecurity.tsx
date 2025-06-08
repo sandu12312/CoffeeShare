@@ -10,7 +10,7 @@ import {
   Alert,
   Linking,
 } from "react-native";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useLanguage } from "../../../context/LanguageContext";
 
@@ -158,15 +158,25 @@ Address: CoffeeShare Ltd., Bucharest, Romania
       <Stack.Screen
         options={{
           headerTitle: t("privacySecurity"),
-          headerBackTitle: t("profile"),
           headerStyle: styles.headerStyle,
           headerTitleStyle: styles.headerTitleStyle,
           headerTintColor: "#321E0E",
-          headerBackVisible: true,
+          headerShown: true,
+          headerBackVisible: false,
+          presentation: "card",
         }}
       />
 
       <ScrollView style={styles.scrollView}>
+        {/* Custom Back Button */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.push("/(mainUsers)/profile")}
+        >
+          <Ionicons name="arrow-back" size={20} color="#8B4513" />
+          <Text style={styles.backButtonText}>Înapoi la Profil</Text>
+        </TouchableOpacity>
+
         {/* Privacy Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Privacy Settings</Text>
@@ -421,6 +431,20 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    marginHorizontal: 20,
+    marginBottom: 10,
+    paddingVertical: 8,
+  },
+  backButtonText: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: "#8B4513",
+    fontWeight: "500",
   },
   section: {
     backgroundColor: "#FFFFFF",

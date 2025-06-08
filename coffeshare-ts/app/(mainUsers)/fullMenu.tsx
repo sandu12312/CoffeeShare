@@ -12,6 +12,7 @@ import {
   TextInput,
   SafeAreaView,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useFirebase } from "../../context/FirebaseContext";
@@ -32,6 +33,7 @@ export default function FullMenu() {
   const { user } = useFirebase();
   const { cartItemCount, refreshCartCount } = useCart();
   const params = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,7 +174,7 @@ export default function FullMenu() {
       <StatusBar barStyle="light-content" backgroundColor="#FFA500" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backButton}
