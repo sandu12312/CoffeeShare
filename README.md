@@ -1,497 +1,301 @@
-# CoffeeShare - Context
+# CoffeeShare - Aplicație Mobile de Abonamente Cafea
 
 ## Descriere Generală
 
-CoffeeShare este o aplicație mobilă dezvoltată cu Expo React Native care permite utilizatorilor să achiziționeze abonamente pentru cafea. Similar cu aplicații precum 7card sau ESX, CoffeeShare oferă acces la o rețea de cafenele partenere prin intermediul unui abonament lunar.
+CoffeeShare este o aplicație mobilă dezvoltată cu **Expo React Native** și **TypeScript** care permite utilizatorilor să gestioneze abonamente pentru cafea. Aplicația oferă o experiență completă de administrare a abonamentelor prin sistemul "Coffee Lover" cu tracking de beans și funcționalități QR pentru validarea în cafenele.
+
+## Starea Actuală a Proiectului
+
+### ✅ Funcționalități Implementate
+
+- **Autentificare Completă**: Înregistrare, login și gestionare utilizatori cu Firebase Authentication
+- **Dashboard Funcțional**: Afișarea datelor de abonament (Coffee Lover plan cu 122/150 beans)
+- **Sistem de Abonamente**: Model "Coffee Lover" cu tracking de beans în timp real
+- **Arhitectură de Securitate**: Implementări avansate de securitate
+- **Structură Modulară**: Organizare clară cu contexte, servicii și componente
+- **Firebase Integration**: Configurare completă pentru auth, Firestore și cloud functions
+- **QR Code System**: Generare și procesare coduri QR pentru validare cafenele
+
+### ⚠️ Probleme Cunoscute
+
+- **Firebase Indexes**: Indexurile composite sunt în construcție, afectând temporar query-urile pentru tranzacții
+- **getWeeklyStats Error**: Funcția de statistici săptămânale necesită debugare
+- **EAS Build Issues**: Probleme cu buildurile Android native (se folosește Expo Go pentru dezvoltare)
+
+### 🔧 Tehnologii Utilizate
+
+#### Stack Principal
+
+- **Frontend**: React Native 0.76.9 + Expo SDK 53.0.11
+- **Language**: TypeScript 5.3.3
+- **Backend**: Firebase (Firestore, Authentication, Cloud Functions)
+- **Navigation**: Expo Router 4.0.20
+- **State Management**: React Context API
+
+#### Securitate și Monitoring
+
+- **Error Tracking**: Sentry integration
+- **Secure Storage**: expo-secure-store pentru date sensibile
+- **Device Security**: react-native-device-info pentru detectarea device-ului
+- **SSL Pinning**: react-native-ssl-pinning pentru securitatea rețelei
+- **Code Obfuscation**: react-native-obfuscating-transformer
+
+#### Funcționalități Speciale
+
+- **QR Codes**: react-native-qrcode-svg pentru generare
+- **Barcode Scanner**: expo-barcode-scanner pentru validare
+- **Maps**: react-native-maps cu Google Maps integration
+- **Payments**: @stripe/stripe-react-native pentru procesare plăți
+- **TOTP**: otpauth pentru autentificare în doi pași
+- **Animations**: react-native-reanimated și react-native-animatable
+
+## Structura Proiectului
+
+```
+coffeshare-ts/
+├── app/                          # Expo Router - file-based routing
+│   ├── (auth)/                  # Autentificare (login, register)
+│   ├── (mainUsers)/             # Interfața utilizatori principali
+│   │   ├── dashboard/           # Dashboard utilizator
+│   │   ├── profile/             # Profil și setări
+│   │   └── subscription/        # Gestionare abonamente
+│   └── (cafenele)/              # Interfața pentru cafenele (admin)
+├── components/                   # Componente reutilizabile
+├── context/                      # React Context providers
+│   ├── FirebaseContext.tsx     # Firebase authentication și configurare
+│   ├── CartProvider.tsx        # Gestionare coș de cumpărături
+│   └── LanguageProvider.tsx    # Suport multi-limbă
+├── services/                     # Servicii și integrări
+│   ├── qr/                     # Servicii pentru QR codes
+│   ├── userProfile/            # Gestionare profile utilizatori
+│   └── security/               # Servicii de securitate
+├── utils/                        # Utilități și helper functions
+├── config/                       # Configurări (Firebase, constante)
+├── types/                        # TypeScript type definitions
+├── styles/                       # Stiluri globale
+├── assets/                       # Imagini, fonturi, resurse
+├── hooks/                        # Custom React hooks
+└── constants/                    # Constante aplicație
+```
 
-## Funcționalități Principale
+## Sistem de Abonamente
 
-### Pentru Utilizatori
+### Coffee Lover Plan (Implementat)
 
-- Înregistrare și autentificare în aplicație
-- Vizualizarea cafenelelor partenere pe o hartă interactivă
-- Achiziționarea de abonamente lunare cu diferite limite de cafele pe zi
-- Generarea unui cod QR pentru a fi scanat la cafenea
-- Istoricul consumului de cafele
-- Profilul utilizatorului cu detalii despre abonament
+- **Capacitate**: 150 beans per abonament
+- **Status Tracking**: Tracking în timp real (ex: 122/150 beans disponibili)
+- **Validare**: QR codes pentru utilizare în cafenele
+- **Statistici**: Dashboard cu progres și istoric utilizare
 
-### Pentru Cafenele (Admin)
+### Planuri Viitoare
 
-- Panou de administrare dedicat
-- Adăugarea și gestionarea produselor disponibile
-- Scanarea codurilor QR ale clienților
-- Vizualizarea statisticilor și rapoartelor
-- Configurarea tipurilor de abonamente acceptate
+- **Student Pack**: Abonament accesibil pentru studenți
+- **Elite Pack**: Pentru utilizatori premium
+- **Premium Pack**: Acces nelimitat
 
-## Tipuri de Abonamente
+## Arhitectura de Securitate
 
-CoffeeShare oferă mai multe tipuri de abonamente:
+### Implementări Actuale
 
-- **Student Pack**: 2 cafele pe zi, preț accesibil pentru studenți
-- **Elite**: 3 cafele pe zi, acces la produse premium
-- **Premium**: Cafele nelimitate, acces la toate produsele și oferte speciale
+- **Device Security Checks**: Detectarea device-urilor compromised
+- **Secure Data Storage**: Toate datele sensibile în expo-secure-store
+- **SSL Pinning**: Securizarea comunicațiilor rețea
+- **Code Obfuscation**: Protecția codului sursă
+- **Firebase Security Rules**: Reguli stricte pentru acces date
+- **TOTP Authentication**: Sistem de autentificare în doi pași
 
-## Tehnologii Utilizate
+### Monitoring și Logging
 
-- **Frontend**: React Native cu Expo
-- **Backend & Bază de Date**: Firebase (Firestore, Authentication, Storage)
-- **Hărți**: Google Maps API / Mapbox
-- **Autentificare**: Firebase Authentication
-- **Plăți**: Stripe / PayPal
+- **Sentry Integration**: Tracking erori în timp real
+- **Firebase Analytics**: Monitorizarea comportamentului utilizatorilor
+- **Performance Monitoring**: Tracking performanță aplicație
 
-## Interfețe Principale
+## Firebase Configuration
 
-Aplicația va avea două interfețe principale:
+### Servicii Utilizate
 
-1. **Interfața pentru Utilizatori**: Focusată pe explorarea cafenelelor, gestionarea abonamentului și generarea codurilor QR
-2. **Interfața pentru Cafenele**: Focusată pe scanarea codurilor, gestionarea produselor și vizualizarea statisticilor
+- **Authentication**: Email/password cu verificare
+- **Firestore**: Bază de date NoSQL pentru users, transactions, subscriptions
+- **Cloud Functions**: Procesare backend și validări
+- **Storage**: Pentru imagini și assets
+- **Security Rules**: Protecția datelor și access control
 
-## Design și Experiență Utilizator
+### Indexuri Firestore (În Construcție)
 
-Aplicația va avea un UI interactiv și modern, cu:
+```javascript
+// Index pentru tranzacții utilizator
+{
+  "collectionGroup": "transactions",
+  "queryScope": "COLLECTION",
+  "fields": [
+    { "fieldPath": "userId", "order": "ASCENDING" },
+    { "fieldPath": "scannedAt", "order": "DESCENDING" },
+    { "fieldPath": "__name__", "order": "DESCENDING" }
+  ]
+}
+```
 
-- Navigare intuitivă
-- Animații fluide
-- Mod întunecat/luminos
-- Experiență consistentă pe iOS și Android
-- Design adaptat pentru diferite dimensiuni de ecran
+## Dezvoltare și Deployment
 
-## Fluxul de Utilizare
+### Environment Setup
 
-1. Utilizatorul își creează un cont
-2. Alege și achiziționează un abonament
-3. Explorează cafenelele disponibile pe hartă
-4. Vizitează o cafenea
-5. Generează un cod QR din aplicație
-6. Codul este scanat de cafenea
-7. Utilizatorul primește cafeaua, iar contorul zilnic se actualizează
+```bash
+# Instalare dependințe
+npm install
 
-## Obiective de Dezvoltare
+# Start development server
+expo start --clear
 
-- Crearea unei experiențe utilizator fluide și intuitive
-- Asigurarea scalabilității pentru adăugarea de noi cafenele partenere
-- Implementarea unui sistem robust de gestionare a abonamentelor
-- Dezvoltarea unui sistem securizat de autentificare și plăți
+# Rulare pe device
+expo start --tunnel  # Pentru testare pe device real prin QR
+```
 
-## Cerințe Comprehensive
+### Build și Distribution
 
-### Cerințe Funcționale Esențiale
+#### Expo Go (Metoda Actuală)
 
-#### Autentificare și Gestionare Utilizatori
+- **Avantaje**: Testare rapidă, deployment instant
+- **Accesare**: Scanare QR code din Expo Go app
+- **Compatibilitate**: Funcționează pe iOS și Android
 
-- Înregistrare cu email/parolă și opțiuni de social login (Google, Facebook)
-- Recuperare parolă și verificare email
-- Profiluri de utilizator cu informații personale și preferințe
-- Roluri diferite pentru utilizatori și administratori de cafenele
+#### EAS Build (În Dezvoltare)
 
-#### Sistem de Abonamente
+- **Status**: Probleme cu buildurile Android native
+- **Erori Cunoscute**: Gradle plugin conflicts, Java toolchain issues
+- **Soluții în Lucru**: Optimizare configurație build
 
-- Procesare plăți securizată pentru abonamente
-- Notificări pentru reînnoirea abonamentelor
-- Posibilitatea de upgrade/downgrade între abonamente
-- Opțiuni de cadou/transfer abonament către alți utilizatori
+### Probleme Tehnice Rezolvate
 
-#### Hartă și Localizare
+#### SDK Upgrade
 
-- Afișarea cafenelelor în funcție de locația utilizatorului
-- Filtrare cafenele după distanță, rating, tipuri de cafea oferite
-- Rute și indicații către cafenelele selectate
-- Informații detaliate despre program, facilități și meniu pentru fiecare cafenea
+- **Upgrade**: De la Expo SDK 52 la 53.0.11
+- **Compatibilitate**: React Native 0.76.9 cu TypeScript 5.3.3
+- **Rezultat**: Îmbunătățiri de performanță și stabilitate
 
-#### Sistem de Coduri QR
+#### Module Compatibility
 
-- Generare coduri QR unice și securizate
-- Validare în timp real a codurilor
-- Prevenirea fraudelor și a utilizării multiple
-- Backup pentru situații când scanarea nu funcționează
+- **Probleme**: Conflicte cu expo-blur, expo-crypto
+- **Soluții**: Înlocuire cu crypto-js și react-native-device-info
+- **Rezultat**: Compatibilitate completă cu Expo Go
 
-#### Interfața Cafenelelor
+## QR Code System
 
-- Dashboard cu statistici și analize
-- Gestionarea inventarului și a produselor disponibile
-- Sistem de notificări pentru comenzi noi
-- Rapoarte financiare și de utilizare
+### Implementare
 
-### Cerințe Non-Funcționale
+- **Generare**: QR codes unice per utilizator/sesiune
+- **Validare**: Scanare prin expo-barcode-scanner
+- **Securitate**: Tokens cu expirare și validare server-side
+- **Tracking**: Istoric utilizare și statistici
 
-#### Performanță
+### Flow de Utilizare
 
-- Timp de încărcare sub 2 secunde pentru ecranele principale
-- Funcționare offline pentru funcționalități de bază
-- Optimizare pentru consum redus de baterie
-- Sincronizare eficientă a datelor
+1. Utilizatorul deschide aplicația
+2. Accesează dashboard-ul cu datele abonamentului
+3. Generează QR code pentru cafeneaua dorită
+4. Cafeneaua scanează codul pentru validare
+5. Sistem actualizează automat bean count
 
-#### Securitate
+## Performance și Optimizare
 
-- Criptarea datelor sensibile
-- Conformitate cu GDPR și alte reglementări de protecție a datelor
-- Autentificare în doi pași pentru conturi de administrator
-- Audit logs pentru acțiunile importante
+### Optimizări Implementate
 
-#### Scalabilitate
+- **Bundle Size**: Code splitting și lazy loading
+- **Memory Usage**: Optimizare imagini și cache management
+- **Network**: SSL pinning și request optimization
+- **Storage**: Secure local storage pentru date frecvent accesate
 
-- Arhitectură care permite adăugarea rapidă de noi cafenele
-- Suport pentru creșterea numărului de utilizatori
-- Capacitate de a gestiona vârfuri de trafic
+### Monitoring
 
-#### Accesibilitate
+- **Performance**: React DevTools integration
+- **Errors**: Sentry pentru tracking și debugging
+- **Analytics**: Firebase Analytics pentru user behavior
 
-- Conformitate cu standardele WCAG 2.1
-- Suport pentru cititor de ecran
-- Contrast adecvat și opțiuni de text redimensionabil
-- Navigare intuitivă fără dependență de culoare
+## Suport Multi-limbă
 
-### Cerințe Specifice Proiectului
+### Implementare
 
-#### Sistem de Loialitate
+- **Provider**: LanguageProvider cu React Context
+- **Limbi Suportate**: Română (primară), Engleză
+- **Extensibilitate**: Sistem modular pentru adăugare limbi noi
 
-- Puncte bonus pentru utilizare frecventă
-- Recompense pentru vizitarea de cafenele noi
-- Program de referral pentru atragerea de noi utilizatori
-- Oferte speciale pentru zile de naștere sau alte ocazii
+## Viitoarele Dezvoltări
 
-#### Funcționalități Sociale
+### Scurt Termn
 
-- Posibilitatea de a vedea prietenii apropiați
-- Opțiuni de a invita prieteni la cafea
-- Recenzii și evaluări pentru cafenele
-- Partajare experiențe pe rețele sociale
+- **Rezolvare Firebase Indexes**: Finalizarea indexurilor pentru query-uri
+- **Fix getWeeklyStats**: Debugging și rezolvare erori statistici
+- **EAS Build Optimization**: Rezolvarea problemelor de build nativ
 
-#### Analitică Avansată
+### Mediu Termn
 
-- Preferințe de cafea pentru utilizatori
-- Tendințe de consum pentru cafenele
-- Predicții pentru perioade aglomerate
-- Recomandări personalizate bazate pe istoric
+- **Maps Integration**: Integrare completă Google Maps pentru cafenele
+- **Payment System**: Implementare completă Stripe pentru abonamente
+- **Push Notifications**: Sistem de notificări pentru utilizatori
 
-### Standarde și Bune Practici
+### Lung Termn
 
-#### Design și Usabilitate
+- **AI Recommendations**: Recomandări personalizate de cafenele
+- **Social Features**: Sistem de prieteni și partajare experiențe
+- **Analytics Dashboard**: Dashboard avansat pentru administratori
 
-- Respectarea principiilor Material Design/Human Interface Guidelines
-- Consistență în interfață și interacțiuni
-- Testare de utilizabilitate cu utilizatori reali
-- Design responsive pentru toate dimensiunile de ecran
+## Documentație Dezvoltator
 
-#### Dezvoltare și Implementare
+### Quick Start
 
-- Arhitectură modulară pentru mentenabilitate
-- Testare automată pentru funcționalitățile critice
-- CI/CD pentru actualizări frecvente și stabile
-- Documentație completă pentru dezvoltatori și utilizatori
+```bash
+# Clone repository
+git clone [repository-url]
+cd LICENTAA/coffeshare-ts
 
-#### Conformitate și Etică
+# Install dependencies
+npm install
 
-- Transparență în colectarea și utilizarea datelor
-- Opțiuni clare pentru preferințe de confidențialitate
-- Conformitate cu reglementările locale pentru servicii de abonament
-- Politici echitabile pentru cafenelele partenere
+# Setup Firebase configuration
+# Add your firebase config in config/firebaseConfig.ts
 
-## Plan de Implementare Fazată
+# Start development
+expo start --clear
+```
 
-### Faza 1: MVP (Minimum Viable Product)
+### Environment Variables
 
-- Autentificare de bază
-- Hartă simplă cu cafenele
-- Sistem de abonamente de bază
-- Generare și scanare coduri QR
+```bash
+# Firebase Configuration
+FIREBASE_API_KEY=your_api_key
+FIREBASE_AUTH_DOMAIN=your_auth_domain
+FIREBASE_PROJECT_ID=your_project_id
 
-### Faza 2: Îmbunătățiri Funcționale
+# Google Maps
+GOOGLE_MAPS_API_KEY=your_maps_api_key
 
-- Sistem de plăți avansat
-- Interfață administrativă completă
-- Filtre avansate pentru hartă
-- Istoric și statistici pentru utilizatori
+# Sentry
+SENTRY_DSN=your_sentry_dsn
+```
 
-### Faza 3: Caracteristici Avansate
+### Testing
 
-- Funcționalități sociale
-- Sistem de loialitate
-- Analitică avansată
-- Integrări cu alte servicii
+```bash
+# Performance testing
+npm run performance-test
 
-## Site Map și Structura Aplicației
+# Install performance dependencies
+npm run install-performance-deps
+```
 
-### Structura Generală
+## Contribuții și Licență
 
-CoffeeShare
-├── Autentificare
-│ ├── Login
-│ └── Register
-├── Home
-│ └── Map
-├── Abonamente
-│ └── Subscription
-├── Cafenea
-│ └── Details
-└── Profil
-└── Settings
+### Dezvoltare
 
-### Detalii Pagini și Interconexiuni
+- **Autor Principal**: Alexandru Gheorghita
+- **Scop**: Proiect de licență în Informatică
+- **Status**: În dezvoltare activă
 
-#### Autentificare
+### Academic Context
 
-- **Login**: Acces pentru utilizatori și cafenele cu opțiuni de social login
-  - Conexiuni: → Înregistrare, → Recuperare Parolă, → Pagina Principală (după autentificare)
-- **Înregistrare**: Formular pentru crearea unui cont nou (utilizator sau cafenea)
-  - Conexiuni: → Login, → Pagina Principală (după înregistrare)
-- **Recuperare Parolă**: Sistem de resetare a parolei prin email
-  - Conexiuni: → Login
-
-#### Interfața Utilizator
-
-- **Pagina Principală (Dashboard)**
-
-  - Rezumat abonament activ
-  - Cafenele recomandate/favorite
-  - Cafele consumate astăzi/săptămâna aceasta
-  - Notificări și noutăți
-  - Conexiuni: → Toate paginile utilizator
-
-- **Hartă Cafenele**
-
-  - Hartă interactivă cu toate cafenelele partenere
-  - Filtre și opțiuni de căutare
-  - Detalii cafenea la selectare
-  - Conexiuni: → Profil Cafenea, → Cod QR, → Indicații Rutiere
-
-- **Profil Utilizator**
-
-  - Informații personale
-  - Preferințe cafea
-  - Istoric activitate
-  - Conexiuni: → Setări, → Istoric Cafele, → Abonamente
-
-- **Abonamente**a
-
-  - Lista abonamentelor disponibile
-  - Detalii abonament curent
-  - Opțiuni de upgrade/downgrade
-  - Procesare plăți
-  - Conexiuni: → Profil Utilizator, → Istoric Cafele
-
-- **Istoric Cafele**
-
-  - Calendar cu cafele consumate
-  - Statistici și grafice
-  - Cafenele vizitate
-  - Conexiuni: → Profil Utilizator, → Hartă Cafenele
-
-- **Cod QR**
-
-  - Generator cod QR pentru cafeneaua curentă
-  - Validare și confirmare
-  - Conexiuni: → Hartă Cafenele, → Istoric Cafele
-
-- **Setări**
-  - Preferințe aplicație
-  - Notificări
-  - Confidențialitate
-  - Ajutor și suport
-  - Conexiuni: → Profil Utilizator
-
-#### Interfața Cafenea (Admin)
-
-- **Dashboard Cafenea**
-
-  - Rezumat activitate zilnică
-  - Statistici rapide
-  - Notificări importante
-  - Conexiuni: → Toate paginile admin
-
-- **Scanner QR**
-
-  - Cameră pentru scanare coduri QR
-  - Validare și confirmare
-  - Istoric scanări recente
-  - Conexiuni: → Dashboard Cafenea, → Rapoarte și Statistici
-
-- **Gestionare Produse**
-
-  - Adăugare/editare produse
-  - Categorii și prețuri
-  - Disponibilitate produse
-  - Conexiuni: → Dashboard Cafenea, → Gestionare Abonamente
-
-- **Rapoarte și Statistici**
-
-  - Analize detaliate
-  - Grafice de utilizare
-  - Exportare date
-  - Conexiuni: → Dashboard Cafenea, → Gestionare Produse
-
-- **Setări Cafenea**
-
-  - Profil cafenea
-  - Ore de funcționare
-  - Locație și contact
-  - Preferințe aplicație
-  - Conexiuni: → Dashboard Cafenea
-
-- **Gestionare Abonamente**
-  - Configurare abonamente acceptate
-  - Reguli și restricții
-  - Oferte speciale
-  - Conexiuni: → Dashboard Cafenea, → Gestionare Produse
-
-### Fluxuri de Navigare Principale
-
-#### Flux Utilizator Nou
-
-1. Înregistrare → Pagina Principală → Abonamente → Procesare Plată → Hartă Cafenele → Cod QR
-
-#### Flux Utilizator Existent
-
-1. Login → Pagina Principală → Hartă Cafenele → Cod QR → Istoric Cafele
-
-#### Flux Cafenea
-
-1. Login → Dashboard Cafenea → Scanner QR → Confirmare Comandă → Rapoarte și Statistici
-
-### Componente Comune
-
-- **Bară de Navigare**: Prezentă în toate paginile după autentificare
-- **Meniu Lateral**: Acces rapid la funcționalitățile principale
-- **Notificări**: Sistem de alerte accesibil din orice pagină
-- **Căutare**: Funcționalitate globală pentru găsirea cafenelelor
-- **Footer**: Informații de contact, termeni și condiții, politica de confidențialitate
-
-### Responsive Design
-
-Toate paginile vor fi adaptate pentru:
-
-- Telefoane mobile (prioritate maximă)
-- Tablete
-- Desktop (pentru interfața de administrare a cafenelelor)
-
-Structura va fi fluidă, cu elemente care se reorganizează în funcție de dimensiunea ecranului, menținând aceeași funcționalitate pe toate dispozitivele.
-
-## Design Pagini Principale
-
-### Dashboard Utilizator
-
-#### Structură și Layout
-
-![Customer Dashboard Mockup](https://placeholder-for-dashboard-mockup.png)
-
-**Header**
-
-- Logo CoffeeShare (stânga)
-- Buton de notificări cu indicator pentru notificări necitite (dreapta)
-- Avatar utilizator cu meniu dropdown pentru profil, setări și logout (dreapta)
-
-**Secțiunea Principală**
-
-1. **Card Abonament Activ**
-
-   - Tip abonament (Student Pack/Elite/Premium) cu badge colorat
-   - Dată expirare abonament
-   - Contor cafele disponibile astăzi (ex: "1/2 cafele rămase astăzi")
-   - Progres vizual (bară de progres circulară)
-   - Buton "Reînnoire" sau "Upgrade" (dacă e cazul)
-
-2. **Cafenele Recomandate**
-
-   - Carusel orizontal cu 3-4 cafenele
-   - Pentru fiecare cafenea:
-     - Imagine cafenea
-     - Nume cafenea
-     - Distanța (ex: "300m")
-     - Rating (stele)
-     - Indicator de aglomerație (verde/galben/roșu)
-   - Buton "Vezi toate" care duce la harta completă
-
-3. **Activitate Recentă**
-
-   - Ultimele 3 cafele consumate cu:
-     - Nume cafenea
-     - Data și ora
-     - Tip cafea (dacă e disponibil)
-     - Iconița cafenelei
-   - Buton "Istoric complet"
-
-4. **Statistici Rapide**
-
-   - Card cu statistici săptămânale:
-     - Total cafele consumate săptămâna aceasta
-     - Comparație cu săptămâna anterioară (procent +/-)
-     - Cafeneaua preferată
-     - Grafic simplu cu consum pe zile
-
-5. **Secțiune Socială** (opțional pentru MVP)
-   - Prieteni apropiați care folosesc aplicația
-   - Buton "Invită la cafea"
-   - Activitate recentă a prietenilor
-
-**Bară de Navigare (Bottom)**
-
-- Buton Home/Dashboard (activ)
-- Buton Hartă
-- Buton QR (central, mai mare)
-- Buton Abonamente
-- Buton Profil
-
-#### Funcționalități Interactive
-
-1. **Generare Rapidă QR**
-
-   - Buton mare "Comandă Cafea" care deschide un modal cu:
-     - Selectare cafenea (dacă locația curentă e aproape de mai multe cafenele)
-     - Generare cod QR
-     - Opțiune de a selecta tipul de cafea (dacă cafeneaua permite)
-
-2. **Notificări Contextuale**
-
-   - Alertă pentru abonament care expiră curând
-   - Oferte speciale de la cafenelele favorite
-   - Reminder pentru cafele neutilizate ("Ai încă 2 cafele disponibile astăzi!")
-
-3. **Widget Meteo** (opțional)
-
-   - Temperatură curentă
-   - Sugestie de cafea bazată pe vreme (ex: "Zi perfectă pentru un Frappuccino!")
-
-4. **Căutare Rapidă**
-   - Bară de căutare pentru găsirea rapidă a cafenelelor
-   - Sugestii bazate pe istoric și preferințe
-
-#### Personalizare și Adaptabilitate
-
-- **Teme**: Suport pentru mod întunecat/luminos
-- **Personalizare**: Opțiuni pentru reorganizarea cardurilor în dashboard
-- **Adaptare Contextuală**:
-  - Dimineața: Focus pe cafenele deschise și aproape
-  - Weekend: Sugestii de cafenele cu spații pentru lucru/studiu
-  - Seara: Cafenele cu program prelungit
-
-#### Stări și Feedback
-
-- **Stare Inactivă**: Informații generale și recomandări
-- **Stare Activă**: Când utilizatorul este într-o cafenea, dashboard-ul se transformă pentru a facilita comanda
-- **Feedback**: După fiecare comandă, opțiune rapidă de rating (1-5 stele)
-- **Erori**: Notificări clare pentru probleme (ex: "Abonamentul a expirat", "Ai atins limita de cafele pentru astăzi")
-
-#### Experiență First-Time User
-
-Pentru utilizatorii noi, dashboard-ul va afișa:
-
-- Tutorial rapid cu overlay explicativ
-- Sugestii pentru primii pași (completare profil, alegere abonament, explorare cafenele)
-- Ofertă specială pentru primul abonament
-
-#### Optimizare pentru Performanță
-
-- Încărcare progresivă a conținutului
-- Caching local pentru date frecvent accesate
-- Prioritizare vizuală a elementelor esențiale
-
-#### Accesibilitate
-
-- Contrast adecvat pentru text și elemente interactive
-- Etichete pentru cititor de ecran
-- Opțiuni de mărire text
-- Navigare completă prin tastatură/gesturi alternative
-
-Acest dashboard este proiectat pentru a oferi utilizatorilor o experiență intuitivă și eficientă, concentrându-se pe funcționalitățile cele mai frecvent utilizate, oferind în același timp acces rapid la toate caracteristicile aplicației.
+- **Domeniu**: Computer Science (Informatică)
+- **Focus**: Dezvoltare aplicații mobile cu emphasis pe securitate
+- **Tehnologii**: React Native, Firebase, TypeScript, Advanced Security
 
 ---
+
+**Nota**: Această documentație reflectă starea actuală a proiectului CoffeeShare și va fi actualizată pe măsură ce proiectul evoluează. Pentru informații actualizate despre probleme cunoscute și progres, consultați commit history și issue tracker.
