@@ -1,0 +1,80 @@
+Cuprins 
+ 
+1.Introducere (2-3 pagini) 
+- enuntarea temei proiectului de licenta, unde se regaseste aceasta, in ce domeniu 
+- motivatia realizarii aplicatiei 
+- obiectivele pe care le ai, minim 3 obiective (ex. Autodidact: invatarea unei tehnologii) 
+- structura lucrarii de licenta (descrierea pe scurt 1-2 fraze a capitolelor lucrarii de licenta) 
+ 
+2. Analiza stadiului actual in domeniul problemei (maxim 15 pagini) 
+- prezentarea a 3-4 aplicatii asemanatoare cu aplicatia pe care ai dezvoltat-o 
+- te vei axa pe prezentarea functionalitatilor si a tehnologiilor utilizate de aplicatiile prezentate 
+- concluzii legate de aplicatiile studiate prin compararea functionalitatiilor, caracteristicilor pe 
+care acestea le au/sau nu fata de aplicatia ta 
+- caracteristicile prezente/absente din aplicatiile studiate puse intr-un tabel comparativ cu 
+aplicatia propusa de tine 
+Ex. 
+Nume 
+aplicatie 
+Caracteristica 
+1 
+Caracteristica 
+2 
+Caracteristica 
+3 
+……. Caracteristica 
+n 
+App1 
+App2 
+App3 
+Aplicatia ta 
+ 
+- se pot cauta articole stiintifice in care se prezinta aplicatii cu anumite caracteristici aici: 
+https://ieeexplore.ieee.org/Xplore/home.jsp 
+Cand vorbesti despre anumite aplicatii la sfarsitul paragrafului pui citare [nr] 
+ 
+3. Bazele teoretice (MAXIM 5 pagini) 
+- prezentarea pe scurt a tehnologiilor folosite si a bibliotecilor cele mai relevante pe care le-ai 
+utilizat in aplicatie 
+Cand vorbesti despre anumite tehnologii la sfarsitul paragrafului pui citare [nr] 
+ 
+4. Solutia propusa si metodologia de proiectare/dezvoltare (nu conteaza numarul de pagini) 
+- arhitectura generala a sistemului 
+- diagrama de functionalitati ale aplicatiei 
+- diagrama de clase (daca este cazul) 
+- prezentarea a 2-3 cazuri de utilizare - cele mai relevante 
+- prezentarea bazei de date si a tabelelor/colectiilor 
+TOATE SCHEMELE, TABELELE, FIGURILE TREBUIE EXPLICATE 
+ 
+5. Implementarea (nu conteaza numarul de pagini) 
+- prezentarea tuturor functionalitatilor aplicatiei, a modului lor de implementare sub forma: 
+nume functionalitate, prezentare functionalitate, parte de cod, explicarea codului din punct de 
+vedere tehnic, imagine din aplicatie daca codul are un efect pe interfata aplicatiei 
+ 
+ 
+6. Utilizarea 
+- teste automate in cypress 
+7. Concluzii (1-2 pagini) 
+- prezentarea lucrurilor care s-au relizat 
+- prezentarea problemelor intampinate din punct de vedere tehnic in realizarea aplicatiei si cum 
+le-ai rezolvat 
+- prezentarea intr-un paragraf a plusurilor aplicatiei dezvoltate fata de cele prezentate in capitolul 
+2 
+- prezentarea functionalitatilor pe care vrei sa le adaugi in viitor la aplicatia dezvoltata 
+ 
+8. Bibliografie 
+- sub forma 
+[nr] Nume link, link, data accesarii 
+Alte anexe 
+Lista figurilor si a tabelelor 
+sub forma 
+Figura nr., Nume figura, pagina 
+Tabel nr., Nume tabel, pagina 
+Ultima pagina in lucrarea de licenta trebuie sa fie declaratia de autenticitate completata si 
+semnata cu pix albastru. 
+- citarile se pun cu [nr], iar in bibliografie pui de unde ai citit 
+- daca citesti intr-un loc o informatie, o rescrii si pui la sfarsitul paragrafului de unde ai citit acea 
+informatie, nu dai copy-paste 
+- a cita inseamna sa spui de unde ai citit nu de unde ai copiat. 
+- fiecare capitol incepe pe pagina noua 
+- documentatia se scrie cu diacritice ă,î,â,ș,ț 

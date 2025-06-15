@@ -8,7 +8,16 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "performance-test": "node scripts/performance-test.js",
-    "install-performance-deps": "chmod +x scripts/install-performance-deps.sh && ./scripts/install-performance-deps.sh"
+    "install-performance-deps": "chmod +x scripts/install-performance-deps.sh && ./scripts/install-performance-deps.sh",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "cypress:run:record": "cypress run --record --key d0afa9f3-3e9c-4c4b-aceb-f440a75453fc",
+    "test:e2e": "cypress run --spec 'cypress/e2e/**/*.cy.js'",
+    "test:e2e:record": "cypress run --spec 'cypress/e2e/**/*.cy.js' --record --key d0afa9f3-3e9c-4c4b-aceb-f440a75453fc",
+    "test:e2e:auth": "cypress run --spec 'cypress/e2e/auth.cy.js'",
+    "test:e2e:qr": "cypress run --spec 'cypress/e2e/qr-system-working.cy.js'",
+    "test:e2e:qr:record": "cypress run --spec 'cypress/e2e/qr-system-working.cy.js' --record --key d0afa9f3-3e9c-4c4b-aceb-f440a75453fc",
+    "test:e2e:subscriptions": "cypress run --spec 'cypress/e2e/subscription-management.cy.js'"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
@@ -67,6 +76,7 @@
     "@types/react": "~18.3.12",
     "babel-plugin-transform-remove-console": "^6.9.4",
     "babylon": "^6.18.0",
+    "cypress": "^14.4.1",
     "react-devtools": "^6.1.2",
     "react-native-flipper": "^0.273.0",
     "react-native-obfuscating-transformer": "^1.0.0",

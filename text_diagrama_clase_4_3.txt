@@ -1,0 +1,75 @@
+**4.3 Diagrama de clase - Arhitectura orientată pe obiecte**
+
+În dezvoltarea aplicației CoffeeShare, am conceput o arhitectură orientată pe obiecte care să reflecte în mod fidel entitățile din lumea reală și relațiile complexe dintre acestea. Diagrama de clase pe care am proiectat-o ilustrează structura fundamentală a sistemului și modul în care componentele interacționează pentru a oferi o experiență completă utilizatorului.
+
+**[INSEREAZĂ AICI FIGURA 3: Diagrama de clase CoffeeShare - diagrama_clase_mermaid_albastru.txt]**
+
+Arhitectura pe care am dezvoltat-o se bazează pe nouă clase principale, fiecare având responsabilități bine definite și relații clare cu celelalte componente ale sistemului.
+
+**Clasa User - Entitatea centrală a sistemului**
+
+Clasa User reprezintă piatra de temelie a întregii aplicații, fiind entitatea în jurul căreia gravitează toate funcționalitățile. Am proiectat această clasă să conțină atributele esențiale pentru identificarea și gestionarea utilizatorilor: id-ul unic (userId), adresa de email pentru autentificare, numele complet (fullName), numărul de telefon pentru comunicare directă, rolul în sistem (role) care diferențiază între utilizatori obișnuiți și administratori, punctele de loialitate acumulate (loyaltyPoints), data creării contului (createdAt) și timestamp-ul ultimei autentificări (lastLogin).
+
+Din punct de vedere funcțional, am implementat metodele login() pentru autentificarea securizată, updateProfile() pentru modificarea datelor personale și addLoyaltyPoints() pentru actualizarea punctelor câștigate. Această clasă servește ca punct central de referință pentru toate operațiunile utilizatorului în sistem.
+
+**Clasa Subscription - Gestionarea abonamentelor**
+
+Pentru a oferi utilizatorilor o experiență premium, am dezvoltat clasa Subscription care gestionează abonamentele active. Această clasă conține subscriptionId pentru identificare unică, userId pentru legătura cu proprietarul, tipul abonamentului (type), statusul curent (status), datele de început și sfârșit (startDate, endDate), prețul lunar (monthlyPrice) și beneficiile incluse (benefits).
+
+Metodele implementate includ activate() pentru activarea unui abonament nou, renew() pentru reînnoirea automată, cancel() pentru anularea la cererea utilizatorului și checkStatus() pentru verificarea validității. Relația de agregare cu clasa User (o-- User) indică faptul că un utilizator poate exista independent de abonament, dar abonamentul aparține întotdeauna unui utilizator specific.
+
+**Clasa QRCode - Sistemul de scanare și validare**
+
+Una dintre funcționalitățile inovatoare pe care le-am implementat este sistemul de QR code-uri pentru acumularea punctelor de loialitate. Clasa QRCode conține qrId pentru identificare, valoarea codată (value), statusul de activitate (isActive), data creării (createdAt), data expirării (expiresAt) și punctele acordate la scanare (pointsValue).
+
+Am dezvoltat metodele generate() pentru crearea de noi coduri, validate() pentru verificarea autenticității, expire() pentru dezactivarea automată și scan() pentru procesarea scanării. Relația de dependență cu clasa User (..> User) reflectă faptul că QR code-urile sunt utilizate de către utilizatori, dar nu depind structural de aceștia.
+
+**Clasa Transaction - Istoricul operațiunilor**
+
+Pentru a menține o evidență completă a tuturor operațiunilor financiare, am proiectat clasa Transaction care înregistrează fiecare tranzacție din sistem. Atributele includ transactionId pentru identificare unică, userId pentru proprietar, suma tranzacției (amount), punctele câștigate (pointsEarned), data și ora (timestamp), tipul operației (type) și statusul curent (status).
+
+Metodele implementate sunt process() pentru executarea tranzacției, validate() pentru verificarea corectitudinii datelor, refund() pentru returnarea sumelor și generateReceipt() pentru emiterea confirmărilor. Relația de compoziție cu User (*-- User) indică faptul că tranzacțiile nu pot exista independent de utilizatori și sunt șterse automat la eliminarea contului.
+
+**Clasa CoffeeShop - Gestionarea partenerilor comerciali**
+
+Pentru a susține ecosistemul de cafenele partenere, am dezvoltat clasa CoffeeShop care gestionează informațiile despre locațiile comerciale. Această clasă conține shopId pentru identificare, numele cafenelei (name), adresa completă (address), coordonatele GPS (latitude, longitude), programul de lucru (workingHours), informațiile de contact (contactInfo) și statusul de activitate (isActive).
+
+Metodele implementate includ register() pentru înregistrarea unei noi cafenele, updateInfo() pentru modificarea detaliilor, activate() și deactivate() pentru gestionarea statusului. Relația de asociație cu Transaction (-- Transaction) reflectă faptul că tranzacțiile sunt legate de cafenelele unde au loc, dar ambele entități pot exista independent.
+
+**Clasa Admin - Administrarea sistemului**
+
+Pentru gestionarea eficientă a platformei, am creat clasa Admin care extinde funcționalitățile clasei User prin moștenire (<|-- User). Această clasă specializată conține adminId pentru identificare suplimentară, nivelul de acces (accessLevel), data ultimei activități administrative (lastActivity) și permisiunile specifice (permissions).
+
+Metodele administrative pe care le-am implementat includ manageUsers() pentru gestionarea conturilor utilizatorilor, generateReports() pentru crearea rapoartelor statistice, configureSystem() pentru modificarea setărilor globale și monitorActivity() pentru supravegherea activității sistemului. Relația de moștenire indică faptul că administratorii sunt utilizatori cu privilegii extinse.
+
+**Clasa Analytics - Inteligența de business**
+
+Pentru a oferi insight-uri valoroase despre comportamentul utilizatorilor și performanța sistemului, am dezvoltat clasa Analytics care colectează și procesează datele statistice. Această clasă conține analyticsId pentru identificare, tipul de metrică (metricType), valoarea măsurată (value), perioada de referință (period), data colectării (collectedAt) și categoria de analiză (category).
+
+Metodele implementate sunt collect() pentru adunarea datelor, analyze() pentru procesarea statisticilor, generateInsights() pentru crearea de recomandări și exportData() pentru extragerea rapoartelor. Relația de dependență cu Admin (..> Admin) indică faptul că analytics-urile sunt utilizate de administratori pentru luarea deciziilor strategice.
+
+**Clasa SecurityService - Protecția sistemului**
+
+Având în vedere importanța securității în aplicațiile mobile financiare, am proiectat clasa SecurityService care gestionează toate aspectele de protecție a sistemului. Această clasă conține serviceId pentru identificare, tipul de securitate (securityType), nivelul de alertă (alertLevel), statusul serviciului (status), data ultimei verificări (lastCheck) și configurațiile de securitate (config).
+
+Am implementat metodele validateDevice() pentru verificarea integrității device-ului, encryptData() pentru criptarea informațiilor sensibile, detectThreat() pentru identificarea amenințărilor și logSecurityEvent() pentru înregistrarea incidentelor. Relația de dependență cu User (..> User) reflectă faptul că serviciile de securitate protejează utilizatorii fără a depinde structural de aceștia.
+
+**Clasa PaymentService - Procesarea plăților**
+
+Pentru gestionarea tranzacțiilor financiare, am dezvoltat clasa PaymentService care se ocupă de toate aspectele legate de plăți. Această clasă conține serviceId pentru identificare, tipul de plată acceptat (paymentType), statusul serviciului (status), configurațiile de plată (config), comisionul aplicat (fee) și metodele de plată disponibile (availableMethods).
+
+Metodele implementate includ processPayment() pentru executarea plăților, validateCard() pentru verificarea cardurilor, refundPayment() pentru returnarea sumelor și generateInvoice() pentru emiterea facturilor. Relația de dependență cu Transaction (..> Transaction) indică faptul că serviciul de plăți procesează tranzacțiile fără a fi dependent structural de acestea.
+
+**Relațiile dintre clase și arhitectura sistemului**
+
+Arhitectura pe care am conceput-o utilizează diferite tipuri de relații UML pentru a reflecta natura interacțiunilor dintre componente. Relațiile de compoziție (*--) indică dependențe puternice unde componenta copil nu poate exista fără părinte, cum este cazul Transaction cu User. Relațiile de agregare (o--) reprezintă asocieri mai slabe, precum Subscription cu User, unde abonamentul aparține utilizatorului dar ambele pot exista independent.
+
+Relațiile de moștenire (<|--) sunt utilizate pentru specializarea claselor, cum este Admin care extinde User cu funcționalități administrative suplimentare. Relațiile de dependență (..>) indică utilizarea unei clase de către alta fără a crea o legătură structurală permanentă.
+
+Această arhitectură orientată pe obiecte pe care am dezvoltat-o oferă flexibilitate în dezvoltare, ușurință în mentenanță și scalabilitate pentru funcționalități viitoare. Separarea clară a responsabilităților și utilizarea principiilor SOLID asigură o bază solidă pentru evoluția continuă a aplicației CoffeeShare.
+
+**Avantajele arhitecturii propuse**
+
+Prin această structură de clase, am reușit să creez un sistem modular și extensibil care poate fi ușor adaptat la cerințele în schimbare ale pieței. Separarea serviciilor de securitate și plăți în clase dedicate permite integrarea facilă cu furnizori externi, iar structura analitică oferă suportul necesar pentru luarea deciziilor bazate pe date.
+
+Relațiile bine definite între clase asigură integritatea datelor și consistența operațiunilor, în timp ce arhitectura modulară facilitează testarea și depanarea codului. Această abordare orientată pe obiecte constituie fundația tehnică solidă asupra căreia am construit întreaga funcționalitate a aplicației CoffeeShare. 

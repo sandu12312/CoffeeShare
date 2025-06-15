@@ -1,0 +1,208 @@
+DIAGRAMA BAZA DE DATE COFFEESHARE - VERSIUNE VERTICALĂ PENTRU A4
+================================================================
+
+Pentru a insera această diagramă în lucrarea de licență:
+1. Copiază codul de mai jos
+2. Generează diagrama folosind Mermaid Live Editor (https://mermaid.live/)
+3. Exportează ca imagine PNG/SVG cu orientare Portrait
+4. Inserează în documentul Word la secțiunea 4.5
+
+ORGANIZARE VERTICALĂ PE 6 STRATURI:
+===================================
+- Stratul 1: Management utilizatori (users, admins, partners)
+- Stratul 2: Core business (cafes, products)
+- Stratul 3: Sistem abonamente (subscriptions, userSubscriptions)
+- Stratul 4: Sistem QR și tranzacții (qrTokens, transactions)
+- Stratul 5: Funcționalități utilizator (userCarts, wishlist)
+- Stratul 6: Analytics și activități (analytics, activities, notifications)
+
+COD MERMAID VERTICAL OPTIMIZAT:
+===============================
+
+```mermaid
+erDiagram
+    %% Layer 1 - Core Users
+    users {
+        string uid PK
+        string email
+        string displayName
+        string role
+        timestamp createdAt
+        string status
+        object subscription
+    }
+    
+    admins {
+        string uid PK
+        string email
+        string displayName
+        array permissions
+        string accessLevel
+    }
+    
+    %% Layer 2 - Partners & Business
+    partners {
+        string uid PK
+        string email
+        string displayName
+        string businessName
+        string verificationStatus
+        timestamp partnershipDate
+    }
+    
+    cafes {
+        string id PK
+        string businessName
+        string address
+        string partnerUid FK
+        string status
+        object location
+        boolean acceptsSubscriptions
+    }
+    
+    %% Layer 3 - Products & Subscriptions
+    products {
+        string id PK
+        string name
+        number priceLei
+        number beansValue
+        string cafeId FK
+        string category
+        boolean isActive
+    }
+    
+    subscriptions {
+        string id PK
+        string name
+        number credits
+        number price
+        boolean isActive
+        string description
+    }
+    
+    %% Layer 4 - User Subscriptions & QR
+    userSubscriptions {
+        string id PK
+        string userId FK
+        string subscriptionId FK
+        number creditsLeft
+        string status
+        timestamp purchaseDate
+    }
+    
+    qrTokens {
+        string id PK
+        string userId FK
+        string token
+        timestamp expiresAt
+        string cafeId FK
+        string type
+        string status
+    }
+    
+    %% Layer 5 - Transactions & Analytics
+    transactions {
+        string id PK
+        string partnerId FK
+        string userId FK
+        string cafeId FK
+        string qrTokenId FK
+        number beansUsed
+        number earningsRon
+        timestamp createdAt
+    }
+    
+    partnerAnalyticsProfiles {
+        string partnerId PK
+        number totalEarnings
+        number totalScans
+        number totalCustomers
+        timestamp lastUpdated
+    }
+    
+    %% Layer 6 - User Features
+    userCarts {
+        string userId PK
+        array items
+        number totalBeans
+        string cafeId FK
+        timestamp updatedAt
+    }
+    
+    wishlist {
+        string id PK
+        string userId FK
+        string cafeId FK
+        string cafeName
+        timestamp addedAt
+    }
+    
+    %% Layer 7 - Statistics & Activities
+    globalStatistics {
+        string id PK
+        number totalUsers
+        number totalRevenue
+        number totalTransactions
+        timestamp lastUpdated
+    }
+    
+    userActivities {
+        string id PK
+        string userId FK
+        string type
+        string cafeId FK
+        timestamp createdAt
+    }
+    
+    userNotifications {
+        string id PK
+        string userId FK
+        string type
+        string message
+        boolean read
+        timestamp createdAt
+    }
+    
+    %% Relationships
+    users ||--o{ userSubscriptions : "has"
+    users ||--o{ qrTokens : "generates"
+    users ||--o{ userCarts : "owns"
+    users ||--o{ wishlist : "maintains"
+    users ||--o{ userActivities : "performs"
+    users ||--o{ userNotifications : "receives"
+    users ||--o{ transactions : "makes"
+    
+    partners ||--o{ cafes : "owns"
+    partners ||--|| partnerAnalyticsProfiles : "has"
+    partners ||--o{ transactions : "receives"
+    
+    cafes ||--o{ products : "sells"
+    cafes ||--o{ qrTokens : "accepts"
+    cafes ||--o{ userCarts : "serves"
+    cafes ||--o{ wishlist : "featured_in"
+    cafes ||--o{ transactions : "processes"
+    
+    subscriptions ||--o{ userSubscriptions : "purchased_as"
+    
+    qrTokens ||--o{ transactions : "used_in"
+```
+
+INSTRUCȚIUNI PENTRU GENERARE:
+=============================
+
+1. MERMAID LIVE EDITOR:
+   - Accesează: https://mermaid.live/
+   - Copiază codul de mai sus (fără backticks-urile)
+   - Setează orientarea Portrait în opțiuni
+   - Descarcă ca PNG sau SVG
+
+2. VISUAL STUDIO CODE:
+   - Instalează extensia "Mermaid Preview"
+   - Creează fișier .mmd cu codul
+   - Exportează diagrama
+
+3. GITHUB:
+   - Creează un fișier .md cu codul în blocuri ```mermaid
+   - Vizualizează și salvează imaginea
+
+NOTĂ: Această versiune verticală este optimizată pentru a încăpea pe o pagină A4 în orientare Portrait, cu tabelele organizate pe 6 straturi logice pentru o vizualizare clară a arhitecturii bazei de date. 

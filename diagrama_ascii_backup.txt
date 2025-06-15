@@ -1,0 +1,114 @@
+ARHITECTURA SISTEMULUI COFFEESHARE - DIAGRAMA ASCII
+=====================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            STRATUL CLIENT                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────────┐    ┌─────────────────────────────────────┐ │
+│  │   Aplicația Mobilă          │    │     Dashboard Administrare         │ │
+│  │   React Native              │    │     • React.js + Material-UI       │ │
+│  │   • Expo SDK 53 + TypeScript│    │     • Gestionare în timp real      │ │
+│  │   • Cross-platform iOS/Android│  │     • Interfață web admin          │ │
+│  └─────────────────────────────┘    └─────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+                    │                                    │
+                    ▼                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      AUTENTIFICARE ȘI SECURITATE                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────┐ │
+│ │Autentificare    │ │SSL Certificate  │ │Stocare Locală   │ │Securitate   │ │
+│ │Firebase         │ │Pinning          │ │Securizată       │ │Dispozitiv   │ │
+│ │• Email/Parolă   │ │• Validare Cert  │ │• expo-secure    │ │• Detectare  │ │
+│ │• 2FA + JWT      │ │• Forțare HTTPS  │ │• Criptare AES   │ │• Jailbreak   │ │
+│ │• Gestionare     │ │• Securizare     │ │• Stocare sigură │ │• Root        │ │
+│ │  Token-uri      │ │  Comunicații    │ │                 │ │              │ │
+│ └─────────────────┘ └─────────────────┘ └─────────────────┘ └─────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+                    │                                    │
+                    ▼                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    SERVICII BACKEND - FIREBASE                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────┐ │
+│ │Baza de Date     │ │Funcții Cloud    │ │Stocare Firebase │ │Analiză      │ │
+│ │Cloud Firestore  │ │Runtime          │ │• Asset-uri      │ │Firebase     │ │
+│ │• Document NoSQL │ │• Logică Server  │ │• CDN Global     │ │• Urmărire   │ │
+│ │• Sincronizare   │ │• Auto-scalare   │ │• Distribuție    │ │  Utilizatori│ │
+│ │  în timp real   │ │• Infrastructură │ │• Fișiere        │ │• Evenimente │ │
+│ └─────────────────┘ └─────────────────┘ └─────────────────┘ └─────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+                    │                                    │
+                    ▼                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    INTEGRĂRI API EXTERNE                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────────────────────┐ │
+│ │Google Maps      │ │Gateway Plăți    │ │Monitorizare Erori Sentry       │ │
+│ │Platform         │ │Stripe           │ │• Monitorizare Performanță      │ │
+│ │• Geolocalizare  │ │• Conformitate   │ │• Alerte în timp real           │ │
+│ │• Navigație      │ │  PCI DSS        │ │• Raportare erori                │ │
+│ │• Servicii       │ │• Multi-valută   │ │• Tracking performanță           │ │
+│ │  Locație        │ │• Procesare      │ │                                 │ │
+│ └─────────────────┘ └─────────────────┘ └─────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+                    │                                    │
+                    ▼                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                  FUNCȚIONALITĂȚI PRINCIPALE APLICAȚIE                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────┐ │
+│ │Gestionare       │ │Motor            │ │Dashboard        │ │Internaționa │ │
+│ │Coduri QR        │ │Abonamente       │ │Analiză          │ │lizare       │ │
+│ │• Generare       │ │• Planuri        │ │• Statistici     │ │• Suport     │ │
+│ │• Validare       │ │  Coffee Lover   │ │  timp real      │ │  Multi-limbă│ │
+│ │• Token-uri      │ │• Urmărire       │ │• Metrici        │ │• Localizare │ │
+│ │  cu timp        │ │  Beans          │ │  Performanță    │ │  Dinamică   │ │
+│ └─────────────────┘ └─────────────────┘ └─────────────────┘ └─────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+FLUXURI DE DATE:
+================
+
+CLIENT → SECURITY:
+• Mobile App ──→ Firebase Auth (Secure Authentication)
+• Mobile App ──→ SSL Pinning (SSL Handshake)
+• Mobile App ──→ Secure Storage (Local Data Cache)
+• Admin Panel ──→ Firebase Auth (Admin Authentication)
+
+SECURITY → BACKEND:
+• Firebase Auth ══→ Firestore (User Data Sync)
+• SSL Pinning ══→ Cloud Functions (Secure API Calls)
+• Secure Storage ══→ Firestore (Cache Synchronization)
+
+BACKEND INTERNAL:
+• Firestore ←→ Cloud Functions (Real-time Updates)
+• Cloud Functions ──→ Storage (Asset Management)
+• Cloud Functions ──→ Analytics (Event Tracking)
+
+EXTERNAL INTEGRATIONS:
+• Mobile App ──→ Google Maps (Location Services)
+• Mobile App ──→ Stripe (Payment Processing)
+• Mobile App ──→ Sentry (Error Reporting)
+• Cloud Functions ══→ Stripe (Payment Validation)
+
+CORE FEATURES:
+• Mobile App ══→ QR Management (QR Code Operations)
+• Mobile App ══→ Subscription Engine (Subscription Management)
+• Mobile App ══→ Analytics (Statistics Retrieval)
+• QR Management ══→ Cloud Functions (Token Validation)
+• Subscription Engine ══→ Firestore (Data Persistence)
+
+LEGENDA:
+========
+──→  Conexiuni client-securitate (dotted lines)
+══→  Fluxuri principale de date (thick arrows)
+←→   Comunicare bidirectională (real-time)
+
+CULORI CONCEPTUALE:
+==================
+CLIENT LAYER: Albastru corporate (#2E86AB)
+AUTHENTICATION & SECURITY: Violet securitate (#A23B72)
+BACKEND SERVICES: Portocaliu infrastructură (#F18F01)
+EXTERNAL APIs: Roșu integrări (#C73E1D)
+CORE FEATURES: Verde funcționalități (#6A994E) 

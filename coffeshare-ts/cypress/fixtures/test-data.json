@@ -1,0 +1,193 @@
+{
+  "users": {
+    "validUser": {
+      "email": "test@coffeeshare.com",
+      "password": "password123",
+      "displayName": "Test User",
+      "phone": "+40123456789"
+    },
+    "adminUser": {
+      "email": "admin@coffeeshare.com",
+      "password": "admin123",
+      "displayName": "Admin User",
+      "role": "admin"
+    },
+    "partnerUser": {
+      "email": "partner@coffeeshare.com",
+      "password": "partner123",
+      "displayName": "Partner User",
+      "businessName": "Test Cafe",
+      "role": "partner"
+    }
+  },
+  "subscriptions": {
+    "basic": {
+      "id": "basic-plan",
+      "name": "Basic",
+      "credits": 50,
+      "price": 25.0,
+      "description": "Perfect pentru consumul ocazional",
+      "features": ["50 credite", "Valabilitate 30 zile", "Suport email"]
+    },
+    "premium": {
+      "id": "premium-plan",
+      "name": "Premium",
+      "credits": 120,
+      "price": 50.0,
+      "description": "Ideal pentru consumatorii regulați",
+      "features": [
+        "120 credite",
+        "Valabilitate 60 zile",
+        "Suport prioritar",
+        "Reduceri exclusive"
+      ]
+    },
+    "pro": {
+      "id": "pro-plan",
+      "name": "Pro",
+      "credits": 250,
+      "price": 90.0,
+      "description": "Pentru adevărații iubitori de cafea",
+      "features": [
+        "250 credite",
+        "Valabilitate 90 zile",
+        "Suport 24/7",
+        "Acces early la noi cafenele"
+      ]
+    }
+  },
+  "cafes": {
+    "testCafe1": {
+      "id": "cafe-1",
+      "businessName": "Test Cafe 1",
+      "address": "Strada Test 123, București",
+      "status": "active",
+      "acceptsSubscriptions": true,
+      "location": {
+        "latitude": 44.4268,
+        "longitude": 26.1025
+      }
+    },
+    "testCafe2": {
+      "id": "cafe-2",
+      "businessName": "Test Cafe 2",
+      "address": "Bulevardul Test 456, Cluj-Napoca",
+      "status": "active",
+      "acceptsSubscriptions": true,
+      "location": {
+        "latitude": 46.7712,
+        "longitude": 23.6236
+      }
+    }
+  },
+  "products": {
+    "espresso": {
+      "id": "product-1",
+      "name": "Espresso",
+      "priceLei": 8.5,
+      "beansValue": 10,
+      "category": "coffee",
+      "isActive": true
+    },
+    "cappuccino": {
+      "id": "product-2",
+      "name": "Cappuccino",
+      "priceLei": 12.0,
+      "beansValue": 15,
+      "category": "coffee",
+      "isActive": true
+    },
+    "latte": {
+      "id": "product-3",
+      "name": "Latte",
+      "priceLei": 14.5,
+      "beansValue": 18,
+      "category": "coffee",
+      "isActive": true
+    }
+  },
+  "qrTokens": {
+    "validToken": {
+      "id": "qr-token-1",
+      "token": "mock-qr-token-123",
+      "userId": "mock-user-id",
+      "cafeId": "cafe-1",
+      "type": "payment",
+      "status": "active",
+      "expiresAt": "2024-12-31T23:59:59Z"
+    },
+    "expiredToken": {
+      "id": "qr-token-2",
+      "token": "expired-qr-token",
+      "userId": "mock-user-id",
+      "cafeId": "cafe-1",
+      "type": "payment",
+      "status": "expired",
+      "expiresAt": "2024-01-01T00:00:00Z"
+    }
+  },
+  "transactions": {
+    "successful": {
+      "id": "trans-1",
+      "partnerId": "partner-1",
+      "userId": "mock-user-id",
+      "cafeId": "cafe-1",
+      "cafeName": "Test Cafe 1",
+      "qrTokenId": "qr-token-1",
+      "beansUsed": 10,
+      "earningsRon": 5.5,
+      "status": "completed",
+      "createdAt": "2024-06-13T10:00:00Z"
+    },
+    "failed": {
+      "id": "trans-2",
+      "partnerId": "partner-1",
+      "userId": "mock-user-id",
+      "cafeId": "cafe-1",
+      "cafeName": "Test Cafe 1",
+      "qrTokenId": "qr-token-2",
+      "beansUsed": 0,
+      "earningsRon": 0,
+      "status": "failed",
+      "error": "QR code expirat",
+      "createdAt": "2024-06-13T11:00:00Z"
+    }
+  },
+  "paymentCards": {
+    "validCard": {
+      "number": "4242424242424242",
+      "expiry": "12/25",
+      "cvc": "123",
+      "name": "Test User"
+    },
+    "declinedCard": {
+      "number": "4000000000000002",
+      "expiry": "12/25",
+      "cvc": "123",
+      "name": "Test User"
+    },
+    "expiredCard": {
+      "number": "4242424242424242",
+      "expiry": "01/20",
+      "cvc": "123",
+      "name": "Test User"
+    }
+  },
+  "notifications": {
+    "lowCredits": {
+      "type": "warning",
+      "message": "Ai doar 5 credite rămase în abonament",
+      "action": "Reînnoiește abonamentul"
+    },
+    "subscriptionExpiring": {
+      "type": "info",
+      "message": "Abonamentul expiră în 3 zile",
+      "action": "Prelungește abonamentul"
+    },
+    "transactionSuccess": {
+      "type": "success",
+      "message": "Tranzacție procesată cu succes",
+      "details": "10 beans utilizate la Test Cafe 1"
+    }
+  }
+}
