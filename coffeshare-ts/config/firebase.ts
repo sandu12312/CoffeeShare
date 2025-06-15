@@ -22,9 +22,8 @@ const app = initializeApp(firebaseConfig);
 // Initialize Auth with AsyncStorage persistence
 let auth: Auth;
 try {
-  auth = initializeAuth(app, {
-    persistence: AsyncStorage as any,
-  });
+  // For React Native, we need to use a different approach for persistence
+  auth = initializeAuth(app);
 } catch (error: any) {
   // If already initialized, just get the existing instance
   if (error.code === "auth/already-initialized") {

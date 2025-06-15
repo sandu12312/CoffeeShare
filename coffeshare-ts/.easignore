@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+
+# Development files
+.expo/
+.expo-shared/
+*.log
+.DS_Store
+
+# Documentation and demo
+docs/
+*.md
+*.txt
+README*
+
+# Testing
+__tests__/
+cypress/
+cypress.config.js
+.nyc_output/
+coverage/
+
+# Cypress Cloud setup file
+CYPRESS_CLOUD_SETUP.md
+
+# Scripts and automation
+scripts/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Other build outputs  
+web-build/
+dist/
+build/
+
+# Environment files (handled separately)
+.env* 

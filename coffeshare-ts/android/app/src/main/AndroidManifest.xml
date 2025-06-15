@@ -32,6 +32,7 @@
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="coffeshare"/>
         <data android:scheme="com.sandu123412.licentaa"/>
+        <data android:scheme="exp+coffeshare"/>
       </intent-filter>
       <intent-filter android:autoVerify="true" data-generated="true">
         <action android:name="android.intent.action.VIEW"/>
