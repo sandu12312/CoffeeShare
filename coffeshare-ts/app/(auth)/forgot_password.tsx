@@ -97,7 +97,7 @@ export default function ForgotPassword() {
         <ScrollView contentContainerStyle={styles.scrollView}>
           <View style={styles.logoContainer}>
             <Image
-              source={require("../../assets/images/coffebeans.png")}
+              source={require("../../assets/images/logo.png")}
               style={styles.logo}
               resizeMode="contain"
             />

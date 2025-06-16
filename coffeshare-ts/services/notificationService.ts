@@ -610,50 +610,74 @@ class NotificationService {
     totalBeans: number;
   }> {
     try {
-      // Get user's scans/activity from Firestore
-      const scansQuery = query(
-        collection(db, "scans"),
-        where("userId", "==", userId),
-        orderBy("timestamp", "desc"),
-        limit(100)
-      );
+      // Try to get user's activity from activityLogs collection instead of scans
+      // First try with type filter, if it fails, try without type filter
+      let activitySnapshot;
 
-      const scansSnapshot = await getDocs(scansQuery);
-      const scans = scansSnapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          userId: data.userId || "",
-          cafeId: data.cafeId || data.partnerId || "",
-          partnerId: data.partnerId || "",
-          timestamp: data.timestamp?.toDate() || new Date(),
-          ...data,
-        };
-      });
+      try {
+        const activityQuery = query(
+          collection(db, "activityLogs"),
+          where("userId", "==", userId),
+          where("type", "==", "COFFEE_REDEMPTION"),
+          orderBy("timestamp", "desc"),
+          limit(100)
+        );
+        activitySnapshot = await getDocs(activityQuery);
+      } catch (indexError) {
+        console.log("Index not ready yet, trying simpler query...");
+        // Fallback to simpler query without type filter
+        const simpleQuery = query(
+          collection(db, "activityLogs"),
+          where("userId", "==", userId),
+          orderBy("timestamp", "desc"),
+          limit(100)
+        );
+        activitySnapshot = await getDocs(simpleQuery);
+      }
+      const activities = activitySnapshot.docs
+        .map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            userId: data.userId || "",
+            cafeId: data.cafeId || "",
+            type: data.type || "",
+            timestamp: data.timestamp?.toDate() || new Date(),
+            ...data,
+          };
+        })
+        .filter(
+          (activity) =>
+            activity.type === "COFFEE_REDEMPTION" ||
+            activity.type === "coffee_redemption" ||
+            !activity.type // Include activities without type for backward compatibility
+        );
 
       // Calculate stats
       const now = new Date();
       const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-      const totalCoffees = scans.length;
-      const monthlyScans = scans.filter(
-        (scan) => scan.timestamp >= oneMonthAgo
+      const totalCoffees = activities.length;
+      const monthlyScans = activities.filter(
+        (activity) => activity.timestamp >= oneMonthAgo
       ).length;
 
       // Count unique cafes
       const uniqueCafes = new Set(
-        scans.map((scan) => scan.cafeId || scan.partnerId)
+        activities.map((activity) => activity.cafeId).filter(Boolean)
       ).size;
 
       // Calculate consecutive days (simplified)
       let consecutiveDays = 0;
-      const scanDates = [
-        ...new Set(scans.map((scan) => scan.timestamp.toDateString())),
+      const activityDates = [
+        ...new Set(
+          activities.map((activity) => activity.timestamp.toDateString())
+        ),
       ];
 
-      for (let i = 0; i < Math.min(scanDates.length, 30); i++) {
+      for (let i = 0; i < Math.min(activityDates.length, 30); i++) {
         const checkDate = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-        if (scanDates.includes(checkDate.toDateString())) {
+        if (activityDates.includes(checkDate.toDateString())) {
           consecutiveDays++;
         } else {
           break;
@@ -661,7 +685,7 @@ class NotificationService {
       }
 
       // Get user's current beans (simplified - would get from user document)
-      const totalBeans = scans.length * 10; // Assume 10 beans per scan
+      const totalBeans = activities.length * 10; // Assume 10 beans per activity
 
       return {
         totalCoffees,
@@ -672,7 +696,7 @@ class NotificationService {
       };
     } catch (error) {
       console.error("Error getting user activity stats:", error);
-      // Return default stats if error
+      // Return default stats if error - this prevents the permission error from breaking the app
       return {
         totalCoffees: 0,
         monthlyScans: 0,

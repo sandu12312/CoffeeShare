@@ -14,7 +14,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.coffeshare.app",
@@ -24,10 +26,20 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Allow CoffeShare to use your location to show nearby cafes.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow CoffeShare to use your location to show nearby cafes.",
-        "UIBackgroundModes": ["location"],
+        "UIBackgroundModes": [
+          "location",
+          "location"
+        ],
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": ["com.coffeshare.app"]
+            "CFBundleURLSchemes": [
+              "com.coffeshare.app"
+            ]
+          },
+          {
+            "CFBundleURLSchemes": [
+              "com.coffeshare.app"
+            ]
           }
         ],
         "NSCameraUsageDescription": "Allow CoffeShare to use your camera to scan QR codes."
@@ -54,10 +66,32 @@
               "host": "oauth2redirect"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "com.coffeshare.app",
+              "host": "oauth2redirect"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
       "permissions": [
+        "CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
         "CAMERA",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
@@ -106,6 +140,9 @@
       }
     },
     "sdkVersion": "52.0.0",
-    "owner": "sandu123412"
+    "owner": "sandu123412",
+    "updates": {
+      "url": "https://u.expo.dev/9fa6d258-ed7e-48ae-953b-3db484389a44"
+    }
   }
 }

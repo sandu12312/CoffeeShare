@@ -28,13 +28,12 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
 
   // Error states for inline validation
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
-  const { login, sendVerificationEmail, signInWithGoogle } = useFirebase();
+  const { login, sendVerificationEmail } = useFirebase();
   const { t } = useLanguage();
 
   // Validation functions
@@ -163,49 +162,6 @@ export default function Login() {
     router.push("/(auth)/register");
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      setGoogleLoading(true);
-      const { role } = await signInWithGoogle();
-
-      // Redirect based on user role from new role management system
-      console.log("Google login successful, redirecting user with role:", role);
-      switch (role) {
-        case "admin":
-          router.push("/(admin)/dashboard");
-          break;
-        case "partner":
-          router.push("/(mainCoffeePartners)/dashboard");
-          break;
-        case "user":
-          router.push("/(mainUsers)/dashboard");
-          break;
-        default:
-          // Fallback - treat unknown roles as regular users
-          console.warn(
-            "Unknown role detected, defaulting to user dashboard:",
-            role
-          );
-          router.push("/(mainUsers)/dashboard");
-      }
-    } catch (error: any) {
-      console.error("Google Login Error:", error);
-      if (error.message !== "Google sign in was cancelled or failed") {
-        Alert.alert(
-          t("login.googleSignInErrorTitle"),
-          t("login.googleSignInFailed")
-        );
-      }
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
-
-  const handleFacebookLogin = () => {
-    // TODO: Implement Facebook login
-    console.log("Facebook login pressed");
-  };
-
   return (
     <ImageBackground
       source={require("../../assets/images/coffee-beans-textured-background.jpg")}
@@ -328,33 +284,6 @@ export default function Login() {
                 </Text>
               )}
             </TouchableOpacity>
-
-            <View style={styles.dividerContainer}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>{t("common.orDivider")}</Text>
-              <View style={styles.divider} />
-            </View>
-
-            <View style={styles.socialLoginContainer}>
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={handleGoogleLogin}
-                disabled={googleLoading}
-              >
-                {googleLoading ? (
-                  <ActivityIndicator color="#DB4437" />
-                ) : (
-                  <Ionicons name="logo-google" size={24} color="#DB4437" />
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={handleFacebookLogin}
-              >
-                <Ionicons name="logo-facebook" size={24} color="#4267B2" />
-              </TouchableOpacity>
-            </View>
 
             <View style={styles.registerContainer}>
               <Text style={styles.registerText}>
@@ -532,40 +461,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "rgba(139, 69, 19, 0.3)",
-  },
-  dividerText: {
-    color: "#8B4513",
-    marginHorizontal: 10,
-    fontSize: 14,
-  },
-  socialLoginContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: 20,
-  },
-  socialButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginHorizontal: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
-  },
+
   registerContainer: {
     flexDirection: "row",
     justifyContent: "center",

@@ -44,19 +44,6 @@
         }
       },
       "package": "com.sandu123412.licentaa",
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "autoVerify": true,
-          "data": [
-            {
-              "scheme": "com.coffeshare.app",
-              "host": "oauth2redirect"
-            }
-          ],
-          "category": ["BROWSABLE", "DEFAULT"]
-        }
-      ],
       "permissions": ["CAMERA"]
     },
     "web": {

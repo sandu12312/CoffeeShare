@@ -25,6 +25,7 @@ import {
 import Toast from "react-native-toast-message";
 import { Toast as ErrorToast } from "../../components/ErrorComponents";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
+import PaymentModalSimple from "../../components/PaymentModalSimple";
 
 const { width } = Dimensions.get("window");
 const { height: screenHeight } = Dimensions.get("screen");
@@ -42,6 +43,14 @@ export default function SubscriptionsScreen() {
   const [subscriptionPlans, setSubscriptionPlans] = useState<
     SubscriptionPlan[]
   >([]);
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [selectedPlanForPayment, setSelectedPlanForPayment] = useState<{
+    planId: string;
+    planName: string;
+    price: number;
+    currency: string;
+    userId: string;
+  } | null>(null);
 
   // Animation values for card scaling
   const animatedScales = useRef<Animated.Value[]>([]).current;
@@ -107,7 +116,7 @@ export default function SubscriptionsScreen() {
     setActiveIndex(index);
   };
 
-  // Subscribe to a plan
+  // Subscribe to a plan - now opens payment modal
   const subscribeToPlan = async () => {
     if (!currentUser) {
       showError(t("subscriptions.loginRequired"));
@@ -121,14 +130,29 @@ export default function SubscriptionsScreen() {
       return;
     }
 
+    const selectedPlan = subscriptionPlans[activeIndex];
+
+    // Set up payment data and show payment modal
+    setSelectedPlanForPayment({
+      planId: selectedPlan.id!,
+      planName: selectedPlan.name,
+      price: selectedPlan.price,
+      currency: "RON", // Romanian Lei currency
+      userId: currentUser.uid,
+    });
+    setPaymentModalVisible(true);
+  };
+
+  // Handle successful payment
+  const handlePaymentSuccess = async () => {
+    if (!currentUser || !selectedPlanForPayment) return;
+
     setLoading(true);
     try {
-      const selectedPlan = subscriptionPlans[activeIndex];
-
-      // Create user subscription
+      // Create user subscription after successful payment
       await SubscriptionService.createUserSubscription(
         currentUser.uid,
-        selectedPlan.id!
+        selectedPlanForPayment.planId
       );
 
       // Show success message
@@ -136,7 +160,10 @@ export default function SubscriptionsScreen() {
         type: "success",
         text1: t("subscriptions.subscriptionActivated"),
         text2: t("subscriptions.receivedBeans", {
-          credits: selectedPlan.credits,
+          credits:
+            subscriptionPlans.find(
+              (p) => p.id === selectedPlanForPayment.planId
+            )?.credits || 0,
         }),
       });
     } catch (error) {
@@ -148,6 +175,7 @@ export default function SubscriptionsScreen() {
       });
     } finally {
       setLoading(false);
+      setSelectedPlanForPayment(null);
     }
   };
 
@@ -381,6 +409,17 @@ export default function SubscriptionsScreen() {
         </Modal>
 
         <BottomTabBar />
+
+        {/* Payment Modal */}
+        <PaymentModalSimple
+          visible={paymentModalVisible}
+          onClose={() => {
+            setPaymentModalVisible(false);
+            setSelectedPlanForPayment(null);
+          }}
+          onSuccess={handlePaymentSuccess}
+          subscriptionData={selectedPlanForPayment}
+        />
 
         {/* Error Components */}
         <ErrorToast

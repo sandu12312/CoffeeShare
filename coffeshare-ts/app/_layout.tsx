@@ -11,10 +11,11 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { enableScreens } from "react-native-screens";
 import { SecurityManager } from "../utils/securityManager";
 import { SecurityMonitoring } from "../utils/monitoring";
-import * as Sentry from '@sentry/react-native';
+import * as Sentry from "@sentry/react-native";
+// import { StripeProvider } from "@stripe/stripe-react-native"; // Removed for Expo Go compatibility
 
 Sentry.init({
-  dsn: 'https://9e95d16c980d636c8547f27f44d3f2d5@o4509464757010432.ingest.de.sentry.io/4509464767758416',
+  dsn: "https://9e95d16c980d636c8547f27f44d3f2d5@o4509464757010432.ingest.de.sentry.io/4509464767758416",
 
   // Adds more context data to events (IP address, cookies, user, etc.)
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
@@ -23,7 +24,10 @@ Sentry.init({
   // Configure Session Replay
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1,
-  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+  integrations: [
+    Sentry.mobileReplayIntegration(),
+    Sentry.feedbackIntegration(),
+  ],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,
