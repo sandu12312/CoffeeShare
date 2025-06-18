@@ -9,9 +9,9 @@ import {
   Alert,
   Animated,
   Dimensions,
+  ImageBackground,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient";
 import { useLanguage } from "../../context/LanguageContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
 import BottomTabBar from "../../components/BottomTabBar";
@@ -372,9 +372,10 @@ export default function QRScreen() {
   // Show subscription required message
   if (!canGenerate && !isLoading) {
     return (
-      <LinearGradient
-        colors={["#F5E6D3", "#E8D5B7", "#D4C4A8"]}
+      <ImageBackground
+        source={require("../../assets/images/coffee-beans-textured-background.jpg")}
         style={styles.background}
+        resizeMode="cover"
       >
         <ScreenWrapper>
           <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
@@ -403,14 +404,15 @@ export default function QRScreen() {
           </Animated.View>
           <BottomTabBar />
         </ScreenWrapper>
-      </LinearGradient>
+      </ImageBackground>
     );
   }
 
   return (
-    <LinearGradient
-      colors={["#F5E6D3", "#E8D5B7", "#D4C4A8"]}
+    <ImageBackground
+      source={require("../../assets/images/coffee-beans-textured-background.jpg")}
       style={styles.background}
+      resizeMode="cover"
     >
       <ScreenWrapper>
         <Animated.View
@@ -575,7 +577,7 @@ export default function QRScreen() {
         </Animated.View>
         <BottomTabBar />
       </ScreenWrapper>
-    </LinearGradient>
+    </ImageBackground>
   );
 }
 
@@ -588,6 +590,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 40,
     paddingBottom: 20,
+    backgroundColor: "rgba(245, 230, 211, 0.7)", // Less transparent overlay
   },
 
   // Header Styles

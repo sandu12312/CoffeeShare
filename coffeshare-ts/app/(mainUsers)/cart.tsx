@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   ScrollView,
   RefreshControl,
+  ImageBackground,
 } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useFocusEffect } from "@react-navigation/native";
@@ -392,10 +393,16 @@ export default function CartScreen() {
   if (loading) {
     return (
       <ScreenWrapper>
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#8B4513" />
-          <Text style={styles.loadingText}>{t("cart.loading")}</Text>
-        </View>
+        <ImageBackground
+          source={require("../../assets/images/coffee-beans-textured-background.jpg")}
+          style={styles.backgroundImage}
+          resizeMode="cover"
+        >
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color="#8B4513" />
+            <Text style={styles.loadingText}>{t("cart.loading")}</Text>
+          </View>
+        </ImageBackground>
         <BottomTabBar />
       </ScreenWrapper>
     );
@@ -404,17 +411,25 @@ export default function CartScreen() {
   if (!cart || cart.items.length === 0) {
     return (
       <ScreenWrapper>
-        <View style={styles.centerContainer}>
-          <Ionicons name="cart-outline" size={80} color="#D7CCC8" />
-          <Text style={styles.emptyTitle}>{t("cart.emptyCart")}</Text>
-          <Text style={styles.emptySubtitle}>{t("cart.emptyCartMessage")}</Text>
-          <TouchableOpacity
-            style={styles.browseButton}
-            onPress={() => router.push("/(mainUsers)/map")}
-          >
-            <Text style={styles.browseButtonText}>{t("findCafes")}</Text>
-          </TouchableOpacity>
-        </View>
+        <ImageBackground
+          source={require("../../assets/images/coffee-beans-textured-background.jpg")}
+          style={styles.backgroundImage}
+          resizeMode="cover"
+        >
+          <View style={styles.centerContainer}>
+            <Ionicons name="cart-outline" size={80} color="#D7CCC8" />
+            <Text style={styles.emptyTitle}>{t("cart.emptyCart")}</Text>
+            <Text style={styles.emptySubtitle}>
+              {t("cart.emptyCartMessage")}
+            </Text>
+            <TouchableOpacity
+              style={styles.browseButton}
+              onPress={() => router.push("/(mainUsers)/map")}
+            >
+              <Text style={styles.browseButtonText}>{t("findCafes")}</Text>
+            </TouchableOpacity>
+          </View>
+        </ImageBackground>
         <BottomTabBar />
       </ScreenWrapper>
     );
@@ -422,93 +437,99 @@ export default function CartScreen() {
 
   return (
     <ScreenWrapper>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backButton}
-          >
-            <Ionicons name="arrow-back" size={24} color="#3C2415" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t("cart.title")}</Text>
-          <View style={styles.headerRight}>
-            <Text style={styles.cafeName}>{cart.cafeName}</Text>
+      <ImageBackground
+        source={require("../../assets/images/coffee-beans-textured-background.jpg")}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      >
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={styles.backButton}
+            >
+              <Ionicons name="arrow-back" size={24} color="#3C2415" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>{t("cart.title")}</Text>
+            <View style={styles.headerRight}>
+              <Text style={styles.cafeName}>{cart.cafeName}</Text>
+            </View>
           </View>
-        </View>
 
-        <FlashList
-          data={cart.items}
-          renderItem={renderCartItem}
-          keyExtractor={(item) => item.product.id}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              colors={["#8B4513"]}
-              tintColor="#8B4513"
-            />
-          }
-          estimatedItemSize={120}
-          removeClippedSubviews={true}
-        />
-
-        <View style={styles.bottomContainer}>
-          <View style={styles.totalContainer}>
-            <Text style={styles.totalLabel}>{t("cart.total")}:</Text>
-            <View style={styles.totalValueContainer}>
-              <Ionicons
-                name="ellipse"
-                size={16}
-                color="#8B4513"
-                style={styles.totalBeansIcon}
+          <FlashList
+            data={cart.items}
+            renderItem={renderCartItem}
+            keyExtractor={(item) => item.product.id}
+            contentContainerStyle={styles.listContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                colors={["#8B4513"]}
+                tintColor="#8B4513"
               />
-              <Text style={styles.totalValue}>
-                {cart.totalBeans} {t("cart.beans")}
-              </Text>
-            </View>
-          </View>
+            }
+            estimatedItemSize={120}
+            removeClippedSubviews={true}
+          />
 
-          {subscriptionStatus.isActive && (
-            <View style={styles.beansRemainingContainer}>
-              <Text style={styles.beansRemainingText}>
-                {t("cart.available")}: {subscriptionStatus.beansLeft}{" "}
-                {t("cart.beans")}
-              </Text>
-              <Text style={styles.beansAfterPurchaseText}>
-                {t("cart.afterPurchase")}:{" "}
-                {subscriptionStatus.beansLeft - cart.totalBeans}{" "}
-                {t("cart.beans")}
-              </Text>
-              {subscriptionStatus.beansLeft < cart.totalBeans && (
-                <Text style={styles.insufficientBeansText}>
-                  ⚠️ {t("cart.insufficientBeans")}
+          <View style={styles.bottomContainer}>
+            <View style={styles.totalContainer}>
+              <Text style={styles.totalLabel}>{t("cart.total")}:</Text>
+              <View style={styles.totalValueContainer}>
+                <Ionicons
+                  name="ellipse"
+                  size={16}
+                  color="#8B4513"
+                  style={styles.totalBeansIcon}
+                />
+                <Text style={styles.totalValue}>
+                  {cart.totalBeans} {t("cart.beans")}
                 </Text>
-              )}
+              </View>
             </View>
-          )}
 
-          <TouchableOpacity
-            style={[
-              styles.checkoutButton,
-              processingCheckout && styles.checkoutButtonDisabled,
-            ]}
-            onPress={handleCheckout}
-            disabled={processingCheckout}
-          >
-            {processingCheckout ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <Ionicons name="qr-code" size={24} color="#FFFFFF" />
-                <Text style={styles.checkoutButtonText}>
-                  {t("cart.checkout")}
+            {subscriptionStatus.isActive && (
+              <View style={styles.beansRemainingContainer}>
+                <Text style={styles.beansRemainingText}>
+                  {t("cart.available")}: {subscriptionStatus.beansLeft}{" "}
+                  {t("cart.beans")}
                 </Text>
-              </>
+                <Text style={styles.beansAfterPurchaseText}>
+                  {t("cart.afterPurchase")}:{" "}
+                  {subscriptionStatus.beansLeft - cart.totalBeans}{" "}
+                  {t("cart.beans")}
+                </Text>
+                {subscriptionStatus.beansLeft < cart.totalBeans && (
+                  <Text style={styles.insufficientBeansText}>
+                    ⚠️ {t("cart.insufficientBeans")}
+                  </Text>
+                )}
+              </View>
             )}
-          </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.checkoutButton,
+                processingCheckout && styles.checkoutButtonDisabled,
+              ]}
+              onPress={handleCheckout}
+              disabled={processingCheckout}
+            >
+              {processingCheckout ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Ionicons name="qr-code" size={24} color="#FFFFFF" />
+                  <Text style={styles.checkoutButtonText}>
+                    {t("cart.checkout")}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </ImageBackground>
       <BottomTabBar />
 
       {/* Error Components */}
@@ -526,9 +547,12 @@ export default function CartScreen() {
 }
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#F5E6D3",
+    backgroundColor: "rgba(245, 230, 211, 0.7)", // Less transparent overlay
   },
   centerContainer: {
     flex: 1,

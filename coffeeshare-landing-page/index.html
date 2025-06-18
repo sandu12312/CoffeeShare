@@ -3,11 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CoffeeShare - Your Citywide Coffee Subscription</title>
+    <title>CoffeeShare - Connect. Discover. Sip.</title>
+    <meta
+      name="description"
+      content="CoffeeShare connects coffee lovers with local cafes through innovative QR-based subscriptions. Discover hidden gems, manage subscriptions, and enjoy seamless coffee experiences across your city."
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
@@ -23,13 +27,17 @@
       <header class="main-header" data-aos="fade-down">
         <div class="container">
           <nav class="main-nav">
-            <a href="#" class="logo">CoffeeShare</a>
+            <a href="#" class="logo">
+              <span class="logo-icon">☕</span>
+              CoffeeShare
+            </a>
             <ul>
               <li><a href="#how-it-works">How It Works</a></li>
               <li><a href="#features">Features</a></li>
+              <li><a href="#subscription-plans">Plans</a></li>
               <li><a href="#partners">For Partners</a></li>
               <li>
-                <a href="#contact-form" class="nav-button">Become a Partner</a>
+                <a href="#contact-form" class="nav-button">Join as Partner</a>
               </li>
             </ul>
             <button class="mobile-nav-toggle" aria-label="Toggle navigation">
@@ -42,23 +50,41 @@
       <!-- Hero Section -->
       <section class="hero-section">
         <div class="hero-background">
-          <!-- Using placeholder service for reliable coffee shop image -->
           <img
-            src="https://images.pexels.com/photos/2074130/pexels-photo-2074130.jpeg?auto=compress&cs=tinysrgb&w=1600&h=900&fit=crop"
-            alt="Cozy cafe atmosphere"
+            src="https://images.pexels.com/photos/2074130/pexels-photo-2074130.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop"
+            alt="Modern coffee shop with warm lighting and comfortable seating"
           />
         </div>
         <div class="container hero-content">
-          <h1 data-aos="fade-up">Unlock Your City's Coffee Scene.</h1>
+          <h1 data-aos="fade-up">Connect. Discover. Sip.</h1>
           <p data-aos="fade-up" data-aos-delay="100">
-            One subscription, endless local coffee experiences. Discover, sip,
-            and enjoy.
+            Transform how you experience coffee with smart subscriptions,
+            interactive maps, and seamless QR payments. One app, unlimited
+            coffee adventures across your city.
           </p>
+          <div class="hero-stats" data-aos="fade-up" data-aos-delay="150">
+            <div class="stat">
+              <span class="stat-number">50+</span>
+              <span class="stat-label">Partner Cafes</span>
+            </div>
+            <div class="stat">
+              <span class="stat-number">1000+</span>
+              <span class="stat-label">Happy Users</span>
+            </div>
+            <div class="stat">
+              <span class="stat-number">10K+</span>
+              <span class="stat-label">Coffees Served</span>
+            </div>
+          </div>
           <div class="hero-cta" data-aos="fade-up" data-aos-delay="200">
-            <a href="#app-download" class="cta-button primary"
-              >Download the App</a
-            >
-            <a href="#how-it-works" class="cta-button secondary">Learn More</a>
+            <a href="#app-download" class="cta-button primary">
+              <span class="cta-icon">📱</span>
+              Download CoffeeShare
+            </a>
+            <a href="#how-it-works" class="cta-button secondary">
+              <span class="cta-icon">▶️</span>
+              Watch Demo
+            </a>
           </div>
         </div>
         <div
@@ -66,7 +92,7 @@
           data-aos="fade-up"
           data-aos-delay="300"
         >
-          <span>Scroll Down</span>
+          <span>Discover More</span>
           <svg
             width="24"
             height="24"
@@ -89,46 +115,65 @@
       <section id="how-it-works" class="how-it-works-section">
         <div class="container">
           <h2 data-aos="fade-up">Your Coffee Journey in 4 Simple Steps</h2>
+          <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+            From signup to sip - we've made it incredibly simple
+          </p>
           <div class="steps-container">
             <div class="step" data-aos="fade-up" data-aos-delay="0">
+              <div class="step-number">1</div>
               <div class="step-icon">
                 <img
-                  src="https://api.iconify.design/mdi:account-plus.svg?color=%238B4513&width=48"
+                  src="https://api.iconify.design/mdi:account-plus.svg?color=%238B4513&width=64"
                   alt="Sign up icon"
                 />
               </div>
-              <h3>1. Sign Up</h3>
-              <p>Create your free CoffeeShare account in seconds.</p>
+              <h3>Create Account</h3>
+              <p>
+                Sign up with your email or social login. Set your coffee
+                preferences and location.
+              </p>
             </div>
             <div class="step" data-aos="fade-up" data-aos-delay="100">
+              <div class="step-number">2</div>
               <div class="step-icon">
                 <img
-                  src="https://api.iconify.design/mdi:coffee.svg?color=%238B4513&width=48"
+                  src="https://api.iconify.design/mdi:crown.svg?color=%238B4513&width=64"
                   alt="Subscription icon"
                 />
               </div>
-              <h3>2. Subscribe</h3>
-              <p>Choose a plan that perfectly fits your coffee cravings.</p>
+              <h3>Choose Your Plan</h3>
+              <p>
+                Select from Coffee Lover (150 beans), Daily Lover (250 beans),
+                or custom enterprise plans.
+              </p>
             </div>
             <div class="step" data-aos="fade-up" data-aos-delay="200">
+              <div class="step-number">3</div>
               <div class="step-icon">
                 <img
-                  src="https://api.iconify.design/mdi:map-marker-radius.svg?color=%238B4513&width=48"
+                  src="https://api.iconify.design/mdi:map-marker-radius.svg?color=%238B4513&width=64"
                   alt="Map icon"
                 />
               </div>
-              <h3>3. Explore & Visit</h3>
-              <p>Discover amazing local cafes on our interactive map.</p>
+              <h3>Discover Cafes</h3>
+              <p>
+                Browse interactive maps, read reviews, check opening hours, and
+                find your next favorite spot.
+              </p>
             </div>
             <div class="step" data-aos="fade-up" data-aos-delay="300">
+              <div class="step-number">4</div>
               <div class="step-icon">
                 <img
-                  src="https://api.iconify.design/mdi:qrcode-scan.svg?color=%238B4513&width=48"
+                  src="https://api.iconify.design/mdi:qrcode-scan.svg?color=%238B4513&width=64"
                   alt="QR code icon"
                 />
               </div>
-              <h3>4. Scan & Sip</h3>
-              <p>Generate your QR code and enjoy your delicious coffee!</p>
+              <h3>Scan & Enjoy</h3>
+              <p>
+                Generate your secure QR code, show it to the barista, and enjoy
+                your perfectly crafted coffee!
+              </p>
             </div>
           </div>
         </div>
@@ -140,194 +185,412 @@
           <h2 data-aos="fade-up">
             Everything You Need for Your Coffee Adventures
           </h2>
+
+          <!-- Interactive Map Feature -->
           <div class="feature-highlight">
             <div class="feature-text" data-aos="fade-right">
-              <h3>Discover Hidden Gems</h3>
+              <h3>🗺️ Smart Cafe Discovery</h3>
               <p>
-                Our interactive map doesn't just show cafes; it reveals details,
-                ratings, opening hours, and helps you navigate to your next
-                favorite spot. Filter by distance, rating, or amenities.
+                Our intelligent map doesn't just show locations - it reveals
+                opening hours, user ratings, available amenities, and real-time
+                availability. Filter by distance, specialty drinks, Wi-Fi
+                availability, or atmosphere to find your perfect coffee spot.
               </p>
-              <a href="#app-download" class="text-link">Get the App →</a>
-            </div>
-            <div class="feature-image" data-aos="fade-left">
-              <!-- App screenshot placeholder -->
-              <img
-                src="https://via.placeholder.com/600x800/8B4513/FFFFFF?text=CoffeeShare+Map+View"
-                alt="CoffeeShare app map view"
-                style="
-                  border-radius: 20px;
-                  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-                "
-              />
-            </div>
-          </div>
-          <div class="feature-highlight reverse">
-            <div class="feature-text" data-aos="fade-left">
-              <h3>Subscriptions Made Simple</h3>
-              <p>
-                Choose from flexible plans like Student, Elite, or Premium.
-                Manage your subscription, track usage, and upgrade or downgrade
-                anytime, right from the app.
-              </p>
-              <a href="#app-download" class="text-link">See Plans in App →</a>
-            </div>
-            <div class="feature-image" data-aos="fade-right">
-              <!-- App screenshot placeholder -->
-              <img
-                src="https://via.placeholder.com/600x800/D2691E/FFFFFF?text=Subscription+Plans"
-                alt="CoffeeShare app subscription view"
-                style="
-                  border-radius: 20px;
-                  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-                "
-              />
-            </div>
-          </div>
-          <div class="feature-highlight">
-            <div class="feature-text" data-aos="fade-right">
-              <h3>Seamless Cafe Check-ins</h3>
-              <p>
-                No more fumbling for loyalty cards. Generate a unique, secure QR
-                code instantly when you're ready to order. The barista scans it,
-                and you're good to go!
-              </p>
+              <ul class="feature-benefits">
+                <li>✅ Real-time cafe availability</li>
+                <li>✅ User reviews and ratings</li>
+                <li>✅ Advanced filtering options</li>
+                <li>✅ Navigation integration</li>
+              </ul>
               <a href="#app-download" class="text-link"
-                >Experience Easy Check-ins →</a
+                >Explore Map Features →</a
               >
             </div>
             <div class="feature-image" data-aos="fade-left">
-              <!-- App screenshot placeholder -->
               <img
-                src="https://via.placeholder.com/600x800/A0522D/FFFFFF?text=QR+Code+Scanner"
-                alt="CoffeeShare app QR code view"
-                style="
-                  border-radius: 20px;
-                  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-                "
+                src="https://images.pexels.com/photos/1307698/pexels-photo-1307698.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop"
+                alt="CoffeeShare app map view showing nearby cafes"
+                class="app-mockup"
               />
+              <div class="mockup-overlay">
+                <div class="mockup-screen">
+                  <h4>📍 5 cafes nearby</h4>
+                  <p>Central Perk - 4.8⭐ (2 min walk)</p>
+                  <p>Bean There - 4.6⭐ (5 min walk)</p>
+                  <p>Grind Coffee - 4.7⭐ (8 min walk)</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subscription Management Feature -->
+          <div class="feature-highlight reverse">
+            <div class="feature-text" data-aos="fade-left">
+              <h3>💎 Flexible Subscriptions</h3>
+              <p>
+                Choose from carefully crafted plans that fit your lifestyle.
+                Track your usage with our bean counter, upgrade or downgrade
+                anytime, and manage everything through our intuitive dashboard.
+              </p>
+              <div class="subscription-preview">
+                <div class="plan-card">
+                  <h4>Coffee Lover</h4>
+                  <p class="plan-price">369 RON/month</p>
+                  <p class="plan-beans">150 coffee beans</p>
+                </div>
+                <div class="plan-card featured">
+                  <h4>Daily Lover</h4>
+                  <p class="plan-price">500 RON/month</p>
+                  <p class="plan-beans">250 coffee beans</p>
+                  <span class="plan-badge">Most Popular</span>
+                </div>
+              </div>
+              <a href="#subscription-plans" class="text-link"
+                >View All Plans →</a
+              >
+            </div>
+            <div class="feature-image" data-aos="fade-right">
+              <img
+                src="https://images.pexels.com/photos/2306281/pexels-photo-2306281.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop"
+                alt="Professional barista preparing artisan coffee"
+                class="app-mockup"
+              />
+            </div>
+          </div>
+
+          <!-- QR Code Feature -->
+          <div class="feature-highlight">
+            <div class="feature-text" data-aos="fade-right">
+              <h3>🔒 Secure QR Payments</h3>
+              <p>
+                Say goodbye to loyalty cards and complicated payment processes.
+                Our secure, time-limited QR codes ensure seamless transactions
+                while protecting your privacy and subscription details.
+              </p>
+              <ul class="feature-benefits">
+                <li>🔐 Bank-level security encryption</li>
+                <li>⏰ Time-limited QR codes</li>
+                <li>📱 Instant generation</li>
+                <li>🚀 Lightning-fast scanning</li>
+              </ul>
+              <a href="#app-download" class="text-link"
+                >Experience Seamless Payments →</a
+              >
+            </div>
+            <div class="feature-image" data-aos="fade-left">
+              <img
+                src="https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop"
+                alt="QR code scanning interface in CoffeeShare app"
+                class="app-mockup"
+              />
+              <div class="qr-demo">
+                <div class="qr-placeholder">
+                  <div class="qr-grid">
+                    <div class="qr-square"></div>
+                    <div class="qr-square filled"></div>
+                    <div class="qr-square"></div>
+                    <div class="qr-square filled"></div>
+                  </div>
+                  <p>Secure QR Code</p>
+                  <p class="qr-timer">Expires in: 4:37</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Subscription Plans Section -->
+      <section id="subscription-plans" class="subscription-section">
+        <div class="container">
+          <h2 data-aos="fade-up">Choose Your Coffee Adventure</h2>
+          <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+            Flexible plans designed for every coffee lifestyle
+          </p>
+
+          <div class="plans-container" data-aos="fade-up" data-aos-delay="200">
+            <div class="plan-card">
+              <div class="plan-header">
+                <h3>Coffee Lover</h3>
+                <div class="plan-price">
+                  <span class="currency">RON</span>
+                  <span class="amount">369</span>
+                  <span class="period">/month</span>
+                </div>
+              </div>
+              <div class="plan-features">
+                <div class="feature-highlight-item">
+                  <span class="feature-icon">☕</span>
+                  <span>150 coffee beans</span>
+                </div>
+                <div class="feature-item">📍 Access to all partner cafes</div>
+                <div class="feature-item">🗺️ Interactive cafe map</div>
+                <div class="feature-item">💳 Secure QR payments</div>
+                <div class="feature-item">📊 Usage analytics</div>
+              </div>
+              <button class="plan-button">Choose Plan</button>
+            </div>
+
+            <div class="plan-card featured">
+              <div class="plan-badge">Most Popular</div>
+              <div class="plan-header">
+                <h3>Daily Lover</h3>
+                <div class="plan-price">
+                  <span class="currency">RON</span>
+                  <span class="amount">500</span>
+                  <span class="period">/month</span>
+                </div>
+              </div>
+              <div class="plan-features">
+                <div class="feature-highlight-item">
+                  <span class="feature-icon">☕</span>
+                  <span>250 coffee beans</span>
+                </div>
+                <div class="feature-item">📍 Access to all partner cafes</div>
+                <div class="feature-item">🗺️ Interactive cafe map</div>
+                <div class="feature-item">💳 Secure QR payments</div>
+                <div class="feature-item">📊 Advanced analytics</div>
+                <div class="feature-item">🎯 Priority support</div>
+                <div class="feature-item">🎁 Exclusive cafe events</div>
+              </div>
+              <button class="plan-button primary">Choose Plan</button>
+            </div>
+
+            <div class="plan-card">
+              <div class="plan-header">
+                <h3>Enterprise</h3>
+                <div class="plan-price">
+                  <span class="currency">Custom</span>
+                  <span class="amount">Pricing</span>
+                </div>
+              </div>
+              <div class="plan-features">
+                <div class="feature-highlight-item">
+                  <span class="feature-icon">🏢</span>
+                  <span>Unlimited for teams</span>
+                </div>
+                <div class="feature-item">👥 Team management</div>
+                <div class="feature-item">📈 Corporate analytics</div>
+                <div class="feature-item">🔧 Custom integrations</div>
+                <div class="feature-item">📞 Dedicated support</div>
+                <div class="feature-item">📋 Expense reporting</div>
+              </div>
+              <button class="plan-button">Contact Sales</button>
             </div>
           </div>
         </div>
       </section>
 
       <!-- App Download Section -->
-      <section
-        id="app-download"
-        class="app-download-section"
-        data-aos="fade-up"
-      >
+      <section id="app-download" class="app-download-section">
         <div class="container">
-          <h2>Ready to Start Exploring?</h2>
-          <p>Download the CoffeeShare app today and begin your journey.</p>
-          <div class="app-download-buttons-large">
-            <a href="#" class="app-button app-store">
-              <img
-                src="https://api.iconify.design/mdi:apple.svg?color=%23FFFFFF&width=32"
-                alt="Apple logo"
-              />
-              <span>Download on the <strong>App Store</strong></span>
-            </a>
-            <a href="#" class="app-button google-play">
-              <img
-                src="https://api.iconify.design/mdi:google-play.svg?color=%23FFFFFF&width=32"
-                alt="Google Play logo"
-              />
-              <span>Get it on <strong>Google Play</strong></span>
-            </a>
+          <div class="download-content" data-aos="fade-up">
+            <h2>Ready to Transform Your Coffee Experience?</h2>
+            <p>
+              Join thousands of coffee lovers who have already discovered their
+              new favorite cafes with CoffeeShare. Download now and get your
+              first week free!
+            </p>
+            <div class="app-download-buttons-large">
+              <a
+                href="#"
+                class="app-button"
+                data-aos="fade-up"
+                data-aos-delay="100"
+              >
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
+                  alt="Download on Google Play"
+                />
+              </a>
+              <a
+                href="#"
+                class="app-button"
+                data-aos="fade-up"
+                data-aos-delay="200"
+              >
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
+                  alt="Download on App Store"
+                />
+              </a>
+            </div>
+            <div class="download-stats" data-aos="fade-up" data-aos-delay="300">
+              <div class="stat">
+                <span class="stat-icon">⭐</span>
+                <span class="stat-text">4.8/5 Rating</span>
+              </div>
+              <div class="stat">
+                <span class="stat-icon">📱</span>
+                <span class="stat-text">10K+ Downloads</span>
+              </div>
+              <div class="stat">
+                <span class="stat-icon">💖</span>
+                <span class="stat-text">99% User Satisfaction</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- For Partners Section -->
+      <!-- Partners Section -->
       <section id="partners" class="partners-section">
         <div class="container">
           <div class="partner-content">
             <div class="partner-text" data-aos="fade-right">
-              <h2>Grow Your Cafe with CoffeeShare</h2>
+              <h2>Partner With CoffeeShare</h2>
               <p>
-                Join our curated network of local cafes and connect with a
-                passionate community of coffee lovers. We provide the tools and
-                the audience; you provide the amazing coffee.
+                Join Romania's fastest-growing coffee network and connect with
+                passionate coffee lovers in your area. Our platform helps you
+                increase customer retention and attract new customers
+                effortlessly.
               </p>
               <ul>
-                <li>Increase visibility and attract loyal customers.</li>
-                <li>Boost foot traffic during all hours.</li>
-                <li>Simple QR code scanning – no complex hardware needed.</li>
-                <li>Gain insights into customer visits and preferences.</li>
+                <li>
+                  <strong>🎯 Targeted Customer Acquisition:</strong> Reach
+                  coffee enthusiasts actively looking for new experiences
+                </li>
+                <li>
+                  <strong>📊 Analytics Dashboard:</strong> Track customer
+                  visits, popular items, and revenue insights
+                </li>
+                <li>
+                  <strong>💳 Simplified Payments:</strong> QR-based transactions
+                  reduce wait times and improve customer flow
+                </li>
+                <li>
+                  <strong>🔄 Recurring Revenue:</strong> Subscription model
+                  ensures consistent customer base
+                </li>
+                <li>
+                  <strong>📱 Easy Integration:</strong> Simple setup with our
+                  partner portal and staff training
+                </li>
               </ul>
-              <a href="#contact-form" class="cta-button primary"
-                >Become a Partner</a
-              >
+              <a href="#contact-form" class="text-link">
+                Become a Partner Today →
+              </a>
             </div>
             <div class="partner-image" data-aos="fade-left">
-              <!-- Barista image from Pexels -->
               <img
-                src="https://images.pexels.com/photos/2306281/pexels-photo-2306281.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop"
-                alt="Friendly barista serving coffee"
-                style="border-radius: 20px"
+                src="./assets/images/patrick-tomasso-GXXYkSwndP4-unsplash.jpg"
+                alt="Coffee shop interior showcasing partnership benefits"
               />
+              <div class="partner-overlay">
+                <div class="partner-stat">
+                  <h4>Average Partner Benefits</h4>
+                  <div class="benefit-item">📈 +40% new customers</div>
+                  <div class="benefit-item">💰 +25% revenue growth</div>
+                  <div class="benefit-item">⏰ -50% checkout time</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- Partner Contact Form Section -->
+      <!-- Contact Form Section -->
       <section id="contact-form" class="contact-form-section">
         <div class="container">
-          <h2 data-aos="fade-up">Let's Brew Something Great Together</h2>
-          <p data-aos="fade-up" data-aos-delay="100">
-            Interested in becoming a CoffeePartner? Fill out the form, and we'll
-            be in touch!
+          <h2 data-aos="fade-up">Ready to Join the CoffeeShare Network?</h2>
+          <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+            Let's discuss how CoffeeShare can help grow your coffee business
           </p>
           <form id="partner-form" data-aos="fade-up" data-aos-delay="200">
             <div class="form-row">
               <div class="form-group">
-                <label for="businessName"
-                  >Business / Cafe Name <span>*</span></label
-                >
+                <label for="business-name">
+                  Business Name <span class="required">*</span>
+                </label>
                 <input
                   type="text"
-                  id="businessName"
+                  id="business-name"
                   name="businessName"
                   required
+                  placeholder="Your Coffee Shop Name"
                 />
               </div>
               <div class="form-group">
-                <label for="contactName"
-                  >Contact Person Name <span>*</span></label
-                >
+                <label for="contact-name">
+                  Contact Person <span class="required">*</span>
+                </label>
                 <input
                   type="text"
-                  id="contactName"
+                  id="contact-name"
                   name="contactName"
                   required
+                  placeholder="Your Full Name"
                 />
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label for="email">Email Address <span>*</span></label>
-                <input type="email" id="email" name="email" required />
+                <label for="email">
+                  Email Address <span class="required">*</span>
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  placeholder="business@example.com"
+                />
               </div>
               <div class="form-group">
-                <label for="phone">Phone Number</label>
-                <input type="tel" id="phone" name="phone" />
+                <label for="phone">
+                  Phone Number <span class="required">*</span>
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  required
+                  placeholder="+40 XXX XXX XXX"
+                />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="location">
+                  Location (City) <span class="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="location"
+                  name="location"
+                  required
+                  placeholder="Bucharest, Cluj-Napoca, etc."
+                />
+              </div>
+              <div class="form-group">
+                <label for="business-type">Business Type</label>
+                <select id="business-type" name="businessType">
+                  <option value="">Select Type</option>
+                  <option value="independent-cafe">Independent Cafe</option>
+                  <option value="coffee-chain">Coffee Chain</option>
+                  <option value="restaurant-with-coffee">
+                    Restaurant with Coffee
+                  </option>
+                  <option value="coworking-space">Coworking Space</option>
+                  <option value="other">Other</option>
+                </select>
               </div>
             </div>
             <div class="form-group">
-              <label for="address">Business Address</label>
-              <input type="text" id="address" name="address" />
+              <label for="message">Additional Information</label>
+              <textarea
+                id="message"
+                name="message"
+                rows="4"
+                placeholder="Tell us about your business, current customer volume, or any specific questions you have about partnering with CoffeeShare..."
+              ></textarea>
             </div>
-            <div class="form-group">
-              <label for="message">Tell us about your cafe (Optional)</label>
-              <textarea id="message" name="message" rows="4"></textarea>
-            </div>
-            <div id="form-status"></div>
-            <button type="submit" id="submit-button" class="cta-button primary">
-              Submit Partnership Request
+            <button type="submit">
+              <span>Send Partnership Request</span>
+              <span class="button-icon">→</span>
             </button>
           </form>
+          <div id="form-status"></div>
         </div>
       </section>
 
@@ -336,81 +599,87 @@
         <div class="container">
           <div class="footer-content">
             <div class="footer-about">
-              <h3>CoffeeShare</h3>
+              <h3>
+                <span class="logo-icon">☕</span>
+                CoffeeShare
+              </h3>
               <p>
-                Connecting coffee lovers with local cafes through simple,
-                flexible subscriptions.
+                Connecting coffee lovers with local cafes through innovative
+                technology and seamless experiences. Discover, sip, and share
+                your coffee journey across Romania.
               </p>
-              <!-- Social Links -->
               <div class="social-links">
-                <a href="#" aria-label="Facebook"
-                  ><img
-                    src="https://api.iconify.design/mdi:facebook.svg?color=%238B4513&width=24"
+                <a href="#" aria-label="Facebook">
+                  <img
+                    src="https://api.iconify.design/mdi:facebook.svg?color=%23ffffff&width=24"
                     alt="Facebook"
-                /></a>
-                <a href="#" aria-label="Instagram"
-                  ><img
-                    src="https://api.iconify.design/mdi:instagram.svg?color=%238B4513&width=24"
+                  />
+                </a>
+                <a href="#" aria-label="Instagram">
+                  <img
+                    src="https://api.iconify.design/mdi:instagram.svg?color=%23ffffff&width=24"
                     alt="Instagram"
-                /></a>
-                <a href="#" aria-label="Twitter"
-                  ><img
-                    src="https://api.iconify.design/mdi:twitter.svg?color=%238B4513&width=24"
+                  />
+                </a>
+                <a href="#" aria-label="Twitter">
+                  <img
+                    src="https://api.iconify.design/mdi:twitter.svg?color=%23ffffff&width=24"
                     alt="Twitter"
-                /></a>
+                  />
+                </a>
+                <a href="#" aria-label="LinkedIn">
+                  <img
+                    src="https://api.iconify.design/mdi:linkedin.svg?color=%23ffffff&width=24"
+                    alt="LinkedIn"
+                  />
+                </a>
               </div>
             </div>
             <div class="footer-links">
-              <h4>Quick Links</h4>
+              <h3>Quick Links</h3>
               <ul>
                 <li><a href="#how-it-works">How It Works</a></li>
                 <li><a href="#features">Features</a></li>
+                <li><a href="#subscription-plans">Subscription Plans</a></li>
                 <li><a href="#partners">For Partners</a></li>
+                <li><a href="#app-download">Download App</a></li>
+              </ul>
+            </div>
+            <div class="footer-links">
+              <h3>Support</h3>
+              <ul>
+                <li><a href="#">Help Center</a></li>
                 <li><a href="#">Privacy Policy</a></li>
                 <li><a href="#">Terms of Service</a></li>
+                <li><a href="#">Contact Support</a></li>
+                <li><a href="#">Partner Portal</a></li>
               </ul>
             </div>
             <div class="footer-contact">
-              <h4>Contact Us</h4>
+              <h3>Get in Touch</h3>
               <p>
-                Have questions? <br />
-                <a href="mailto:hello@coffeeshare.example.com"
-                  >hello@coffeeshare.example.com</a
-                >
+                <strong>Email:</strong>
+                <a href="mailto:hello@coffeeshare.ro">hello@coffeeshare.ro</a>
               </p>
               <p>
-                Partnerships: <br />
-                <a href="mailto:partners@coffeeshare.example.com"
-                  >partners@coffeeshare.example.com</a
-                >
+                <strong>Phone:</strong>
+                <a href="tel:+40123456789">+40 123 456 789</a>
               </p>
+              <p><strong>Address:</strong> Bucharest, Romania</p>
             </div>
           </div>
           <div class="footer-bottom">
-            <p>&copy; 2024 CoffeeShare. Designed with ❤️.</p>
+            <p>
+              &copy; 2024 CoffeeShare. All rights reserved. Made with ☕ in
+              Romania.
+            </p>
           </div>
         </div>
       </footer>
     </div>
-    <!-- .page-wrapper -->
 
-    <script>
-      // --- Firebase Configuration ---
-      const firebaseConfig = {
-        apiKey: "AIzaSyB4rX3X7RBfjDWLJ62GympGJRauwjFbV6I",
-        authDomain: "coffeeshare-b4098.firebaseapp.com",
-        projectId: "coffeeshare-b4098",
-        storageBucket: "coffeeshare-b4098.firebasestorage.app",
-        messagingSenderId: "947075506777",
-        appId: "1:947075506777:web:b6ef9fa0ae586fd574c748",
-      };
-      firebase.initializeApp(firebaseConfig);
-      const db = firebase.firestore();
-      // --- End Firebase Config ---
-    </script>
-    <!-- AOS Library JS -->
+    <!-- AOS Animation Library -->
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <!-- Custom JS -->
     <script src="script.js"></script>
   </body>
 </html>
