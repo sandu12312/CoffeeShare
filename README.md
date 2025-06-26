@@ -1200,7 +1200,7 @@ java --version    # JDK 11 sau mai nou
 
 ```bash
 # Clone repository-ul
-git clone https://github.com/alexandru-gheorghita/CoffeeShare.git
+git clone https://github.com/sandu12312/CoffeeShare.git
 cd CoffeeShare/coffeshare-ts
 
 # Instalează dependencies
@@ -1611,8 +1611,8 @@ O aplicație rapidă cu mai puține features bate întotdeauna o aplicație lent
 ### 📧 Contact Information
 
 - **Email**: alexandru.gheorghita@student.informatica.ro
-- **LinkedIn**: [Alexandru Gheorghiță](https://linkedin.com/in/alexandru-gheorghita)
-- **GitHub**: [@alexandru-gheorghita](https://github.com/alexandru-gheorghita)
+- **LinkedIn**: [Alexandru Gheorghiță](https://linkedin.com/in/sandu12312)
+- **GitHub**: [@sandu12312](https://github.com/sandu12312)
 - **Portfolio**: [www.alexandrugheorghita.ro](https://alexandrugheorghita.ro)
 
 ### 🤝 Oportunități de Colaborare
@@ -1672,6 +1672,6 @@ Acest proiect nu ar fi fost posibil fără ecosistemul fantastic de biblioteci o
 
 ---
 
-**🔔 Keep Updated**: Pentru ultimele noutăți despre CoffeeShare, urmărește [repository-ul GitHub](https://github.com/alexandru-gheorghita/CoffeeShare) și [blog-ul de dezvoltare](https://alexandrugheorghita.ro/blog/coffeeshare).
+**🔔 Keep Updated**: Pentru ultimele noutăți despre CoffeeShare, urmărește [repository-ul GitHub](https://github.com/sandu12312/CoffeeShare) și [blog-ul de dezvoltare](https://alexandrugheorghita.ro/blog/coffeeshare).
 
 **☕ Let's brew something amazing together!**
