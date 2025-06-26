@@ -56,7 +56,7 @@ export interface CafeData {
 }
 
 /**
- * Admin Service class to handle all admin-related operations
+ * Clasă de serviciu Admin pentru a gestiona toate operațiunile legate de admin
  */
 class AdminService {
   async isAdmin(): Promise<boolean> {
@@ -76,10 +76,10 @@ class AdminService {
   }
 
   /**
-   * Get all users with pagination
-   * @param lastVisible Last visible document for pagination
-   * @param pageSize Number of users per page
-   * @returns Array of users
+   * Obțin toți utilizatorii cu paginare
+   * @param lastVisible Ultimul document vizibil pentru paginare
+   * @param pageSize Numărul de utilizatori pe pagină
+   * @returns Array de utilizatori
    */
   async getAllUsers(
     lastVisible?: QueryDocumentSnapshot<any>,
@@ -89,7 +89,7 @@ class AdminService {
     lastVisible: QueryDocumentSnapshot<any> | null;
   }> {
     try {
-      // Create query reference
+      // Creez referința pentru query
       let usersQuery;
 
       if (lastVisible) {
@@ -107,10 +107,10 @@ class AdminService {
         );
       }
 
-      // Execute query
+      // Execut query-ul
       const snapshot = await getDocs(usersQuery);
 
-      // Process results
+      // Procesez rezultatele
       const users: AdminUserData[] = [];
       snapshot.forEach((doc) => {
         const userData = doc.data();
@@ -138,7 +138,7 @@ class AdminService {
         });
       });
 
-      // Get the last visible document for pagination
+      // Obțin ultimul document vizibil pentru paginare
       const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1] || null;
 
       return {
@@ -152,9 +152,9 @@ class AdminService {
   }
 
   /**
-   * Search users by name or email
-   * @param searchQuery Query to search for in name or email
-   * @returns Array of matching users
+   * Caut utilizatori după nume sau email
+   * @param searchQuery Query-ul de căutare în nume sau email
+   * @returns Array de utilizatori găsiți
    */
   async searchUsers(searchQuery: string): Promise<AdminUserData[]> {
     try {
@@ -170,7 +170,7 @@ class AdminService {
         const displayName = userData.displayName || "";
         const email = userData.email || "";
 
-        // Check if the name or email matches the search query
+        // Verific dacă numele sau email-ul se potrivesc cu query-ul de căutare
         if (
           displayName.toLowerCase().includes(lowerQuery) ||
           email.toLowerCase().includes(lowerQuery)
@@ -208,9 +208,9 @@ class AdminService {
   }
 
   /**
-   * Update a user's profile
-   * @param userId User ID to update
-   * @param data Data to update
+   * Actualizez profilul unui utilizator
+   * @param userId ID-ul utilizatorului de actualizat
+   * @param data Datele de actualizat
    */
   async updateUser(
     userId: string,
@@ -219,13 +219,13 @@ class AdminService {
     try {
       const userRef = doc(db, "users", userId);
 
-      // Clean up the data before updating
+      // Curăț datele înainte de actualizare
       const updateData: any = {
         ...data,
         updatedAt: serverTimestamp(),
       };
 
-      // Remove id field as it's not part of the document
+      // Șterg câmpul id căci nu face parte din document
       delete updateData.id;
       delete updateData.uid;
 

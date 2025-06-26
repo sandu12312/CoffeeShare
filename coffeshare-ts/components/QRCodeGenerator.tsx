@@ -30,7 +30,7 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
   const screenWidth = Dimensions.get("window").width;
   const qrSize = screenWidth * 0.7;
 
-  // Generate a new QR code
+  // Generez un cod QR nou
   const fetchQRCode = async () => {
     try {
       setLoading(true);
@@ -38,14 +38,14 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
 
       const qrData = await generateQRCode(cafeId, productId);
 
-      // Add uniqueCode for security and current timestamp
+      // Adaug uniqueCode pentru securitate și timestamp-ul curent
       const qrCodeWithTime = {
         ...qrData,
         refreshedAt: new Date().toISOString(),
       };
 
       setQrValue(JSON.stringify(qrCodeWithTime));
-      setRemainingTime(15); // Reset countdown to 15 seconds
+      setRemainingTime(15); // Resetez countdown-ul la 15 secunde
     } catch (error: any) {
       console.error("Error generating QR code:", error);
       setError(error.message || "Failed to generate QR code");
@@ -55,12 +55,12 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
     }
   };
 
-  // Generate QR code on initial render
+  // Generez codul QR la primul render
   useEffect(() => {
     fetchQRCode();
   }, [cafeId, productId]);
 
-  // Refresh QR code every 15 seconds
+  // Refresh-ez codul QR la fiecare 15 secunde
   useEffect(() => {
     const intervalId = setInterval(() => {
       if (remainingTime > 0) {

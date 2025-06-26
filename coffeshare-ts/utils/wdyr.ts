@@ -1,7 +1,7 @@
 import React from "react";
 
 if (__DEV__) {
-  // Only load in development
+  // Încarc doar în dezvoltare
   const whyDidYouRender = require("@welldone-software/why-did-you-render");
 
   whyDidYouRender(React, {
@@ -10,11 +10,11 @@ if (__DEV__) {
     logOnDifferentValues: true,
     collapseGroups: true,
     include: [
-      // Add specific components you want to track
+      // Adaug componentele specifice pe care vreau să le urmăresc
       /^(Map|Cart|Dashboard|QR|Product)/,
     ],
     exclude: [
-      // Exclude components that change frequently by design
+      // Exclud componentele care se schimbă frecvent prin design
       /^(Animated|Toast|Modal)/,
     ],
   });

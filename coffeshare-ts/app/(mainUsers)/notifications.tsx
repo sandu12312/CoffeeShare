@@ -33,6 +33,9 @@ export default function NotificationsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedNotification, setSelectedNotification] =
+    useState<NotificationItem | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     if (user?.uid) {
@@ -43,7 +46,10 @@ export default function NotificationsScreen() {
   }, [user?.uid, subscriptionStatus]);
 
   const loadNotifications = async () => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const userNotifications = await notificationService.getNotifications(
@@ -69,8 +75,6 @@ export default function NotificationsScreen() {
         user.uid,
         subscriptionStatus.subscription
       );
-      // Reload notifications after initialization
-      setTimeout(() => loadNotifications(), 1000);
     } catch (error) {
       console.error("Error initializing notifications:", error);
     }
@@ -78,72 +82,73 @@ export default function NotificationsScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadNotifications();
-    initializeNotifications();
+    loadNotifications().finally(() => setRefreshing(false));
   };
 
   const handleNotificationPress = async (notification: NotificationItem) => {
-    if (!user?.uid) return;
+    setSelectedNotification(notification);
+    setModalVisible(true);
 
-    try {
-      if (!notification.read) {
+    if (!notification.read && user?.uid) {
+      try {
         await notificationService.markAsRead(user.uid, notification.id);
-        await loadNotifications(); // Refresh to show updated read status
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n))
+        );
+      } catch (error) {
+        console.error("Error marking notification as read:", error);
       }
+    }
 
-      // Handle different notification types
-      if (notification.type === "subscription_expiry") {
-        showConfirmModal(
-          notification.title,
-          notification.message +
-            "\n\nWould you like to renew your subscription?",
-          () => router.push("/(mainUsers)/subscriptions")
-        );
-      } else if (notification.type === "daily_update") {
-        showConfirmModal(
-          notification.title,
-          notification.message + "\n\nWould you like to view available plans?",
-          () => router.push("/(mainUsers)/subscriptions")
-        );
-      } else if (notification.type === "special_offer") {
-        showConfirmModal(
-          notification.title,
-          notification.message + "\n\nDon't miss out on this great deal!",
-          () => router.push("/(mainUsers)/subscriptions")
-        );
-      } else if (notification.type === "achievement") {
-        showErrorModal(
-          notification.title,
-          notification.message + "\n\nKeep up the great work! ☕",
-          { label: "Awesome!", onPress: hideModal }
-        );
-      } else if (notification.type === "coffee_tip") {
-        showErrorModal(
-          notification.title,
-          notification.message + "\n\nHappy brewing! ☕",
-          { label: "Thanks!", onPress: hideModal }
-        );
-      } else if (notification.type === "recommendation") {
-        showConfirmModal(
-          notification.title,
-          notification.message + "\n\nWould you like to explore more cafes?",
-          () => router.push("/(mainUsers)/home")
-        );
-      } else if (notification.type === "welcome") {
-        showConfirmModal(
-          notification.title,
-          notification.message + "\n\nLet's get you started!",
-          () => router.push("/(mainUsers)/subscriptions")
-        );
-      } else {
-        // Generic notification handling
-        showErrorModal(notification.title, notification.message, {
-          label: "OK",
-          onPress: hideModal,
-        });
-      }
-    } catch (error) {
-      console.error("Error handling notification press:", error);
+    // Handle different notification types
+    if (notification.type === "subscription_expiry") {
+      showConfirmModal(
+        notification.title,
+        notification.message + "\n\nAr vrei să reînnoiești abonamentul?",
+        () => router.push("/(mainUsers)/subscriptions")
+      );
+    } else if (notification.type === "daily_update") {
+      showConfirmModal(
+        notification.title,
+        notification.message + "\n\nAr vrei să vezi planurile disponibile?",
+        () => router.push("/(mainUsers)/subscriptions")
+      );
+    } else if (notification.type === "special_offer") {
+      showConfirmModal(
+        notification.title,
+        notification.message + "\n\nNu pierdeți această oportunitate!",
+        () => router.push("/(mainUsers)/subscriptions")
+      );
+    } else if (notification.type === "achievement") {
+      showErrorModal(
+        notification.title,
+        notification.message + "\n\nContinuă să lucrezi bine! ☕",
+        { label: "Awesome!", onPress: hideModal }
+      );
+    } else if (notification.type === "coffee_tip") {
+      showErrorModal(
+        notification.title,
+        notification.message + "\n\nBucură-te de prepararea caféi! ☕",
+        { label: "Thanks!", onPress: hideModal }
+      );
+    } else if (notification.type === "recommendation") {
+      showConfirmModal(
+        notification.title,
+        notification.message + "\n\nAr vrei să explorezi mai multe cafenele?",
+        () => router.push("/(mainUsers)/home")
+      );
+    } else if (notification.type === "welcome") {
+      showConfirmModal(
+        notification.title,
+        notification.message + "\n\nSă îți începem!",
+        () => router.push("/(mainUsers)/subscriptions")
+      );
+    } else {
+      // Generic notification handling
+      showErrorModal(notification.title, notification.message, {
+        label: "OK",
+        onPress: hideModal,
+      });
     }
   };
 

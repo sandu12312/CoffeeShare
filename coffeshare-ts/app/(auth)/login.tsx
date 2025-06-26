@@ -29,14 +29,14 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Error states for inline validation
+  // Stări pentru validarea erorilor în timp real
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
   const { login, sendVerificationEmail } = useFirebase();
   const { t } = useLanguage();
 
-  // Validation functions
+  // Funcții de validare pentru formularul de login
   const validateEmail = (email: string) => {
     if (!email) {
       setEmailError("Email is required");
@@ -61,11 +61,11 @@ export default function Login() {
   };
 
   const handleLogin = async () => {
-    // Clear previous errors
+    // Șterg erorile anterioare
     setEmailError("");
     setPasswordError("");
 
-    // Validate inputs
+    // Validez datele de intrare
     const isEmailValid = validateEmail(email);
     const isPasswordValid = validatePassword(password);
 
@@ -77,7 +77,7 @@ export default function Login() {
       setLoading(true);
       const { role } = await login(email, password);
 
-      // Check if email is verified
+      // Verific dacă email-ul este verificat
       const user = auth.currentUser;
       if (user && !user.emailVerified) {
         Alert.alert(
@@ -112,7 +112,7 @@ export default function Login() {
         return;
       }
 
-      // Redirect based on user role from new role management system
+      // Redirecționez utilizatorul pe baza rolului din sistemul de administrare
       console.log("Login successful, redirecting user with role:", role);
       switch (role) {
         case "admin":
@@ -125,7 +125,7 @@ export default function Login() {
           router.push("/(mainUsers)/dashboard");
           break;
         default:
-          // Fallback - treat unknown roles as regular users
+          // Fallback - tratez rolurile necunoscute ca utilizatori normali
           console.warn(
             "Unknown role detected, defaulting to user dashboard:",
             role

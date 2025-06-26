@@ -24,13 +24,13 @@ export default function ForgotPassword() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Error state for inline validation
+  // Stare pentru validarea erorilor în timp real
   const [emailError, setEmailError] = useState("");
 
   const { resetPassword } = useFirebase();
   const { t } = useLanguage();
 
-  // Validation function
+  // Funcție de validare pentru email
   const validateEmail = (email: string) => {
     if (!email) {
       setEmailError("Email is required");
@@ -46,10 +46,10 @@ export default function ForgotPassword() {
   };
 
   const handleResetPassword = async () => {
-    // Clear previous errors
+    // Șterg erorile anterioare
     setEmailError("");
 
-    // Validate input
+    // Validez datele de intrare
     const isEmailValid = validateEmail(email);
 
     if (!isEmailValid) {

@@ -85,7 +85,7 @@ export default function TransactionHistoryModal({
     transactions.forEach((transaction) => {
       const dateKey = transaction.date.includes("ago")
         ? transaction.date
-        : transaction.date.split(",")[0]; // Extract just the date part
+        : transaction.date.split(",")[0]; // Extrag doar partea cu data
 
       if (!grouped[dateKey]) {
         grouped[dateKey] = [];
@@ -211,7 +211,7 @@ export default function TransactionHistoryModal({
     );
   };
 
-  // Calculate summary statistics
+  // Calculez statisticile sumare
   const totalTransactions = transactions.length;
   const totalBeansUsed = transactions.reduce(
     (sum, transaction) => sum + transaction.beansUsed,
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   headerSpacer: {
-    width: 38, // Same width as close button for centering
+    width: 38, // Aceeași lățime ca butonul de închidere pentru centrare
   },
   summaryContainer: {
     flexDirection: "row",

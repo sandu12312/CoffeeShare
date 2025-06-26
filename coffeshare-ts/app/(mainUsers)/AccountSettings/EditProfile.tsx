@@ -46,7 +46,7 @@ export default function EditProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-  // Update state when userProfile changes
+  // Actualizez starea când userProfile se schimbă
   useEffect(() => {
     if (userProfile) {
       setDisplayName(userProfile.displayName || "");
@@ -77,7 +77,7 @@ export default function EditProfileScreen() {
         updatedAt: new Date(),
       };
 
-      // Update user profile in Firestore
+      // Actualizez profilul utilizatorului în Firestore
       const userDocRef = doc(db, "users", user.uid);
       await updateDoc(userDocRef, profileData);
 
@@ -96,7 +96,7 @@ export default function EditProfileScreen() {
 
   const handleChangeProfilePhoto = async () => {
     try {
-      // Request permission to access camera roll
+      // Cer permisiunea pentru a accesa galeria foto
       const permissionResult =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -108,7 +108,7 @@ export default function EditProfileScreen() {
         return;
       }
 
-      // Show options for camera or gallery
+      // Afișez opțiunile pentru cameră sau galerie
       Alert.alert(
         "Change Profile Photo",
         "Choose how you want to change your profile photo",
@@ -176,21 +176,21 @@ export default function EditProfileScreen() {
 
       setUploadingPhoto(true);
 
-      // Upload photo to Firebase Storage
+      // Încarc poza în Firebase Storage
       const response = await fetch(uri);
       const blob = await response.blob();
 
-      // Create a unique filename
+      // Creez un nume unic pentru fișier
       const filename = `profile_photos/${user.uid}_${Date.now()}.jpg`;
 
-      // Upload to Firebase Storage
+      // Încarc în Firebase Storage
       const storage = getStorage();
       const storageRef = ref(storage, filename);
 
       await uploadBytes(storageRef, blob);
       const downloadURL = await getDownloadURL(storageRef);
 
-      // Update user profile with new photo URL in Firestore
+      // Actualizez profilul utilizatorului cu noul URL al pozei în Firestore
       const userDocRef = doc(db, "users", user.uid);
       await updateDoc(userDocRef, {
         photoURL: downloadURL,
@@ -249,7 +249,7 @@ export default function EditProfileScreen() {
           text: "Delete",
           style: "destructive",
           onPress: () => {
-            // Second confirmation
+            // A doua confirmare
             Alert.alert(
               "Confirm Delete",
               "Are you absolutely sure you want to delete your account? This cannot be undone.",
@@ -333,15 +333,15 @@ export default function EditProfileScreen() {
         return;
       }
 
-      // First delete user data from Firestore
+      // Întâi șterg datele utilizatorului din Firestore
       const userDocRef = doc(db, "users", user.uid);
       await deleteDoc(userDocRef);
 
-      // Then delete related data (subscriptions, notifications, etc.)
-      // Note: In a real production app, you might want to do this server-side
-      // for better cleanup of all user-related data
+      // Apoi șterg datele relacionate (abonamente, notificări, etc.)
+      // În producție ar trebui să fac validarea și pe server
+      // pentru o curățare mai bună a tuturor datelor legate de utilizator
 
-      // Finally delete the Firebase Auth user
+      // În final șterg utilizatorul Firebase Auth
       await deleteUser(currentUser);
 
       Alert.alert(
@@ -351,8 +351,8 @@ export default function EditProfileScreen() {
           {
             text: "OK",
             onPress: () => {
-              // Navigate to login screen after account deletion
-              // Since the user is deleted, they'll be automatically logged out
+              // Navighez la ecranul de login după ștergerea contului
+              // Deoarece utilizatorul este șters, va fi delogat automat
             },
           },
         ]
@@ -360,12 +360,12 @@ export default function EditProfileScreen() {
     } catch (error: any) {
       console.error("Error deleting account:", error);
 
-      // Provide more specific error messages
+      // Oferă mesaje de eroare mai specifice
       if (error.code === "auth/requires-recent-login") {
-        // Try to re-authenticate
+        // Încerc să reautentific
         const reauthed = await reauthenticateUser();
         if (reauthed) {
-          // Try deletion again after successful re-authentication
+          // Încerc din nou ștergerea după reautentificarea cu succes
           confirmDeleteAccount();
         }
       } else {
@@ -403,7 +403,7 @@ export default function EditProfileScreen() {
       />
 
       <ScrollView style={styles.scrollView}>
-        {/* Profile Photo Section */}
+        {/* Secțiunea pentru poza de profil */}
         <View style={styles.photoSection}>
           <TouchableOpacity
             style={styles.photoContainer}
@@ -433,7 +433,7 @@ export default function EditProfileScreen() {
           <Text style={styles.photoHint}>Tap to change photo</Text>
         </View>
 
-        {/* Form Fields */}
+        {/* Câmpurile formularului */}
         <View style={styles.formSection}>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Display Name *</Text>
@@ -493,7 +493,7 @@ export default function EditProfileScreen() {
           </View>
         </View>
 
-        {/* Account Info Section */}
+        {/* Secțiunea cu informații despre cont */}
         <View style={styles.infoSection}>
           <Text style={styles.sectionTitle}>Account Information</Text>
 
@@ -519,7 +519,7 @@ export default function EditProfileScreen() {
           </View>
         </View>
 
-        {/* Save Button Section */}
+        {/* Secțiunea cu butonul de salvare */}
         <View style={styles.saveSection}>
           <TouchableOpacity
             style={[
@@ -537,7 +537,7 @@ export default function EditProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Actions Section */}
+        {/* Secțiunea cu acțiuni */}
         <View style={styles.actionsSection}>
           <TouchableOpacity
             style={styles.actionItem}
@@ -561,7 +561,7 @@ export default function EditProfileScreen() {
         </View>
       </ScrollView>
 
-      {/* Toast Messages */}
+      {/* Mesaje Toast */}
       <Toast
         visible={errorState.toast.visible}
         message={errorState.toast.message}

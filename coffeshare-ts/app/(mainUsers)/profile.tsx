@@ -41,13 +41,13 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-  // Use the subscription status hook to get real-time data
+  // Folosesc hook-ul pentru starea abonamentului pentru a obține date în timp real
   const subscriptionStatus = useSubscriptionStatus(user?.uid);
 
-  // Clean up listeners when user is null (after account deletion)
+  // Curăț listener-ii când utilizatorul este null (după ștergerea contului)
   useEffect(() => {
     if (!user) {
-      // User has been deleted or logged out, clean up any active listeners
+      // Utilizatorul a fost șters sau s-a delogat, curăț orice listener activ
       console.log("User is null, cleaning up profile screen");
     }
   }, [user]);
@@ -55,9 +55,9 @@ export default function ProfileScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      // Refresh user profile data
+      // Refresh-ez datele profilului utilizatorului
       if (user?.uid) {
-        // Profile data will be refreshed automatically by the context
+        // Datele profilului vor fi refresh-ate automat de către context
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     } finally {
@@ -67,7 +67,7 @@ export default function ProfileScreen() {
 
   const handleChangeProfilePhoto = async () => {
     try {
-      // Request permission to access camera roll
+      // Cer permisiunea pentru a accesa galeria foto
       const permissionResult =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -79,7 +79,7 @@ export default function ProfileScreen() {
         return;
       }
 
-      // Show options for camera or gallery
+      // Afișez opțiunile pentru cameră sau galerie
       Alert.alert(
         t("editProfile.changeProfilePhoto"),
         t("editProfile.photoOptions"),
@@ -154,21 +154,21 @@ export default function ProfileScreen() {
     try {
       if (!user?.uid) return;
 
-      // Upload photo to Firebase Storage and update user profile
+      // Încarc poza în Firebase Storage și actualizez profilul utilizatorului
       const response = await fetch(uri);
       const blob = await response.blob();
 
-      // Create a unique filename
+      // Creez un nume unic pentru fișier
       const filename = `profile_photos/${user.uid}_${Date.now()}.jpg`;
 
-      // Upload to Firebase Storage
+      // Încarc în Firebase Storage
       const storage = getStorage();
       const storageRef = ref(storage, filename);
 
       await uploadBytes(storageRef, blob);
       const downloadURL = await getDownloadURL(storageRef);
 
-      // Update user profile with new photo URL in Firestore
+      // Actualizez profilul utilizatorului cu noul URL al pozei în Firestore
       const userDocRef = doc(db, "users", user.uid);
       await updateDoc(userDocRef, {
         photoURL: downloadURL,
@@ -406,7 +406,7 @@ export default function ProfileScreen() {
 
         <BottomTabBar />
 
-        {/* Error Components */}
+        {/* Componentele pentru erori */}
         <Toast
           visible={errorState.toast.visible}
           message={errorState.toast.message}

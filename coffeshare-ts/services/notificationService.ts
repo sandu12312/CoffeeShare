@@ -50,7 +50,7 @@ class NotificationService {
   private readonly DAILY_UPDATE_KEY = "last_daily_update";
 
   /**
-   * Get all notifications for a user
+   * Obțin toate notificările pentru un utilizator
    */
   async getNotifications(userId: string): Promise<NotificationItem[]> {
     try {
@@ -73,7 +73,7 @@ class NotificationService {
   }
 
   /**
-   * Save notifications to storage
+   * Salvez notificările în storage
    */
   private async saveNotifications(
     userId: string,

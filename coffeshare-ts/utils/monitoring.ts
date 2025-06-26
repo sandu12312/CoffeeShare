@@ -18,19 +18,19 @@ export interface SecurityEvent {
 export class SecurityMonitoring {
   private static isInitialized = false;
 
-  // ✅ DSN automatically configured by Sentry wizard
+  // ✅ DSN configurat automat de wizard-ul Sentry
   private static readonly SENTRY_DSN =
     "https://9e95d16c980d636c8547f27f44d3f2d5@o4509464757010432.ingest.de.sentry.io/4509464767758416";
 
   /**
-   * Initialize Sentry monitoring
+   * Inițializez monitorizarea Sentry
    */
   static initializeMonitoring(): void {
     if (this.isInitialized) return;
 
     try {
-      // Sentry is already initialized by the wizard in _layout.tsx
-      // We just set up our security monitoring context
+      // Sentry este deja inițializat de wizard în _layout.tsx
+      // Configurez doar contextul de monitorizare a securității
       this.isInitialized = true;
       console.log(
         "✅ Security monitoring initialized (using Sentry wizard config)"
@@ -41,19 +41,19 @@ export class SecurityMonitoring {
   }
 
   /**
-   * Log security event
+   * Loghez evenimentul de securitate
    */
   static logSecurityEvent(event: SecurityEvent): void {
     try {
-      // Always log to console for development
+      // Loghez întotdeauna în consolă pentru dezvoltare
       console.warn(
         `🚨 Security Event [${event.severity.toUpperCase()}]:`,
         event.message
       );
 
-      // Sentry is already configured by wizard
+      // Sentry este deja configurat de wizard
 
-      // Log to Sentry
+      // Loghez în Sentry
       Sentry.addBreadcrumb({
         message: event.message,
         level: this.mapSeverityToSentryLevel(event.severity),
@@ -67,7 +67,7 @@ export class SecurityMonitoring {
         },
       });
 
-      // For critical events, capture as exception
+      // Pentru evenimentele critice, capturez ca excepție
       if (event.severity === "critical") {
         Sentry.captureException(
           new Error(`CRITICAL SECURITY EVENT: ${event.message}`),
@@ -86,7 +86,7 @@ export class SecurityMonitoring {
   }
 
   /**
-   * Log device security report
+   * Loghez raportul de securitate al dispozitivului
    */
   static logSecurityReport(report: SecurityReport, userId?: string): void {
     try {
@@ -113,7 +113,7 @@ export class SecurityMonitoring {
   }
 
   /**
-   * Log suspicious network activity
+   * Loghez activitatea suspectă de rețea
    */
   static logSuspiciousNetworkActivity(
     url: string,
@@ -138,7 +138,7 @@ export class SecurityMonitoring {
   }
 
   /**
-   * Log unauthorized access attempt
+   * Loghez tentativa de acces neautorizat
    */
   static logUnauthorizedAccess(action: string, userId?: string): void {
     const event: SecurityEvent = {
@@ -157,7 +157,7 @@ export class SecurityMonitoring {
   }
 
   /**
-   * Set user context for monitoring
+   * Setez contextul utilizatorului pentru monitorizare
    */
   static setUser(userId: string, email?: string): void {
     try {
@@ -171,7 +171,7 @@ export class SecurityMonitoring {
   }
 
   /**
-   * Clear user context
+   * Șterg contextul utilizatorului
    */
   static clearUser(): void {
     try {
@@ -182,7 +182,7 @@ export class SecurityMonitoring {
   }
 
   /**
-   * Capture error with context
+   * Capturez eroarea cu context
    */
   static captureError(error: Error, context?: Record<string, any>): void {
     try {
@@ -197,7 +197,7 @@ export class SecurityMonitoring {
   }
 
   /**
-   * Filter sensitive data from Sentry events
+   * Filtrez datele sensibile din evenimentele Sentry
    */
   private static filterSensitiveData(event: any): any {
     if (!event) return event;
@@ -215,7 +215,7 @@ export class SecurityMonitoring {
       "session",
     ];
 
-    // Recursively filter sensitive data
+    // Filtrez recursiv datele sensibile
     const filterObject = (obj: any): any => {
       if (!obj || typeof obj !== "object") return obj;
 
@@ -243,12 +243,12 @@ export class SecurityMonitoring {
   }
 
   /**
-   * Filter sensitive breadcrumbs
+   * Filtrez breadcrumb-urile sensibile
    */
   private static filterSensitiveBreadcrumb(breadcrumb: any): any {
     if (!breadcrumb) return breadcrumb;
 
-    // Filter auth related breadcrumbs
+    // Filtrez breadcrumb-urile legate de autentificare
     if (
       breadcrumb.category === "auth" ||
       breadcrumb.category === "authentication"
@@ -256,7 +256,7 @@ export class SecurityMonitoring {
       return null;
     }
 
-    // Filter network requests with sensitive data
+    // Filtrez cererile de rețea cu date sensibile
     if (breadcrumb.category === "http" && breadcrumb.data) {
       const url = breadcrumb.data.url || "";
       if (
@@ -272,7 +272,7 @@ export class SecurityMonitoring {
   }
 
   /**
-   * Map severity to Sentry level
+   * Mapez severitatea la nivelul Sentry
    */
   private static mapSeverityToSentryLevel(
     severity: string
@@ -292,7 +292,7 @@ export class SecurityMonitoring {
   }
 
   /**
-   * Get monitoring statistics
+   * Obțin statisticile de monitorizare
    */
   static getMonitoringStats(): any {
     return {

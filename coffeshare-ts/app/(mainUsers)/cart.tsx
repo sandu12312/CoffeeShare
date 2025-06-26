@@ -40,7 +40,7 @@ export default function CartScreen() {
   const [processingCheckout, setProcessingCheckout] = useState(false);
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
 
-  // Get real-time subscription status
+  // Obțin starea abonamentului în timp real
   const subscriptionStatus = useSubscriptionStatus(user?.uid);
 
   const loadCart = useCallback(
@@ -61,7 +61,7 @@ export default function CartScreen() {
         const userCart = await cartService.getUserCart(user.uid);
         setCart(userCart);
 
-        // Only log in development
+        // Fac log doar în dezvoltare
         if (__DEV__) {
           console.log(
             `Loaded cart for user ${user.uid}:`,
@@ -87,17 +87,17 @@ export default function CartScreen() {
     [user?.uid, t]
   );
 
-  // Refresh handler for pull-to-refresh
+  // Handler pentru refresh prin pull-to-refresh
   const handleRefresh = useCallback(() => {
     loadCart(true);
   }, [loadCart]);
 
-  // Load cart on component mount
+  // Încarc coșul la mount-ul componentei
   useEffect(() => {
     loadCart();
   }, [loadCart]);
 
-  // Refresh cart data when screen comes into focus
+  // Refresh-ul datelor coșului când ecranul intră în focus
   useFocusEffect(
     useCallback(() => {
       if (user?.uid) {
@@ -110,13 +110,13 @@ export default function CartScreen() {
     async (productId: string, newQuantity: number) => {
       if (!user?.uid || !cart) return;
 
-      // Prevent multiple rapid updates on the same item
+      // Previn actualizările rapide multiple pe același produs
       if (updatingItems.has(productId)) return;
 
-      // Add to updating set
+      // Adaug în setul de actualizare
       setUpdatingItems((prev) => new Set(prev).add(productId));
 
-      // Optimistic UI update - immediately update the cart state
+      // Actualizare optimistă a UI-ului - actualizez imediat starea coșului
       const updatedCart = { ...cart };
       const itemIndex = updatedCart.items.findIndex(
         (item) => item.product.id === productId
@@ -136,11 +136,11 @@ export default function CartScreen() {
       const beansDiff =
         updatedCart.items[itemIndex].product.beansValue * quantityDiff;
 
-      // Update quantity and total beans optimistically
+      // Actualizez cantitatea și totalul de beans în mod optimist
       updatedCart.items[itemIndex].quantity = newQuantity;
       updatedCart.totalBeans += beansDiff;
 
-      // Update UI immediately
+      // Actualizez UI-ul imediat
       setCart(updatedCart);
 
       try {
@@ -151,7 +151,7 @@ export default function CartScreen() {
         );
 
         if (!result.success) {
-          // Revert optimistic update on failure
+          // Revert actualizarea optimistă la eșec
           const revertedCart = { ...updatedCart };
           revertedCart.items[itemIndex].quantity = oldQuantity;
           revertedCart.totalBeans -= beansDiff;
@@ -163,11 +163,11 @@ export default function CartScreen() {
             text2: result.message,
           });
         } else {
-          // Update cart context count after successful quantity update
+          // Actualizez contorul coșului din context după actualizarea cu succes
           refreshCartCount();
         }
       } catch (error) {
-        // Revert optimistic update on error
+        // Revert actualizarea optimistă la eroare
         const revertedCart = { ...updatedCart };
         revertedCart.items[itemIndex].quantity = oldQuantity;
         revertedCart.totalBeans -= beansDiff;
@@ -179,7 +179,7 @@ export default function CartScreen() {
           text2: t("cart.failedToUpdateQuantity"),
         });
       } finally {
-        // Remove from updating set
+        // Elimin din setul de actualizare
         setUpdatingItems((prev) => {
           const newSet = new Set(prev);
           newSet.delete(productId);
@@ -198,13 +198,13 @@ export default function CartScreen() {
         t("cart.removeItem"),
         t("cart.removeItemConfirm"),
         async () => {
-          // Find the item to remove for optimistic update
+          // Găsesc produsul de eliminat pentru actualizarea optimistă
           const itemToRemove = cart.items.find(
             (item) => item.product.id === productId
           );
           if (!itemToRemove) return;
 
-          // Optimistic UI update - immediately remove the item
+          // Actualizare optimistă a UI-ului - elimin imediat produsul
           const updatedCart = { ...cart };
           updatedCart.items = updatedCart.items.filter(
             (item) => item.product.id !== productId
@@ -212,7 +212,7 @@ export default function CartScreen() {
           updatedCart.totalBeans -=
             itemToRemove.product.beansValue * itemToRemove.quantity;
 
-          // If cart becomes empty, set to null
+          // Dacă coșul devine gol, îl setez la null
           if (updatedCart.items.length === 0) {
             setCart(null);
           } else {
@@ -231,10 +231,10 @@ export default function CartScreen() {
                 text1: t("cart.removed"),
                 text2: t("cart.itemRemovedFromCart"),
               });
-              // Update cart context count after successful removal
+              // Actualizez contorul coșului din context după eliminarea cu succes
               refreshCartCount();
             } else {
-              // Revert optimistic update on failure
+              // Revert actualizarea optimistă la eșec
               setCart(cart);
               Toast.show({
                 type: "error",
@@ -243,7 +243,7 @@ export default function CartScreen() {
               });
             }
           } catch (error) {
-            // Revert optimistic update on error
+            // Revert actualizarea optimistă la eroare
             setCart(cart);
             Toast.show({
               type: "error",
@@ -260,7 +260,7 @@ export default function CartScreen() {
   const handleCheckout = useCallback(async () => {
     if (!user?.uid || !cart || !cart.cafeId) return;
 
-    // Check if user has enough beans
+    // Verific dacă utilizatorul are suficiente beans
     if (subscriptionStatus.beansLeft < cart.totalBeans) {
       Toast.show({
         type: "error",
@@ -276,14 +276,14 @@ export default function CartScreen() {
     setProcessingCheckout(true);
 
     try {
-      // Generate checkout QR token
+      // Generez token-ul QR pentru checkout
       const qrToken = await QRService.generateCheckoutQRToken(
         user.uid,
         cart.cafeId
       );
 
       if (qrToken) {
-        // Navigate to QR screen with checkout mode
+        // Navighez la ecranul QR cu modul checkout
         router.push({
           pathname: "/(mainUsers)/qr",
           params: {
@@ -532,7 +532,7 @@ export default function CartScreen() {
       </ImageBackground>
       <BottomTabBar />
 
-      {/* Error Components */}
+      {/* Componentele pentru erori */}
       <ErrorModal
         visible={errorState.modal.visible}
         title={errorState.modal.title}

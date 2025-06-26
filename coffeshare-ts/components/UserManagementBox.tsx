@@ -79,7 +79,7 @@ const UserManagementBox: React.FC<UserManagementBoxProps> = ({
     },
   ];
 
-  // Load statistics
+  // Încarc statisticile
   const loadStats = useCallback(async () => {
     try {
       const statistics = await roleManagementService.getAllRoleStatistics();
@@ -89,28 +89,28 @@ const UserManagementBox: React.FC<UserManagementBoxProps> = ({
     }
   }, []);
 
-  // Load users based on search and filter
+  // Încarc utilizatorii pe baza căutării și filtrului
   const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
       let results: UserSearchResult[] = [];
 
       if (searchQuery.trim()) {
-        // Search by query
+        // Caut pe baza query-ului
         const roleFilter = selectedRole === "all" ? undefined : selectedRole;
         results = await roleManagementService.searchUsers(
           searchQuery,
           roleFilter
         );
       } else if (selectedRole !== "all") {
-        // Get users by role
+        // Obțin utilizatorii pe baza rolului
         const response = await roleManagementService.getUsersByRole(
           selectedRole,
           50
         );
         results = response.users;
       } else {
-        // Get users from all roles (limited)
+        // Obțin utilizatori din toate rolurile (limitat)
         const userResults = await roleManagementService.getUsersByRole(
           "user",
           20
@@ -131,22 +131,22 @@ const UserManagementBox: React.FC<UserManagementBoxProps> = ({
         ];
       }
 
-      // Enhanced deduplication based on UID - keep the most recent or prioritize new collections
+      // Deduplicare îmbunătățită pe baza UID - păstrez cea mai recentă sau prioritizez colecțiile noi
       const userMap = new Map<string, UserSearchResult>();
 
       results.forEach((user) => {
         const existingUser = userMap.get(user.userData.uid);
 
         if (!existingUser) {
-          // First occurrence, add it
+          // Prima apariție, o adaug
           userMap.set(user.userData.uid, user);
         } else {
-          // If we have a duplicate, prioritize new collections over legacy
+          // Dacă am un duplicat, prioritizez colecțiile noi față de cele legacy
           const isExistingLegacy = existingUser.collection === "users";
           const isCurrentNew = user.collection !== "users";
 
           if (isExistingLegacy && isCurrentNew) {
-            // Replace legacy with new collection entry
+            // Înlocuiesc intrarea legacy cu cea din colecția nouă
             console.log(
               `Replacing legacy user ${user.userData.uid} from ${existingUser.collection} with ${user.collection}`
             );
@@ -156,7 +156,7 @@ const UserManagementBox: React.FC<UserManagementBoxProps> = ({
               `Keeping existing user ${user.userData.uid} from ${existingUser.collection}, skipping ${user.collection}`
             );
           }
-          // Otherwise keep the existing one
+          // Altfel păstrez cea existentă
         }
       });
 
@@ -173,7 +173,7 @@ const UserManagementBox: React.FC<UserManagementBoxProps> = ({
     }
   }, [searchQuery, selectedRole]);
 
-  // Refresh data
+  // Refresh-ez datele
   const refreshData = useCallback(async () => {
     setRefreshing(true);
     await Promise.all([loadUsers(), loadStats()]);
@@ -181,13 +181,13 @@ const UserManagementBox: React.FC<UserManagementBoxProps> = ({
     onUserUpdated?.();
   }, [loadUsers, loadStats, onUserUpdated]);
 
-  // Initial load
+  // Încărcarea inițială
   useEffect(() => {
     loadStats();
     loadUsers();
   }, [loadStats, loadUsers]);
 
-  // Debounced search
+  // Căutare cu întârziere (debounced)
   useEffect(() => {
     const timer = setTimeout(() => {
       loadUsers();
@@ -228,7 +228,7 @@ const UserManagementBox: React.FC<UserManagementBoxProps> = ({
           };
           break;
         case "user":
-          // No additional data needed for regular users
+          // Nu sunt necesare date suplimentare pentru utilizatorii obișnuiți
           break;
       }
 

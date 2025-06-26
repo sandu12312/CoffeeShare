@@ -41,8 +41,8 @@ export interface AuthState {
 }
 
 /**
- * Hybrid Authentication Service with Role-Based Collections
- * Works with both legacy single collection and new role-based collections
+ * Serviciu de Autentificare Hibrid cu Colecții Bazate pe Roluri
+ * Funcționează atât cu colecția legacy unică cât și cu colecțiile noi bazate pe roluri
  */
 class AuthService {
   private authStateListeners: Array<(user: AuthUser | null) => void> = [];
@@ -52,7 +52,7 @@ class AuthService {
   }
 
   /**
-   * Initialize Firebase Auth state listener
+   * Inițializez listener-ul de stare Firebase Auth
    */
   private initializeAuthListener(): void {
     onAuthStateChanged(auth, async (firebaseUser) => {
@@ -71,19 +71,19 @@ class AuthService {
   }
 
   /**
-   * Get authenticated user with role information (hybrid approach)
+   * Obțin utilizatorul autentificat cu informații despre rol (abordare hibridă)
    */
   private async getAuthUserFromFirebaseUser(
     firebaseUser: FirebaseUser
   ): Promise<AuthUser | null> {
     try {
-      // Use the hybrid role management service
+      // Folosesc serviciul hibrid de management al rolurilor
       const userSearchResult = await roleManagementService.getUserByUid(
         firebaseUser.uid
       );
 
       if (!userSearchResult) {
-        // If user not found anywhere, create a basic user profile
+        // Dacă utilizatorul nu e găsit nicăieri, trebuie creat un profil de bază
         console.warn(
           "User not found in any collection, may need profile creation"
         );
@@ -110,12 +110,12 @@ class AuthService {
   }
 
   /**
-   * Add auth state listener
+   * Adaug listener pentru starea de autentificare
    */
   addAuthStateListener(listener: (user: AuthUser | null) => void): () => void {
     this.authStateListeners.push(listener);
 
-    // Return unsubscribe function
+    // Returnez funcția de dezabonare
     return () => {
       const index = this.authStateListeners.indexOf(listener);
       if (index > -1) {
@@ -125,14 +125,14 @@ class AuthService {
   }
 
   /**
-   * Notify all auth state listeners
+   * Notific toți listenerii de stare de autentificare
    */
   private notifyAuthStateListeners(user: AuthUser | null): void {
     this.authStateListeners.forEach((listener) => listener(user));
   }
 
   /**
-   * Sign in user (hybrid approach)
+   * Autentific utilizatorul (abordare hibridă)
    */
   async signIn(email: string, password: string): Promise<AuthUser> {
     try {
@@ -153,7 +153,7 @@ class AuthService {
         throw new Error("Account is not active");
       }
 
-      // Update last login
+      // Actualizez ultima autentificare
       await this.updateLastLogin(authUser.uid, authUser.collection);
 
       return authUser;
@@ -164,7 +164,7 @@ class AuthService {
   }
 
   /**
-   * Sign out user
+   * Deconectez utilizatorul
    */
   async signOut(): Promise<void> {
     try {
@@ -176,7 +176,7 @@ class AuthService {
   }
 
   /**
-   * Get current authenticated user (hybrid approach)
+   * Obțin utilizatorul autentificat curent (abordare hibridă)
    */
   async getCurrentUser(): Promise<AuthUser | null> {
     const firebaseUser = auth.currentUser;

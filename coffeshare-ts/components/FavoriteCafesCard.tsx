@@ -19,7 +19,7 @@ interface FavoriteCafesCardProps {
 }
 
 const { width } = Dimensions.get("window");
-const CARD_WIDTH = (width - 60) / 2.2; // Adjust for padding and spacing
+const CARD_WIDTH = (width - 60) / 2.2; // Ajustez pentru padding și spațiere
 
 export default function FavoriteCafesCard({
   favoriteCafes,
@@ -113,7 +113,7 @@ export default function FavoriteCafesCard({
           </TouchableOpacity>
         ))}
 
-        {/* Add more button if there are more cafes */}
+        {/* Adaug buton "mai multe" dacă sunt mai multe cafenele */}
         {favoriteCafes.length >= 3 && (
           <TouchableOpacity
             style={styles.moreCard}
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Empty state styles
+  // Stiluri pentru starea goală
   emptyContainer: {
     alignItems: "center",
     paddingVertical: 40,

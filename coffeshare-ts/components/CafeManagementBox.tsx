@@ -61,7 +61,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
     pendingRequests: 0,
   });
 
-  // Form state for editing
+  // Starea formularului pentru editare
   const [editForm, setEditForm] = useState({
     businessName: "",
     contactName: "",
@@ -114,7 +114,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
     },
   ];
 
-  // Load statistics
+  // Încarc statisticile
   const loadStats = useCallback(async () => {
     try {
       const statistics = await adminService.getCafeStatistics();
@@ -124,21 +124,21 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
     }
   }, []);
 
-  // Load cafes and requests
+  // Încarc cafenelele și cererile
   const loadCafes = useCallback(async () => {
     setLoading(true);
     try {
       let results: CafeWithRequests[] = [];
 
       if (searchQuery.trim()) {
-        // Search cafes
+        // Caut cafenele
         const cafeResults = await adminService.searchCafes(searchQuery);
         results = cafeResults.map((cafe) => ({
           ...cafe,
           _type: "cafe" as const,
         }));
 
-        // Also search partnership requests if query might match
+        // Caut și în cererile de parteneriat dacă query-ul ar putea să se potrivească
         const requests = await adminService.getPartnershipRequests();
         const matchingRequests = requests
           .filter(
@@ -161,7 +161,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
 
         results = [...results, ...matchingRequests];
       } else if (selectedStatus === "partnership_request") {
-        // Get partnership requests
+        // Obțin cererile de parteneriat
         const requests = await adminService.getPartnershipRequests();
         results = requests.map(
           (req) =>
@@ -172,7 +172,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
             } as CafeWithRequests)
         );
       } else if (selectedStatus !== "all") {
-        // Get cafes by status
+        // Obțin cafenelele după status
         const cafeResults = await adminService.getCafesByStatus(
           selectedStatus as any
         );
@@ -181,7 +181,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
           _type: "cafe" as const,
         }));
       } else {
-        // Get all cafes and requests
+        // Obțin toate cafenelele și cererile
         const [cafeResults, requests] = await Promise.all([
           adminService.getAllCafes(),
           adminService.getPartnershipRequests(),
@@ -206,7 +206,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
         results = [...cafeData, ...requestData];
       }
 
-      // Sort by creation date (newest first)
+      // Sortez după data creării (cele mai noi primul)
       results.sort((a, b) => {
         const dateA = a.createdAt?.toMillis() || 0;
         const dateB = b.createdAt?.toMillis() || 0;
@@ -222,7 +222,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
     }
   }, [searchQuery, selectedStatus]);
 
-  // Refresh data
+  // Refresh-ez datele
   const refreshData = useCallback(async () => {
     setRefreshing(true);
     await Promise.all([loadCafes(), loadStats()]);
@@ -230,13 +230,13 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
     onCafeUpdated?.();
   }, [loadCafes, loadStats, onCafeUpdated]);
 
-  // Initial load
+  // Încărcare inițială
   useEffect(() => {
     loadStats();
     loadCafes();
   }, [loadStats, loadCafes]);
 
-  // Debounced search
+  // Căutare cu debounce
   useEffect(() => {
     const timer = setTimeout(() => {
       loadCafes();
@@ -245,7 +245,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
     return () => clearTimeout(timer);
   }, [searchQuery, selectedStatus]);
 
-  // Handle edit cafe
+  // Gestionez editarea cafenelei
   const handleEditCafe = (cafe: CafeWithRequests) => {
     if (cafe._type === "request") {
       Alert.alert(
@@ -266,7 +266,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
     setShowEditModal(true);
   };
 
-  // Handle status change
+  // Gestionez schimbarea de status
   const handleStatusChange = (cafe: CafeWithRequests) => {
     if (cafe._type === "request") {
       Alert.alert(
@@ -280,7 +280,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
     setShowStatusModal(true);
   };
 
-  // Perform status change
+  // Execut schimbarea de status
   const performStatusChange = async (newStatus: CafeStatus) => {
     if (!selectedCafe || selectedCafe._type === "request") return;
 
@@ -298,7 +298,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
     }
   };
 
-  // Perform edit save
+  // Execut salvarea editării
   const handleSaveEdit = async () => {
     if (!selectedCafe || selectedCafe._type === "request") return;
 
@@ -328,7 +328,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
     }
   };
 
-  // Handle delete cafe
+  // Gestionez ștergerea cafenelei
   const handleDeleteCafe = (cafe: CafeWithRequests) => {
     const deleteAction =
       cafe._type === "request"
@@ -369,7 +369,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
     );
   };
 
-  // Handle approve request
+  // Gestionez aprobarea cererii
   const handleApproveRequest = async (request: CafeWithRequests) => {
     if (request._type !== "request") return;
 
@@ -383,7 +383,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
           style: "default",
           onPress: async () => {
             try {
-              // Transfer the partnership request to cafes collection
+              // Transfer cererea de parteneriat în colecția cafenele
               await adminService.transferPartnershipRequestToCafe(request.id);
 
               Alert.alert(
@@ -536,7 +536,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
     <View style={styles.container}>
       <Text style={styles.title}>Cafe Management</Text>
 
-      {/* Statistics */}
+      {/* Statistici */}
       <View style={styles.statsContainer}>
         {renderStatsCard("Total", stats.totalCafes, colors.primary)}
         {renderStatsCard("Active", stats.activeCafes, colors.success)}
@@ -544,7 +544,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
         {renderStatsCard("Requests", stats.pendingRequests, colors.info)}
       </View>
 
-      {/* Search */}
+      {/* Căutare */}
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
           <Ionicons
@@ -562,7 +562,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
         </View>
       </View>
 
-      {/* Status Filter */}
+      {/* Filtru Status */}
       <View style={styles.filterContainer}>
         {statusOptions.map((option) => (
           <TouchableOpacity
@@ -590,7 +590,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
         ))}
       </View>
 
-      {/* Cafes List */}
+      {/* Lista Cafenele */}
       <View style={styles.listContainer}>
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -625,7 +625,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
         )}
       </View>
 
-      {/* Edit Modal */}
+      {/* Modal Editare */}
       <Modal
         visible={showEditModal}
         animationType="slide"
@@ -735,7 +735,7 @@ const CafeManagementBox: React.FC<CafeManagementBoxProps> = ({
         </View>
       </Modal>
 
-      {/* Status Change Modal */}
+      {/* Modal Schimbare Status */}
       <Modal
         visible={showStatusModal}
         animationType="slide"

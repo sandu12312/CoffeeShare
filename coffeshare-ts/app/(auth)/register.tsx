@@ -29,7 +29,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
 
-  // Error states for inline validation
+  // Stări pentru validarea erorilor în timp real
   const [nameError, setNameError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -38,7 +38,7 @@ export default function Register() {
   const { register } = useFirebase();
   const { t } = useLanguage();
 
-  // Validation functions
+  // Funcții de validare pentru formularul de înregistrare
   const validateName = (name: string) => {
     if (!name.trim()) {
       setNameError("Full name is required");
@@ -68,31 +68,31 @@ export default function Register() {
       return false;
     }
 
-    // Check minimum length
+    // Verific lungimea minimă
     if (password.length < 8) {
       setPasswordError("Password must be at least 8 characters long");
       return false;
     }
 
-    // Check for uppercase letter
+    // Verific prezența unei litere mari
     if (!/[A-Z]/.test(password)) {
       setPasswordError("Password must contain at least one uppercase letter");
       return false;
     }
 
-    // Check for lowercase letter
+    // Verific prezența unei litere mici
     if (!/[a-z]/.test(password)) {
       setPasswordError("Password must contain at least one lowercase letter");
       return false;
     }
 
-    // Check for number
+    // Verific prezența unei cifre
     if (!/[0-9]/.test(password)) {
       setPasswordError("Password must contain at least one number");
       return false;
     }
 
-    // Check for special character
+    // Verific prezența unui caracter special
     if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
       setPasswordError(
         "Password must contain at least one special character (!@#$%^&*...)"
@@ -114,35 +114,35 @@ export default function Register() {
     let strength = 0;
     const requirements = [];
 
-    // Length check
+    // Verific lungimea
     if (password.length >= 8) {
       strength += 20;
     } else {
       requirements.push("8+ characters");
     }
 
-    // Uppercase check
+    // Verific literele mari
     if (/[A-Z]/.test(password)) {
       strength += 20;
     } else {
       requirements.push("uppercase letter");
     }
 
-    // Lowercase check
+    // Verific literele mici
     if (/[a-z]/.test(password)) {
       strength += 20;
     } else {
       requirements.push("lowercase letter");
     }
 
-    // Number check
+    // Verific cifrele
     if (/[0-9]/.test(password)) {
       strength += 20;
     } else {
       requirements.push("number");
     }
 
-    // Special character check
+    // Verific caracterele speciale
     if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
       strength += 20;
     } else {
@@ -180,13 +180,13 @@ export default function Register() {
   };
 
   const handleRegister = async () => {
-    // Clear previous errors
+    // Șterg erorile anterioare
     setNameError("");
     setEmailError("");
     setPasswordError("");
     setConfirmPasswordError("");
 
-    // Validate inputs
+    // Validez toate câmpurile de intrare
     const isNameValid = validateName(name);
     const isEmailValid = validateEmail(email);
     const isPasswordValid = validatePassword(password);
@@ -207,7 +207,7 @@ export default function Register() {
     try {
       setLoading(true);
 
-      // Register the user with Firebase Auth and create their profile
+      // Înregistrez utilizatorul cu Firebase Auth și creez profilul
       const result = await register(email, password, name);
 
       if (result.success) {
@@ -379,7 +379,7 @@ export default function Register() {
                   onChangeText={(text) => {
                     setPassword(text);
                     if (passwordError) validatePassword(text);
-                    // Also revalidate confirm password if it exists
+                    // Revalidez și parola de confirmare dacă există
                     if (confirmPassword && confirmPasswordError) {
                       validateConfirmPassword(confirmPassword, text);
                     }

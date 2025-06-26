@@ -1,8 +1,8 @@
 /**
- * Formats a date or timestamp into a readable string
- * @param timestamp Firebase timestamp or Date object
- * @param includeTime Whether to include time in the formatted string
- * @returns Formatted date string
+ * Formatez o dată sau timestamp într-un string lizibil
+ * @param timestamp Firebase timestamp sau obiect Date
+ * @param includeTime Dacă să includ timpul în string-ul formatat
+ * @returns String-ul datei formatate
  */
 export const formatDate = (
   timestamp: any,
@@ -11,7 +11,7 @@ export const formatDate = (
   if (!timestamp) return "N/A";
 
   try {
-    // Handle Firebase timestamp or seconds timestamp
+    // Gestionez Firebase timestamp sau timestamp în secunde
     const date = timestamp.toDate
       ? timestamp.toDate()
       : timestamp.seconds
@@ -36,9 +36,9 @@ export const formatDate = (
 };
 
 /**
- * Get time elapsed since a given date
- * @param timestamp Firebase timestamp or Date object
- * @returns String representing elapsed time (e.g., "2 days ago", "Just now")
+ * Obțin timpul scurs de la o dată dată
+ * @param timestamp Firebase timestamp sau obiect Date
+ * @returns String reprezentând timpul scurs (ex: "acum 2 zile", "Acum")
  */
 export const getTimeAgo = (timestamp: any): string => {
   if (!timestamp) return "";

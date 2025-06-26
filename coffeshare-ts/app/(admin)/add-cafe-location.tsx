@@ -12,6 +12,7 @@ import {
   Keyboard,
   Image,
   Modal,
+  Alert,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -29,8 +30,8 @@ import { Toast, ErrorModal, Snackbar } from "../../components/ErrorComponents";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 
 const DEFAULT_REGION: Region = {
-  latitude: 45.7579, // Timisoara Latitude
-  longitude: 21.2287, // Timisoara Longitude
+  latitude: 45.7579, // Coordonatele Timișoarei - orașul meu natal
+  longitude: 21.2287, // Longitudine Timișoara
   latitudeDelta: 0.04,
   longitudeDelta: 0.02,
 };
@@ -82,7 +83,7 @@ export default function AddCafeLocationScreen() {
   const [showPartnersDropdown, setShowPartnersDropdown] = useState(false);
   const mapRef = useRef<MapView>(null);
 
-  // Predefined opening hours options
+  // Programele predefinite pentru cafenele - am observat că majoritatea au aceste intervale
   const openingHoursOptions = [
     "Mon-Fri: 7:00-20:00, Sat-Sun: 8:00-18:00",
     "Mon-Sun: 6:00-22:00",
@@ -93,10 +94,10 @@ export default function AddCafeLocationScreen() {
     "Custom (enter manually)",
   ];
 
-  // Product categories available
+  // Categoriile de produse disponibile în aplicație
   const productCategories = ["Coffee", "Tea", "Pastries", "Snacks"];
 
-  // Get user's current location
+  // Obțin locația curentă pentru a centra harta
   useEffect(() => {
     const getUserLocation = async () => {
       try {
@@ -123,7 +124,7 @@ export default function AddCafeLocationScreen() {
     getUserLocation();
   }, []);
 
-  // Load coffee partners for dropdown
+  // Încarc partenerii de cafea pentru dropdown
   useEffect(() => {
     const loadCoffeePartners = async () => {
       try {
@@ -145,7 +146,7 @@ export default function AddCafeLocationScreen() {
     setSelectedLocation(coordinate);
   };
 
-  // Image picker functions
+  // Funcții pentru selectarea imaginilor
   const requestPermissions = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -244,11 +245,11 @@ export default function AddCafeLocationScreen() {
         .substring(7)}.jpg`;
       const storageRef = ref(storage, filename);
 
-      // Convert image to blob
+      // Convertesc imaginea în blob
       const response = await fetch(imageUri);
       const blob = await response.blob();
 
-      // Upload to Firebase Storage
+      // Upload în Firebase Storage
       await uploadBytes(storageRef, blob);
       const downloadURL = await getDownloadURL(storageRef);
 
@@ -259,7 +260,7 @@ export default function AddCafeLocationScreen() {
     }
   };
 
-  // Category handlers
+  // Gestionari pentru categorii
   const toggleCategory = (category: string) => {
     setSelectedCategories((prev) =>
       prev.includes(category)
@@ -268,7 +269,7 @@ export default function AddCafeLocationScreen() {
     );
   };
 
-  // Opening hours handler
+  // Gestionar pentru programul de lucru
   const handleOpeningHoursSelect = (hours: string) => {
     if (hours === "Custom (enter manually)") {
       setFormData({ ...formData, openingHours: "" });
@@ -278,7 +279,7 @@ export default function AddCafeLocationScreen() {
     setShowHoursDropdown(false);
   };
 
-  // Coffee partner selection handler
+  // Gestionar pentru selectarea partenerului de cafea
   const handlePartnerSelect = (partnerEmail: string) => {
     setFormData({ ...formData, ownerEmail: partnerEmail });
     setShowPartnersDropdown(false);

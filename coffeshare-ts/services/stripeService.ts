@@ -1,6 +1,6 @@
 import { initStripe } from "@stripe/stripe-react-native";
 
-// Initialize Stripe with publishable key
+// Inițializez Stripe cu cheia publică
 const STRIPE_PUBLISHABLE_KEY =
   process.env.STRIPE_PUBLISHABLE_KEY || "pk_test_YOUR_KEY_HERE";
 
@@ -20,28 +20,28 @@ export interface SubscriptionPaymentData {
 }
 
 /**
- * Currency conversion rates (RON to USD)
- * In production, you should fetch these from a real-time API like ExchangeRate-API
+ * Ratele de conversie valutară (RON la USD)
+ * În producție, ar trebui să obții acestea de la un API în timp real precum ExchangeRate-API
  */
 const CURRENCY_RATES = {
-  RON_TO_USD: 0.22, // 1 RON ≈ 0.22 USD (approximate rate)
-  USD_TO_RON: 4.55, // 1 USD ≈ 4.55 RON (approximate rate)
+  RON_TO_USD: 0.22, // 1 RON ≈ 0.22 USD (rată aproximativă)
+  USD_TO_RON: 4.55, // 1 USD ≈ 4.55 RON (rată aproximativă)
 };
 
 /**
- * Currency conversion utility
+ * Utilitarul de conversie valutară
  */
 class CurrencyConverter {
   /**
-   * Convert RON to USD for Stripe processing
+   * Convert RON în USD pentru procesarea Stripe
    */
   static convertRonToUsd(amountInRon: number): number {
     const usdAmount = amountInRon * CURRENCY_RATES.RON_TO_USD;
-    return Math.round(usdAmount * 100); // Convert to cents
+    return Math.round(usdAmount * 100); // Convert în cenți
   }
 
   /**
-   * Convert USD back to RON for display
+   * Convert USD înapoi în RON pentru afișare
    */
   static convertUsdToRon(amountInUsdCents: number): number {
     const usdAmount = amountInUsdCents / 100;
@@ -49,19 +49,19 @@ class CurrencyConverter {
   }
 
   /**
-   * Fetch real-time exchange rates (for production use)
+   * Obțin ratele de schimb în timp real (pentru utilizarea în producție)
    */
   static async fetchExchangeRates(): Promise<{
     ronToUsd: number;
     usdToRon: number;
   }> {
     try {
-      // In production, use a real API like:
+      // În producție, folosesc un API real precum:
       // const response = await fetch('https://api.exchangerate-api.com/v4/latest/RON');
       // const data = await response.json();
       // return { ronToUsd: data.rates.USD, usdToRon: 1 / data.rates.USD };
 
-      // For now, return static rates
+      // Pentru moment, returnez ratele statice
       return {
         ronToUsd: CURRENCY_RATES.RON_TO_USD,
         usdToRon: CURRENCY_RATES.USD_TO_RON,
@@ -85,8 +85,8 @@ class StripeService {
     try {
       await initStripe({
         publishableKey: STRIPE_PUBLISHABLE_KEY,
-        merchantIdentifier: "merchant.com.coffeshare.app", // For Apple Pay
-        urlScheme: "coffeshare", // For redirects
+        merchantIdentifier: "merchant.com.coffeshare.app", // Pentru Apple Pay
+        urlScheme: "coffeshare", // Pentru redirecționări
       });
       this.initialized = true;
       console.log("✅ Stripe initialized successfully");
@@ -97,14 +97,14 @@ class StripeService {
   }
 
   /**
-   * Create a payment intent for subscription
-   * This calls the real backend API with currency conversion
+   * Creez un payment intent pentru abonament
+   * Aceasta apelează API-ul real de backend cu conversia valutară
    */
   async createPaymentIntent(
     subscriptionData: SubscriptionPaymentData
   ): Promise<PaymentIntentData> {
     try {
-      // Convert RON to USD for Stripe processing
+      // Convert RON în USD pentru procesarea Stripe
       const originalAmountRon = subscriptionData.amount;
       const amountInUsdCents =
         CurrencyConverter.convertRonToUsd(originalAmountRon);
@@ -122,7 +122,7 @@ class StripeService {
           },
           body: JSON.stringify({
             amount: amountInUsdCents,
-            currency: "usd", // Always use USD for Stripe
+            currency: "usd", // Folosesc întotdeauna USD pentru Stripe
             description: `CoffeeShare Subscription - ${subscriptionData.planId} (${originalAmountRon} RON)`,
             metadata: {
               planId: subscriptionData.planId,
@@ -147,9 +147,9 @@ class StripeService {
 
       return {
         clientSecret: data.clientSecret,
-        amount: originalAmountRon, // Return original RON amount for display
-        currency: "RON", // Display currency as RON
-        paymentIntentId: data.paymentIntentId, // Add payment intent ID for confirmation
+        amount: originalAmountRon, // Returnez suma originală în RON pentru afișare
+        currency: "RON", // Afișez moneda ca RON
+        paymentIntentId: data.paymentIntentId, // Adaug ID-ul payment intent pentru confirmare
       };
     } catch (error) {
       console.error("❌ Failed to create payment intent:", error);
@@ -158,7 +158,7 @@ class StripeService {
   }
 
   /**
-   * Confirm a payment intent using test payment methods
+   * Confirm un payment intent folosind metode de plată de test
    */
   async confirmPayment(
     paymentIntentId: string,
@@ -176,7 +176,7 @@ class StripeService {
           },
           body: JSON.stringify({
             paymentIntentId,
-            testCardNumber: cardNumber.replace(/\s/g, ""), // Remove spaces
+            testCardNumber: cardNumber.replace(/\s/g, ""), // Elimin spațiile
           }),
         }
       );
@@ -199,17 +199,17 @@ class StripeService {
   }
 
   /**
-   * Simulate backend call for testing
-   * In production, replace this with actual API call
+   * Simulez apelul de backend pentru testare
+   * În producție, înlocuiesc aceasta cu apelul actual de API
    */
   private async simulateBackendCall(
     subscriptionData: SubscriptionPaymentData
   ): Promise<any> {
-    // Simulate network delay
+    // Simulez întârzierea de rețea
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // For testing, return a mock client secret
-    // In production, your backend would create a real PaymentIntent
+    // Pentru testare, returnez un client secret mock
+    // În producție, backend-ul ar crea un PaymentIntent real
     return {
       client_secret: `pi_test_${Date.now()}_secret_${Math.random()
         .toString(36)
@@ -219,7 +219,7 @@ class StripeService {
   }
 
   /**
-   * Process test payment (for development only)
+   * Procesez plata de test (doar pentru dezvoltare)
    */
   async processTestPayment(
     amount: number,
@@ -230,10 +230,10 @@ class StripeService {
         `🧪 Processing test payment: ${amount} ${currency.toUpperCase()}`
       );
 
-      // Simulate payment processing
+      // Simulez procesarea plății
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      // For testing, randomly succeed or fail (90% success rate)
+      // Pentru testare, success sau eșuez aleatoriu (90% rată de succes)
       const success = Math.random() > 0.1;
 
       if (success) {
@@ -250,10 +250,10 @@ class StripeService {
   }
 
   /**
-   * Validate payment method for testing
+   * Validez metoda de plată pentru testare
    */
   validateTestCard(cardNumber: string): boolean {
-    // Stripe test card numbers
+    // Numerele cardurilor de test Stripe
     const testCards = [
       "4242424242424242", // Visa
       "4000056655665556", // Visa (debit)
@@ -267,7 +267,7 @@ class StripeService {
   }
 
   /**
-   * Get test card suggestions
+   * Obțin sugestiile de carduri de test
    */
   getTestCards(): Array<{
     number: string;

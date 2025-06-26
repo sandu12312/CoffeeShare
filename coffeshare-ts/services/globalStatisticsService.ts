@@ -94,7 +94,7 @@ class GlobalStatisticsService {
   private readonly DAILY_STATS_COLLECTION = "dailyStatistics";
 
   /**
-   * Calculate and update global statistics
+   * Calculez și actualizez statisticile globale
    */
   async calculateAndUpdateGlobalStatistics(): Promise<GlobalStatistics> {
     try {
@@ -134,7 +134,7 @@ class GlobalStatisticsService {
         calculatedAt: Timestamp.now(),
       };
 
-      // Date calculations
+      // Calculez datele
       const now = new Date();
       const today = now.toISOString().split("T")[0];
       const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);

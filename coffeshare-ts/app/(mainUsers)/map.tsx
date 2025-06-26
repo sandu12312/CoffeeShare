@@ -43,9 +43,10 @@ import * as Animatable from "react-native-animatable";
 import { Toast as ErrorToast } from "../../components/ErrorComponents";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 
+// Coordonatele importante pentru România
 const DEFAULT_REGION: Region = {
-  latitude: 45.7579, // Timisoara Latitude
-  longitude: 21.2287, // Timisoara Longitude
+  latitude: 45.7579, // Latitudinea Timișoarei
+  longitude: 21.2287, // Longitudinea Timișoarei
   latitudeDelta: 0.04,
   longitudeDelta: 0.02,
 };
@@ -57,8 +58,8 @@ interface Cafe {
     latitude: number;
     longitude: number;
   };
-  address: string; // Add address if available in your Firestore data
-  imageUrl?: string; // Added for café image
+  address: string; // Adaug adresa dacă e disponibilă în datele Firestore
+  imageUrl?: string; // Adăugat pentru imaginea cafenelei
 }
 
 interface RomanianCity {
@@ -68,7 +69,7 @@ interface RomanianCity {
   region: string;
 }
 
-// Major Romanian cities with their coordinates
+// Orașele importante din România cu coordonatele lor
 const ROMANIAN_CITIES: RomanianCity[] = [
   {
     name: "București",
@@ -248,11 +249,11 @@ export default function MapScreen() {
   const [bottomSheetExpanded, setBottomSheetExpanded] = useState(false);
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
 
-  // Animation value for sliding in bottom sheet
+  // Valoarea animației pentru glisarea bottom sheet-ului
   const slideAnim = useRef(new Animated.Value(-200)).current;
   const { height: screenHeight } = Dimensions.get("window");
 
-  // Refs for search functionality
+  // Referințe pentru funcționalitatea de căutare
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const mapRef = useRef<MapView | null>(null);
 
@@ -290,14 +291,14 @@ export default function MapScreen() {
     }
   };
 
-  // Function to request permissions and get location
+  // Funcția pentru a cere permisiuni și a obține locația
   const getLocationAsync = async () => {
-    setLocationError(null); // Reset location error
+    setLocationError(null); // Resetez eroarea de locație
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
       setLocationError(t("map.locationPermissionDenied")); // Tradus
       console.warn("Location permission denied.");
-      return null; // Indicate permission failure
+      return null; // Indic eșecul permisiunii
     }
 
     try {
@@ -324,18 +325,22 @@ export default function MapScreen() {
     setLoading(false);
   }, []);
 
-  // Add useFocusEffect to refresh map data when screen comes into focus
+  // Adaug useFocusEffect pentru a refresh-a datele hărții când ecranul intră în focus
   useFocusEffect(
     useCallback(() => {
-      loadMapData();
-    }, [loadMapData])
+      if (user?.uid) {
+        loadMapData();
+      }
+    }, [user?.uid, loadMapData])
   );
 
   useEffect(() => {
-    loadMapData();
-  }, [loadMapData]);
+    if (user?.uid) {
+      loadMapData();
+    }
+  }, [user?.uid, loadMapData]);
 
-  // Debounce search query
+  // Debounce pentru query-ul de căutare
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -352,14 +357,14 @@ export default function MapScreen() {
     };
   }, [searchQuery]);
 
-  // Handle search suggestions visibility
+  // Gestionez vizibilitatea sugestiilor de căutare
   useEffect(() => {
     setShowSearchSuggestions(searchQuery.length > 0);
   }, [searchQuery]);
 
-  // Cart count is now managed by CartContext
+  // Contorul coșului este acum gestionat de CartContext
 
-  // Load products when cafe is selected
+  // Încarc produsele când o cafenea este selectată
   const loadCafeProducts = async (cafeId: string) => {
     try {
       setLoadingProducts(true);
@@ -380,7 +385,7 @@ export default function MapScreen() {
     }
   };
 
-  // Refresh handler
+  // Handler pentru refresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     setLocationError(null);
@@ -390,17 +395,17 @@ export default function MapScreen() {
     setRefreshing(false);
   }, []);
 
-  // Handle marker press
+  // Gestionez apăsarea marker-ului
   const handleMarkerPress = async (cafe: Cafe) => {
     setSelectedCafe(cafe);
     setBottomSheetVisible(true);
     setBottomSheetExpanded(false);
     setProducts([]);
 
-    // Load products for this cafe
+    // Încarc produsele pentru această cafenea
     await loadCafeProducts(cafe.id);
 
-    // Animate the bottom sheet sliding up
+    // Animez bottom sheet-ul să alunece în sus
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 300,
@@ -408,7 +413,7 @@ export default function MapScreen() {
     }).start();
   };
 
-  // Toggle bottom sheet expansion
+  // Comutez expansiunea bottom sheet-ului
   const toggleBottomSheet = () => {
     const newExpanded = !bottomSheetExpanded;
     setBottomSheetExpanded(newExpanded);
@@ -420,7 +425,7 @@ export default function MapScreen() {
     }).start();
   };
 
-  // Add product to cart with optimistic UI update
+  // Adaug produsul în coș cu actualizare optimistă a UI-ului
   const handleAddToCart = async (product: Product) => {
     if (!user?.uid || !selectedCafe) {
       Toast.show({
@@ -431,7 +436,7 @@ export default function MapScreen() {
       return;
     }
 
-    // Prevent multiple rapid additions of the same product
+    // Previn adăugirile rapide multiple ale aceluiași produs
     if (addingToCart === product.id) return;
 
     setAddingToCart(product.id);
@@ -451,7 +456,7 @@ export default function MapScreen() {
           text1: "Added!",
           text2: `${product.name}`,
         });
-        // Refresh cart count to show accurate count
+        // Refresh-ez contorul coșului pentru a afișa numărul corect
         refreshCartCount();
       } else {
         Toast.show({
@@ -471,7 +476,7 @@ export default function MapScreen() {
     }
   };
 
-  // Navigate to cafe details screen
+  // Navighez la ecranul de detalii al cafenelei
   const navigateToCafeDetails = () => {
     if (selectedCafe) {
       router.push({
@@ -481,7 +486,7 @@ export default function MapScreen() {
     }
   };
 
-  // Close bottom sheet
+  // Închid bottom sheet-ul
   const closeBottomSheet = () => {
     Animated.timing(slideAnim, {
       toValue: -200,
@@ -492,16 +497,16 @@ export default function MapScreen() {
     });
   };
 
-  // Search for Romanian cities matching the query
+  // Caut orașe românești care se potrivesc cu query-ul
   const searchCitySuggestions = useMemo(() => {
     if (searchQuery.length < 2) return [];
 
     return ROMANIAN_CITIES.filter((city) =>
       city.name.toLowerCase().includes(searchQuery.toLowerCase())
-    ).slice(0, 5); // Limit to 5 suggestions
+    ).slice(0, 5); // Limitez la 5 sugestii
   }, [searchQuery]);
 
-  // Filter cafes based on search query
+  // Filtrez cafenelele în funcție de query-ul de căutare
   const filteredCafes = useMemo(() => {
     if (debouncedSearchQuery.length === 0) return cafes;
 
@@ -514,7 +519,7 @@ export default function MapScreen() {
     );
   }, [cafes, debouncedSearchQuery]);
 
-  // Handle city selection
+  // Gestionez selecția orașelor
   const handleCitySelect = useCallback((city: RomanianCity) => {
     const newRegion: Region = {
       latitude: city.latitude,
@@ -527,12 +532,12 @@ export default function MapScreen() {
     setSearchQuery(city.name);
     setShowSearchSuggestions(false);
 
-    // Animate map to new region
+    // Animez harta către noua regiune
     if (mapRef.current) {
       mapRef.current.animateToRegion(newRegion, 1000);
     }
 
-    // Show info toast
+    // Afișez toast cu informații
     Toast.show({
       type: "info",
       text1: `Navigated to ${city.name}`,
@@ -541,19 +546,19 @@ export default function MapScreen() {
     });
   }, []);
 
-  // Handle search input change
+  // Gestionez schimbarea input-ului de căutare
   const handleSearchChange = useCallback((text: string) => {
     setSearchQuery(text);
   }, []);
 
-  // Clear search
+  // Șterg căutarea
   const clearSearch = useCallback(() => {
     setSearchQuery("");
     setDebouncedSearchQuery("");
     setShowSearchSuggestions(false);
   }, []);
 
-  // Default cafe image
+  // Imaginea implicită pentru cafenele
   const defaultCafeImage =
     "https://via.placeholder.com/400x200?text=No+Image+Available";
 

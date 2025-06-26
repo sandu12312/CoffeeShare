@@ -55,13 +55,13 @@ export default function CoffeePartnerDashboard() {
     try {
       setLoading(true);
 
-      // Find the partner's cafe
+      // Găsesc cafeneaua partenerului
       const partnerDoc = await getDoc(doc(db, "coffeePartners", user.uid));
       if (!partnerDoc.exists()) {
         console.error(
           "Partner document not found in coffeePartners collection"
         );
-        // Try legacy partners collection as fallback
+        // Încerc colecția legacy partners ca fallback
         const legacyPartnerDoc = await getDoc(doc(db, "partners", user.uid));
         if (!legacyPartnerDoc.exists()) {
           console.error(
@@ -70,7 +70,7 @@ export default function CoffeePartnerDashboard() {
           return;
         }
         console.log("Using legacy partners collection");
-        // Use legacy doc data
+        // Folosesc datele din documentul legacy
         const partnerData = legacyPartnerDoc.data();
         console.log(
           "Legacy partner document data:",
@@ -86,12 +86,12 @@ export default function CoffeePartnerDashboard() {
             "No associatedCafeId found in legacy, checking if partner has business info..."
           );
 
-          // If partner has business info, use partner as cafe
+          // Dacă partenerul are informații de business, îl folosesc ca cafenea
           if (partnerData.businessName) {
             console.log(
               "Legacy partner has business info, using partner as cafe"
             );
-            // Use partner ID as cafe ID since the partner contains the business info
+            // Folosesc ID-ul partenerului ca ID cafenea deoarece conține informațiile business-ului
             associatedCafeId = user.uid;
             businessName = partnerData.businessName;
 
@@ -99,14 +99,14 @@ export default function CoffeePartnerDashboard() {
             setCafeName(businessName);
             setPartnerId(user.uid);
 
-            // Initialize partner analytics profile
+            // Inițializez profilul de analiză pentru partener
             await partnerAnalyticsService.initializePartnerProfile(
               user.uid,
               user.email || "",
               user.displayName || "Partner"
             );
 
-            // Load dashboard stats
+            // Încarc statisticile dashboard-ului
             const stats =
               await partnerAnalyticsService.getPartnerDashboardStats(user.uid);
             console.log("Dashboard stats loaded:", stats);
@@ -123,7 +123,7 @@ export default function CoffeePartnerDashboard() {
               {
                 label: "Continue Anyway",
                 onPress: () => {
-                  // Allow dashboard to load with a default setup
+                  // Permit dashboard-ului să se încarce cu o configurație implicită
                   setCafeId("default");
                   setCafeName("Setup Required");
                   setPartnerId(user.uid);
@@ -137,14 +137,14 @@ export default function CoffeePartnerDashboard() {
         setCafeId(associatedCafeId);
         setPartnerId(user.uid);
 
-        // Load cafe details (or use business name from partner if no separate cafe doc)
+        // Încarc detaliile cafenelei (sau folosesc numele business-ului din partener dacă nu există doc separat)
         try {
           const cafeDoc = await getDoc(doc(db, "cafes", associatedCafeId));
           if (cafeDoc.exists()) {
             const cafeData = cafeDoc.data();
             setCafeName(cafeData.businessName || cafeData.name || businessName);
           } else {
-            // No separate cafe document, use business name from partner
+            // Nu există document separat pentru cafenea, folosesc numele business-ului din partener
             console.log(
               "No legacy cafe document found, using business name from partner"
             );
@@ -158,14 +158,14 @@ export default function CoffeePartnerDashboard() {
           setCafeName(businessName);
         }
 
-        // Initialize partner analytics profile
+        // Inițializez profilul de analiză pentru partener
         await partnerAnalyticsService.initializePartnerProfile(
           user.uid,
           user.email || "",
           user.displayName || "Partner"
         );
 
-        // Load dashboard stats
+        // Încarc statisticile dashboard-ului
         const stats = await partnerAnalyticsService.getPartnerDashboardStats(
           user.uid
         );
@@ -180,7 +180,7 @@ export default function CoffeePartnerDashboard() {
         JSON.stringify(partnerData, null, 2)
       );
 
-      // Check if partner has associatedCafeId, otherwise use partner as cafe
+      // Verific dacă partenerul are associatedCafeId, altfel folosesc partenerul ca cafenea
       let associatedCafeId =
         partnerData.associatedCafeId || partnerData.cafeId || "";
       let businessName = partnerData.businessName || "Your Business";
@@ -190,10 +190,10 @@ export default function CoffeePartnerDashboard() {
           "No associatedCafeId found, checking if partner has business info..."
         );
 
-        // If partner has business info, use partner as cafe
+        // Dacă partenerul are informații de business, îl folosesc ca cafenea
         if (partnerData.businessName) {
           console.log("Partner has business info, using partner as cafe");
-          // Use partner ID as cafe ID since the partner contains the business info
+          // Folosesc ID-ul partenerului ca ID cafenea deoarece conține informațiile business-ului
           associatedCafeId = user.uid;
           businessName = partnerData.businessName;
 
@@ -201,14 +201,14 @@ export default function CoffeePartnerDashboard() {
           setCafeName(businessName);
           setPartnerId(user.uid);
 
-          // Initialize partner analytics profile
+          // Inițializez profilul de analiză pentru partener
           await partnerAnalyticsService.initializePartnerProfile(
             user.uid,
             user.email || "",
             user.displayName || "Partner"
           );
 
-          // Load dashboard stats
+          // Încarc statisticile dashboard-ului
           const stats = await partnerAnalyticsService.getPartnerDashboardStats(
             user.uid
           );
@@ -226,7 +226,7 @@ export default function CoffeePartnerDashboard() {
             {
               label: "Continue Anyway",
               onPress: () => {
-                // Allow dashboard to load with a default setup
+                // Permit dashboard-ului să se încarce cu o configurație implicită
                 setCafeId("default");
                 setCafeName("Setup Required");
                 setPartnerId(user.uid);
@@ -240,14 +240,14 @@ export default function CoffeePartnerDashboard() {
       setCafeId(associatedCafeId);
       setPartnerId(user.uid);
 
-      // Load cafe details (or use business name from partner if no separate cafe doc)
+      // Încarc detaliile cafenelei (sau folosesc numele business-ului din partener dacă nu există doc separat)
       try {
         const cafeDoc = await getDoc(doc(db, "cafes", associatedCafeId));
         if (cafeDoc.exists()) {
           const cafeData = cafeDoc.data();
           setCafeName(cafeData.businessName || cafeData.name || businessName);
         } else {
-          // No separate cafe document, use business name from partner
+          // Nu există document separat pentru cafenea, folosesc numele business-ului din partener
           console.log(
             "No cafe document found, using business name from partner"
           );
@@ -261,14 +261,14 @@ export default function CoffeePartnerDashboard() {
         setCafeName(businessName);
       }
 
-      // Initialize partner analytics profile
+      // Inițializez profilul de analiză pentru partener
       await partnerAnalyticsService.initializePartnerProfile(
         user.uid,
         user.email || "",
         user.displayName || "Partner"
       );
 
-      // Load dashboard stats
+      // Încarc statisticile dashboard-ului
       const stats = await partnerAnalyticsService.getPartnerDashboardStats(
         user.uid
       );
@@ -304,7 +304,7 @@ export default function CoffeePartnerDashboard() {
     router.push("/(mainCoffeePartners)/settings");
   };
 
-  // Create current date for testing if no data available
+  // Creez data curentă pentru testare dacă nu există date disponibile
   const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 
   if (loading) {

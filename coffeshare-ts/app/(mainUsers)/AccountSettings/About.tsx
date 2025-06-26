@@ -52,7 +52,7 @@ export default function AboutScreen() {
       />
 
       <ScrollView style={styles.scrollView}>
-        {/* Custom Back Button */}
+        {/* Buton custom pentru înapoi */}
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.push("/(mainUsers)/profile")}
@@ -61,7 +61,7 @@ export default function AboutScreen() {
           <Text style={styles.backButtonText}>Înapoi la Profil</Text>
         </TouchableOpacity>
 
-        {/* App Logo and Info */}
+        {/* Logo-ul aplicației și informații */}
         <View style={styles.appSection}>
           <View style={styles.logoContainer}>
             <View style={styles.logoPlaceholder}>
@@ -78,7 +78,7 @@ export default function AboutScreen() {
           </View>
         </View>
 
-        {/* Mission Statement */}
+        {/* Declarația de misiune */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Our Mission</Text>
           <Text style={styles.missionText}>
@@ -89,7 +89,7 @@ export default function AboutScreen() {
           </Text>
         </View>
 
-        {/* Features */}
+        {/* Funcționalități */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>What We Offer</Text>
 
@@ -136,7 +136,7 @@ export default function AboutScreen() {
           </View>
         </View>
 
-        {/* Team */}
+        {/* Echipa */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Meet the Team</Text>
 
@@ -156,7 +156,7 @@ export default function AboutScreen() {
           ))}
         </View>
 
-        {/* Company Info */}
+        {/* Informații despre companie */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Company Information</Text>
 
@@ -198,7 +198,7 @@ export default function AboutScreen() {
           </View>
         </View>
 
-        {/* Acknowledgments */}
+        {/* Mulțumiri */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Special Thanks</Text>
           <Text style={styles.acknowledgeIntro}>
@@ -216,7 +216,7 @@ export default function AboutScreen() {
           </View>
         </View>
 
-        {/* Legal Links */}
+        {/* Link-uri legale */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Legal</Text>
 

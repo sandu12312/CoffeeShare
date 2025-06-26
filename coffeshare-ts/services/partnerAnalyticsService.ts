@@ -18,8 +18,8 @@ import {
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 
-// Constants
-const BEANS_TO_RON_RATE = 2; // 1 bean = 2 RON
+// Constante
+const BEANS_TO_RON_RATE = 2; // 1 boabă = 2 RON
 
 // Interfaces
 export interface PartnerTransaction {
@@ -102,7 +102,7 @@ export interface ReportsData {
 
 class PartnerAnalyticsService {
   /**
-   * Initialize partner analytics profile
+   * Inițializez profilul de analiză al partenerului
    */
   async initializePartnerProfile(
     partnerId: string,

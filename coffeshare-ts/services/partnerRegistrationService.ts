@@ -30,7 +30,7 @@ export interface PendingPartnerRegistration {
 }
 
 export class PartnerRegistrationService {
-  // Get all pending registrations
+  // Obțin toate înregistrările în așteptare
   static async getPendingRegistrations(): Promise<
     PendingPartnerRegistration[]
   > {
@@ -60,7 +60,7 @@ export class PartnerRegistrationService {
     }
   }
 
-  // Get registration by confirmation token
+  // Obțin înregistrarea prin token-ul de confirmare
   static async getRegistrationByToken(
     token: string
   ): Promise<PendingPartnerRegistration | null> {
@@ -91,14 +91,14 @@ export class PartnerRegistrationService {
     }
   }
 
-  // Confirm partner registration
+  // Confirm înregistrarea partenerului
   static async confirmRegistration(token: string): Promise<{
     success: boolean;
     message: string;
     userUid?: string;
   }> {
     try {
-      // Get registration by token
+      // Obțin înregistrarea prin token
       const registration = await this.getRegistrationByToken(token);
 
       if (!registration) {
@@ -108,9 +108,9 @@ export class PartnerRegistrationService {
         };
       }
 
-      // Check if token has expired
+      // Verific dacă token-ul a expirat
       if (new Date() > registration.expiresAt) {
-        // Update status to expired
+        // Actualizez status-ul la expired
         await updateDoc(
           doc(db, "pendingPartnerRegistrations", registration.id),
           {
@@ -125,7 +125,7 @@ export class PartnerRegistrationService {
         };
       }
 
-      // Create Firebase Auth user
+      // Creez utilizatorul Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         registration.email,
@@ -134,7 +134,7 @@ export class PartnerRegistrationService {
 
       const newUserUid = userCredential.user.uid;
 
-      // Create user profile document
+      // Creez documentul profilului utilizatorului
       const userProfileRef = doc(db, "users", newUserUid);
       await setDoc(userProfileRef, {
         uid: newUserUid,
@@ -146,7 +146,7 @@ export class PartnerRegistrationService {
         registrationSource: "admin_invitation",
       });
 
-      // Update registration status to confirmed
+      // Actualizez status-ul înregistrării la confirmed
       await updateDoc(doc(db, "pendingPartnerRegistrations", registration.id), {
         status: "confirmed",
         confirmedAt: serverTimestamp(),
@@ -174,7 +174,7 @@ export class PartnerRegistrationService {
     }
   }
 
-  // Reject partner registration
+  // Resping înregistrarea partenerului
   static async rejectRegistration(
     registrationId: string,
     reason?: string
@@ -200,7 +200,7 @@ export class PartnerRegistrationService {
     }
   }
 
-  // Clean up expired registrations
+  // Fac curățenie pentru înregistrările expirate
   static async cleanupExpiredRegistrations(): Promise<void> {
     try {
       const now = new Date();
@@ -234,7 +234,7 @@ export class PartnerRegistrationService {
     }
   }
 
-  // Get registration statistics
+  // Obțin statisticile înregistrărilor
   static async getRegistrationStats(): Promise<{
     pending: number;
     confirmed: number;
@@ -273,7 +273,7 @@ export class PartnerRegistrationService {
     }
   }
 
-  // Resend confirmation email (placeholder)
+  // Retrimît email-ul de confirmare (placeholder)
   static async resendConfirmationEmail(
     registrationId: string
   ): Promise<{ success: boolean; message: string }> {
@@ -298,7 +298,7 @@ export class PartnerRegistrationService {
         };
       }
 
-      // Check if not expired
+      // Verific dacă nu a expirat
       let expiresAt: Date;
       if (registration.expiresAt instanceof Date) {
         expiresAt = registration.expiresAt;
@@ -308,7 +308,7 @@ export class PartnerRegistrationService {
       ) {
         expiresAt = registration.expiresAt.toDate();
       } else {
-        expiresAt = new Date(); // fallback to current date if invalid
+        expiresAt = new Date(); // fallback la data curentă dacă este nevalidă
       }
 
       if (new Date() > expiresAt) {
@@ -318,7 +318,7 @@ export class PartnerRegistrationService {
         };
       }
 
-      // In a real implementation, this would call the email service
+      // Într-o implementare reală, aceasta ar apela serviciul de email
       const confirmationLink = `https://yourdomain.com/confirm-partner-registration?token=${registration.confirmationToken}`;
 
       console.log("Resending confirmation email to:", registration.email);

@@ -46,7 +46,7 @@ export interface UserSubscription {
 export class SubscriptionService {
   // === ADMIN FUNCTIONS ===
 
-  // Create a new subscription plan
+  // Creez un plan de abonament nou
   static async createSubscriptionPlan(
     plan: Omit<SubscriptionPlan, "id">
   ): Promise<string> {

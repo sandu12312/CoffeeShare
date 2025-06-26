@@ -33,12 +33,12 @@ export default function ManageSubscriptionsScreen() {
   const [showAddEditModal, setShowAddEditModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
 
-  // Load subscription plans on mount
+  // Încarc planurile de abonament la început
   useEffect(() => {
     loadSubscriptions();
   }, []);
 
-  // Load subscription plans from Firebase
+  // Încarc planurile de abonament din Firebase
   const loadSubscriptions = async () => {
     try {
       setLoading(true);
@@ -56,26 +56,26 @@ export default function ManageSubscriptionsScreen() {
     }
   };
 
-  // Handle refresh
+  // Gestionez refresh-ul listei
   const handleRefresh = async () => {
     setRefreshing(true);
     await loadSubscriptions();
     setRefreshing(false);
   };
 
-  // Handle add new subscription
+  // Gestionez adăugarea unui nou abonament
   const handleAddSubscription = () => {
     setEditingPlan(null);
     setShowAddEditModal(true);
   };
 
-  // Handle edit subscription
+  // Gestionez editarea unui abonament existent
   const handleEditSubscription = (plan: SubscriptionPlan) => {
     setEditingPlan(plan);
     setShowAddEditModal(true);
   };
 
-  // Handle toggle status
+  // Gestionez comutarea statusului unui plan (activ/inactiv)
   const handleToggleStatus = async (plan: SubscriptionPlan) => {
     try {
       const newStatus = !plan.isActive;
@@ -83,7 +83,7 @@ export default function ManageSubscriptionsScreen() {
         isActive: newStatus,
       });
 
-      // Update local state
+      // Actualizez starea locală
       setSubscriptions((prevSubs) =>
         prevSubs.map((s) =>
           s.id === plan.id ? { ...s, isActive: newStatus } : s
@@ -107,7 +107,7 @@ export default function ManageSubscriptionsScreen() {
     }
   };
 
-  // Handle delete subscription
+  // Gestionez ștergerea unui plan de abonament
   const handleDeleteSubscription = (plan: SubscriptionPlan) => {
     showConfirmModal(
       "Delete Subscription Plan",
@@ -122,7 +122,7 @@ export default function ManageSubscriptionsScreen() {
             text2: `${plan.name} has been deleted`,
           });
 
-          // Reload subscriptions
+          // Reîncarc abonamentele
           loadSubscriptions();
         } catch (error) {
           console.error("Error deleting plan:", error);
@@ -136,17 +136,17 @@ export default function ManageSubscriptionsScreen() {
     );
   };
 
-  // Handle modal success
+  // Gestionez succesul modal-ului (reîncarc datele)
   const handleModalSuccess = () => {
     loadSubscriptions();
   };
 
-  // Format price
+  // Formatez prețul în RON
   const formatPrice = (price: number) => {
     return `${price.toFixed(2)} RON`;
   };
 
-  // Render subscription item
+  // Randez fiecare element din lista de abonamente
   const renderSubscriptionItem = ({ item }: { item: SubscriptionPlan }) => {
     const statusColor = item.isActive ? "#4CAF50" : "#9E9E9E";
 

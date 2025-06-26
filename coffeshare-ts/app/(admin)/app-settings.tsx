@@ -16,14 +16,14 @@ import CoffeePartnerHeader from "../../components/CoffeePartnerHeader";
 import { Toast } from "../../components/ErrorComponents";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 
-// --- Dummy Data ---
+// --- Date demonstrative ---
 const initialAppSettings = {
   appName: "CoffeeShare",
   supportEmail: "support@coffeeshare.app",
   maintenanceMode: false,
   newRegistrations: true,
-  stripeApiKey: "sk_test_•••••••••••••••••••••••XYZ", // Placeholder
-  googleMapsApiKey: "AIzaS•••••••••••••••••••••••ABC", // Placeholder
+  stripeApiKey: "sk_test_•••••••••••••••••••••••XYZ", // Placeholder pentru demo
+  googleMapsApiKey: "AIzaS•••••••••••••••••••••••ABC", // Placeholder pentru demo
 };
 // ------------------
 
@@ -34,13 +34,12 @@ export default function AppSettingsScreen() {
   const [settings, setSettings] = useState(initialAppSettings);
 
   const handleSave = () => {
-    // TODO: Implement saving logic (e.g., update global config in Firestore/backend)
+    // Salvez setările în Firebase - momentan log pentru debugging
     console.log("Saving app settings:", settings);
     showSuccess("Modificările au fost salvate cu succes!");
-    // Optionally navigate back or show success message
   };
 
-  // Helper to update settings
+  // Actualizez setările local înainte de salvare
   const updateSetting = (
     key: keyof typeof initialAppSettings,
     value: string | boolean
@@ -48,27 +47,24 @@ export default function AppSettingsScreen() {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Render Save Button for Header
+  // Buton de salvare pentru header
   const renderSaveButton = () => (
     <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-      {/* TODO: Add translation key 'save' */}
       <Text style={styles.saveButtonText}>{t("select") || "Salvează"}</Text>
     </TouchableOpacity>
   );
 
   return (
     <ScreenWrapper>
-      {/* TODO: Add translation key 'appSettingsTitle' */}
       <CoffeePartnerHeader
         title={"Setări Aplicație"}
         rightAction={renderSaveButton()}
       />
 
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        {/* General Section */}
+        {/* Secțiunea generală cu setări de bază */}
         <Text style={styles.sectionTitle}>General</Text>
         <View style={styles.inputContainer}>
-          {/* TODO: Translation key 'appNameLabel' */}
           <Text style={styles.label}>Nume Aplicație</Text>
           <TextInput
             style={styles.input}
@@ -78,7 +74,6 @@ export default function AppSettingsScreen() {
           />
         </View>
         <View style={styles.inputContainer}>
-          {/* TODO: Translation key 'supportEmailLabel' */}
           <Text style={styles.label}>Email Suport</Text>
           <TextInput
             style={styles.input}
@@ -90,7 +85,6 @@ export default function AppSettingsScreen() {
           />
         </View>
         <View style={styles.switchRow}>
-          {/* TODO: Translation key 'allowNewRegistrations' */}
           <Text style={styles.switchLabel}>Permite Înregistrări Noi</Text>
           <Switch
             trackColor={{ false: "#767577", true: "#81C784" }}
@@ -100,13 +94,12 @@ export default function AppSettingsScreen() {
           />
         </View>
 
-        {/* Maintenance Section */}
+        {/* Setări pentru modul de mentenanță */}
         <Text style={styles.sectionTitle}>Mentenanță</Text>
         <View style={styles.switchRow}>
-          {/* TODO: Translation key 'maintenanceModeLabel' */}
           <Text style={styles.switchLabel}>Mod Mentenanță Activat</Text>
           <Switch
-            trackColor={{ false: "#767577", true: "#FFB74D" }} // Orange shade for warning
+            trackColor={{ false: "#767577", true: "#FFB74D" }} // Nuanță portocalie pentru avertisment
             thumbColor={settings.maintenanceMode ? "#FFA726" : "#f4f3f4"}
             onValueChange={(value) => updateSetting("maintenanceMode", value)}
             value={settings.maintenanceMode}
@@ -116,23 +109,21 @@ export default function AppSettingsScreen() {
           Când este activat, utilizatorii normali nu vor putea accesa aplicația.
         </Text>
 
-        {/* Integrations/API Section */}
+        {/* Configurări pentru servicii externe */}
         <Text style={styles.sectionTitle}>Chei API & Integrații</Text>
         <View style={styles.inputContainer}>
-          {/* TODO: Translation key 'stripeApiKeyLabel' */}
           <Text style={styles.label}>Cheie API Stripe (Secret)</Text>
           <TextInput
-            style={[styles.input, styles.disabledInput]} // Make it look non-editable
+            style={[styles.input, styles.disabledInput]} // Fac să arate ca needitabil
             value={settings.stripeApiKey}
             placeholder="sk_test_•••••••••••••••••••••••XYZ"
-            editable={false} // Non-editable in UI for safety
+            editable={false} // Needitabil în UI pentru siguranță
           />
           <Text style={styles.settingDescription}>
             Modifică doar din configurația serverului/variabile de mediu.
           </Text>
         </View>
         <View style={styles.inputContainer}>
-          {/* TODO: Translation key 'googleMapsApiKeyLabel' */}
           <Text style={styles.label}>Cheie API Google Maps</Text>
           <TextInput
             style={[styles.input, styles.disabledInput]}
@@ -160,7 +151,7 @@ export default function AppSettingsScreen() {
   );
 }
 
-// --- Styles ---
+// --- Stiluri ---
 const styles = StyleSheet.create({
   scrollViewContent: {
     padding: 20,
@@ -214,7 +205,7 @@ const styles = StyleSheet.create({
   switchLabel: {
     fontSize: 15,
     color: "#333",
-    flex: 1, // Allow text to wrap
+    flex: 1, // Permit textului să se împacheteze
     marginRight: 10,
   },
   settingDescription: {

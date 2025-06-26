@@ -33,7 +33,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cartItemCount, setCartItemCount] = useState(0);
   const { user } = useFirebase();
 
-  // Load initial cart count
+  // Încarc numărul de produse din coș la login
   useEffect(() => {
     if (user?.uid) {
       refreshCartCount();
@@ -42,11 +42,11 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }
   }, [user]);
 
-  // Refresh cart count when app becomes active (helps after QR redemption)
+  // Actualizez coșul când aplicația devine activă - util după scanarea QR
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (nextAppState === "active" && user?.uid) {
-        // Refresh cart count when app becomes active
+        // Refresh după ce utilizatorul revine în aplicație
         refreshCartCount();
       }
     };

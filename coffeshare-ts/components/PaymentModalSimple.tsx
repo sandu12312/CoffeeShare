@@ -42,11 +42,11 @@ export default function PaymentModalSimple({
   const [cvc, setCvc] = useState("");
   const [showTestCards, setShowTestCards] = useState(false);
 
-  // Initialize Stripe when modal opens
+  // Inițializez Stripe când se deschide modalul
   useEffect(() => {
     if (visible) {
       initializeStripe();
-      // Pre-fill with test card for easier testing
+      // Pre-completez cu cartea de test pentru testare mai ușoară
       setCardNumber("4242 4242 4242 4242");
       setExpiryDate("12/25");
       setCvc("123");
@@ -67,18 +67,18 @@ export default function PaymentModalSimple({
   };
 
   const formatCardNumber = (text: string) => {
-    // Remove all non-digits
+    // Elimin toate non-cifrele
     const cleaned = text.replace(/\D/g, "");
-    // Add spaces every 4 digits
+    // Adaug spații la fiecare 4 cifre
     const formatted = cleaned.replace(/(.{4})/g, "$1 ").trim();
-    // Limit to 19 characters (16 digits + 3 spaces)
+    // Limitez la 19 caractere (16 cifre + 3 spații)
     return formatted.substring(0, 19);
   };
 
   const formatExpiryDate = (text: string) => {
-    // Remove all non-digits
+    // Elimin toate non-cifrele
     const cleaned = text.replace(/\D/g, "");
-    // Add slash after 2 digits
+    // Adaug slash după 2 cifre
     if (cleaned.length >= 2) {
       return cleaned.substring(0, 2) + "/" + cleaned.substring(2, 4);
     }
@@ -115,16 +115,16 @@ export default function PaymentModalSimple({
 
     setLoading(true);
     try {
-      // Check if server is running (fallback to test payment if not)
+      // Verific dacă serverul rulează (fallback la plata de test dacă nu)
       const healthCheck = await fetch("http://localhost:3001/health").catch(
         () => null
       );
 
       if (!healthCheck) {
-        // Fallback to test payment if server is not running
+        // Fallback la plata de test dacă serverul nu rulează
         console.log("⚠️ Server not running, using test payment");
 
-        // Validate if it's a test card
+        // Validez dacă este o carte de test
         const isTestCard = stripeService.validateTestCard(cardNumber);
 
         if (!isTestCard) {
@@ -137,7 +137,7 @@ export default function PaymentModalSimple({
           return;
         }
 
-        // Process test payment
+        // Procesez plata de test
         const success = await stripeService.processTestPayment(
           subscriptionData.price * 100,
           subscriptionData.currency
@@ -155,20 +155,20 @@ export default function PaymentModalSimple({
         return;
       }
 
-      // Real Stripe payment flow
+      // Fluxul real de plată Stripe
       console.log("🔄 Creating real payment intent...");
 
       const paymentIntentData = await stripeService.createPaymentIntent({
         subscriptionId: subscriptionData.planId,
         planId: subscriptionData.planId,
         userId: subscriptionData.userId,
-        amount: subscriptionData.price, // Amount in RON (conversion handled in service)
+        amount: subscriptionData.price, // Suma în RON (conversia se face în serviciu)
         currency: subscriptionData.currency,
       });
 
       console.log("✅ Payment intent created, confirming payment...");
 
-      // Confirm the payment with the entered card details
+      // Confirm plata cu detaliile cardului introduse
       const confirmedPayment = await stripeService.confirmPayment(
         paymentIntentData.paymentIntentId,
         cardNumber
@@ -240,7 +240,7 @@ export default function PaymentModalSimple({
             style={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* Subscription Details */}
+            {/* Detalii Abonament */}
             <View style={styles.subscriptionDetails}>
               <Text style={styles.planName}>{subscriptionData.planName}</Text>
               <Text style={styles.planPrice}>
@@ -249,7 +249,7 @@ export default function PaymentModalSimple({
               </Text>
             </View>
 
-            {/* Test Mode Banner */}
+            {/* Banner Mod Test */}
             <View style={styles.testBanner}>
               <Ionicons name="flask" size={20} color="#FF9500" />
               <Text style={styles.testBannerText}>
@@ -257,7 +257,7 @@ export default function PaymentModalSimple({
               </Text>
             </View>
 
-            {/* Test Cards Helper */}
+            {/* Helper pentru Cărți de Test */}
             <TouchableOpacity
               style={styles.testCardsButton}
               onPress={() => setShowTestCards(!showTestCards)}
@@ -293,7 +293,7 @@ export default function PaymentModalSimple({
               </View>
             )}
 
-            {/* Card Input Fields */}
+            {/* Câmpuri de Introducere Card */}
             <View style={styles.cardContainer}>
               <Text style={styles.cardLabel}>Card Information</Text>
 
@@ -340,7 +340,7 @@ export default function PaymentModalSimple({
               </View>
             </View>
 
-            {/* Payment Summary */}
+            {/* Sumar Plată */}
             <View style={styles.paymentSummary}>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Subscription</Text>
@@ -372,7 +372,7 @@ export default function PaymentModalSimple({
             </View>
           </ScrollView>
 
-          {/* Payment Button */}
+          {/* Buton Plată */}
           <View style={styles.footer}>
             <TouchableOpacity
               style={[

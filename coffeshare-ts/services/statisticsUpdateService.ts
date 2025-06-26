@@ -16,7 +16,7 @@ interface StatisticsUpdateTrigger {
 
 class StatisticsUpdateService {
   private updateTriggers: StatisticsUpdateTrigger[] = [
-    // User-related triggers
+    // Trigger-e legate de utilizatori
     { collection: "users", updateType: "all", debounceMs: 5000 },
     { collection: "admins", updateType: "all", debounceMs: 5000 },
     { collection: "partners", updateType: "all", debounceMs: 5000 },
@@ -26,16 +26,16 @@ class StatisticsUpdateService {
       debounceMs: 5000,
     },
 
-    // Business-related triggers
+    // Trigger-e legate de business
     { collection: "cafes", updateType: "all", debounceMs: 3000 },
     { collection: "products", updateType: "all", debounceMs: 10000 },
 
-    // Transaction-related triggers
+    // Trigger-e legate de tranzacții
     { collection: "transactions", updateType: "all", debounceMs: 1000 },
     { collection: "userSubscriptions", updateType: "all", debounceMs: 2000 },
     { collection: "userActivities", updateType: "all", debounceMs: 3000 },
 
-    // Cart-related triggers
+    // Trigger-e legate de coș
     { collection: "userCarts", updateType: "all", debounceMs: 5000 },
   ];
 
@@ -44,7 +44,7 @@ class StatisticsUpdateService {
   private isActive = false;
 
   /**
-   * Start listening to collection changes
+   * Încep să ascult modificările colecțiilor
    */
   startListening(): void {
     if (this.isActive) {
@@ -65,7 +65,7 @@ class StatisticsUpdateService {
   }
 
   /**
-   * Stop all listeners
+   * Opresc toți ascultătorii
    */
   stopListening(): void {
     if (!this.isActive) {
@@ -74,11 +74,11 @@ class StatisticsUpdateService {
 
     console.log("⏹️ Stopping statistics update service...");
 
-    // Clear all listeners
+    // Șterg toți ascultătorii
     this.listeners.forEach((unsubscribe) => unsubscribe());
     this.listeners = [];
 
-    // Clear all timeouts
+    // Șterg toate timeout-urile
     this.updateTimeouts.forEach((timeout) => clearTimeout(timeout));
     this.updateTimeouts.clear();
 
@@ -87,14 +87,14 @@ class StatisticsUpdateService {
   }
 
   /**
-   * Setup listener for a specific collection
+   * Configurez ascultătorul pentru o colecție specifică
    */
   private setupCollectionListener(trigger: StatisticsUpdateTrigger): void {
     try {
       const unsubscribe = onSnapshot(
         collection(db, trigger.collection),
         (snapshot) => {
-          // Only trigger updates if there are actual changes
+          // Declanșez actualizări doar dacă există modificări reale
           if (snapshot.docChanges().length > 0) {
             console.log(
               `📊 Changes detected in ${trigger.collection}, scheduling statistics update`
@@ -104,7 +104,7 @@ class StatisticsUpdateService {
         },
         (error) => {
           console.warn(`⚠️ Error listening to ${trigger.collection}:`, error);
-          // Continue listening to other collections even if one fails
+          // Continui să ascult la alte colecții chiar dacă una eșuează
         }
       );
 
@@ -118,18 +118,18 @@ class StatisticsUpdateService {
   }
 
   /**
-   * Schedule a debounced statistics update
+   * Programez o actualizare de statistici cu debounce
    */
   private scheduleStatisticsUpdate(trigger: StatisticsUpdateTrigger): void {
     const key = trigger.collection;
     const debounceMs = trigger.debounceMs || 3000;
 
-    // Clear existing timeout for this collection
+    // Șterg timeout-ul existent pentru această colecție
     if (this.updateTimeouts.has(key)) {
       clearTimeout(this.updateTimeouts.get(key)!);
     }
 
-    // Schedule new update
+    // Programez actualizarea nouă
     const timeout = setTimeout(async () => {
       try {
         console.log(
@@ -149,7 +149,7 @@ class StatisticsUpdateService {
   }
 
   /**
-   * Manually trigger a statistics update
+   * Declanșez manual o actualizare de statistici
    */
   async triggerUpdate(): Promise<void> {
     try {
@@ -163,7 +163,7 @@ class StatisticsUpdateService {
   }
 
   /**
-   * Add a custom trigger
+   * Adaug un trigger personalizat
    */
   addTrigger(trigger: StatisticsUpdateTrigger): void {
     if (this.updateTriggers.some((t) => t.collection === trigger.collection)) {
@@ -181,7 +181,7 @@ class StatisticsUpdateService {
   }
 
   /**
-   * Remove a trigger
+   * Elimin un trigger
    */
   removeTrigger(collectionName: string): void {
     const index = this.updateTriggers.findIndex(
@@ -194,7 +194,7 @@ class StatisticsUpdateService {
 
     this.updateTriggers.splice(index, 1);
 
-    // Clear any pending timeout for this collection
+    // Șterg orice timeout în așteptare pentru această colecție
     if (this.updateTimeouts.has(collectionName)) {
       clearTimeout(this.updateTimeouts.get(collectionName)!);
       this.updateTimeouts.delete(collectionName);
@@ -204,7 +204,7 @@ class StatisticsUpdateService {
   }
 
   /**
-   * Get current status
+   * Obțin status-ul curent
    */
   getStatus(): {
     isActive: boolean;
@@ -219,19 +219,19 @@ class StatisticsUpdateService {
   }
 
   /**
-   * Force update statistics immediately (bypass debouncing)
+   * Forțez actualizarea statisticilor imediat (ocolesc debouncing-ul)
    */
   async forceUpdate(): Promise<void> {
-    // Clear all pending timeouts
+    // Șterg toate timeout-urile în așteptare
     this.updateTimeouts.forEach((timeout) => clearTimeout(timeout));
     this.updateTimeouts.clear();
 
-    // Trigger immediate update
+    // Declanșez actualizarea imediată
     await this.triggerUpdate();
   }
 
   /**
-   * Batch update statistics metadata (for complex operations)
+   * Actualizez batch metadatele statisticilor (pentru operații complexe)
    */
   async batchUpdateStatisticsMetadata(
     updates: Record<string, any>
@@ -240,7 +240,7 @@ class StatisticsUpdateService {
       const batch = writeBatch(db);
       const statsRef = doc(db, "globalStatistics", "global");
 
-      // Add lastManualUpdate timestamp
+      // Adaug timestamp-ul lastManualUpdate
       batch.set(
         statsRef,
         {

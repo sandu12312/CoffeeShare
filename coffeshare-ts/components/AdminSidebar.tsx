@@ -55,11 +55,13 @@ const AdminSidebar = () => {
 
   return (
     <View style={styles.container}>
+      {/* Header panoul admin */}
       <View style={styles.header}>
         <Text style={styles.title}>CoffeShare</Text>
         <Text style={styles.subtitle}>Admin Panel</Text>
       </View>
 
+      {/* Container pentru meniu */}
       <ScrollView style={styles.menuContainer}>
         {menuItems.map((item, index) => {
           const isActive = pathname === item.href;
@@ -88,6 +90,7 @@ const AdminSidebar = () => {
         })}
       </ScrollView>
 
+      {/* Footer cu butonul de ieșire */}
       <View style={styles.footer}>
         <Link href="/(mainUsers)/dashboard" asChild>
           <TouchableOpacity style={styles.footerButton}>

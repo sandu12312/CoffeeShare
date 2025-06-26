@@ -1,17 +1,17 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
 
-// Check if running in Expo Go
+// Verific dacă rulează în Expo Go
 export const isExpoGo = Constants.appOwnership === "expo";
 
-// Fallback for react-native-device-info when running in Expo Go
+// Fallback pentru react-native-device-info când rulează în Expo Go
 export const deviceInfoFallback = {
   getModel: () => Promise.resolve(`${Platform.OS} Device`),
   getSystemVersion: () =>
     Promise.resolve(Platform.Version?.toString() || "1.0"),
   getUniqueId: () => Promise.resolve("expo-go-unique-id"),
   getDeviceId: () => Promise.resolve(`expo-go-${Platform.OS}`),
-  isEmulator: () => Promise.resolve(true), // Assume emulator in Expo Go
+  isEmulator: () => Promise.resolve(true), // Presupun emulator în Expo Go
   hasSystemFeature: () => Promise.resolve(false),
   getSystemName: () => Promise.resolve(Platform.OS),
   getVersion: () => Promise.resolve("1.0.0"),
@@ -56,7 +56,7 @@ export const deviceInfoFallback = {
   supportedAbis: () => Promise.resolve([]),
 };
 
-// Safe DeviceInfo import with fallback
+// Import sigur DeviceInfo cu fallback
 export const getDeviceInfo = () => {
   if (isExpoGo) {
     return deviceInfoFallback;

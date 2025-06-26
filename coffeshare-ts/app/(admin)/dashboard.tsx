@@ -13,14 +13,14 @@ import { useLanguage } from "../../context/LanguageContext";
 import ScreenWrapper from "../../components/ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-// Using the new UserManagementBox component
+// Folosesc componenta de administrare utilizatori
 import UserManagementBox from "../../components/UserManagementBox";
 import CoffeePartnerHeader from "../../components/CoffeePartnerHeader";
 import { roleManagementService } from "../../services/roleManagementService";
 import { formatDate } from "../../utils/dateUtils";
 
 const { width } = Dimensions.get("window");
-const CARD_WIDTH = width / 2 - 30; // For potential 2-column layout
+const CARD_WIDTH = width / 2 - 30; // Pentru layout potențial în 2 coloane
 
 export default function AdminDashboardScreen() {
   const { t } = useLanguage();
@@ -63,7 +63,7 @@ export default function AdminDashboardScreen() {
   };
 
   const handleUserManagementUpdate = () => {
-    // Refresh dashboard data when users are updated
+    // Reîmprospătez datele dashboard-ului când utilizatorii sunt actualizați
     loadDashboardData();
   };
 

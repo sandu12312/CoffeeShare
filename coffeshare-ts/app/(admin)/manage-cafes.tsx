@@ -9,7 +9,7 @@ export default function ManageCafesScreen() {
   const { refreshUser } = useAuth();
 
   const handleCafeUpdated = () => {
-    // Refresh auth user in case permissions changed
+    // Reîmprospătez utilizatorul auth în caz că permisiunile s-au schimbat
     refreshUser();
   };
 

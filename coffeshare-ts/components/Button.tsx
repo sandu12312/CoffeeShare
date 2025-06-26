@@ -10,6 +10,7 @@ type ButtonProps = {
 };
 
 export default function Button({ label, theme, onPress, icon }: ButtonProps) {
+  // Gestionez butonul de înapoi pentru tema login->welcome
   if (theme === "login->welcome") {
     return (
       <TouchableOpacity style={styles.backButton} onPress={onPress}>
@@ -18,6 +19,7 @@ export default function Button({ label, theme, onPress, icon }: ButtonProps) {
     );
   }
 
+  // Randez butonul standard pentru tema welcome->login
   return (
     <TouchableOpacity style={styles.button} onPress={onPress}>
       <Text style={styles.buttonText}>{label}</Text>

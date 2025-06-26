@@ -20,7 +20,7 @@ import globalStatisticsService, {
 } from "../../services/globalStatisticsService";
 import Toast from "react-native-toast-message";
 
-// Placeholder for charting libraries
+// Placeholder pentru biblioteci de grafice
 // import { LineChart, PieChart } from "react-native-chart-kit";
 
 const { width } = Dimensions.get("window");
@@ -42,7 +42,7 @@ export default function GeneralStatisticsScreen() {
     loadStatistics();
     loadTrendingData();
 
-    // Subscribe to real-time updates
+    // Mă abonez la actualizări în timp real
     const unsubscribe = globalStatisticsService.subscribeToGlobalStatistics(
       (stats) => {
         if (stats) {
@@ -167,7 +167,6 @@ export default function GeneralStatisticsScreen() {
 
   return (
     <ScreenWrapper>
-      {/* TODO: Add translation key 'generalStatisticsTitle' */}
       <CoffeePartnerHeader title={"Statistici Generale"} />
 
       <ScrollView
@@ -176,7 +175,7 @@ export default function GeneralStatisticsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* TODO: Implement Date Range Selector */}
+        {/* Selector pentru perioada de timp - pe viitor */}
         <Text style={styles.dateRangeText}>Perioada: Ultimele 30 de zile</Text>
 
         {/* Last Updated Info */}
@@ -467,7 +466,7 @@ export default function GeneralStatisticsScreen() {
   );
 }
 
-// Updated styles
+// Stiluri actualizate
 const styles = StyleSheet.create({
   scrollViewContent: {
     padding: 15,

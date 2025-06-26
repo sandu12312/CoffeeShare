@@ -43,10 +43,10 @@ const styles = StyleSheet.create({
   },
   activeDot: {
     width: 20,
-    backgroundColor: "#D2B48C", // Saddle brown - a rich coffee color
+    backgroundColor: "#D2B48C", // Maro-cafeniu - o culoare bogată de cafea
   },
   inactiveDot: {
     width: 8,
-    backgroundColor: "#D2B48C", // Tan - a lighter coffee color
+    backgroundColor: "#D2B48C", // Tan - o culoare de cafea mai deschisă
   },
 });

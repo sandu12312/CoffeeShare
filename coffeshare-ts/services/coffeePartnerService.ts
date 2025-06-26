@@ -59,12 +59,12 @@ export interface Product {
 }
 
 /**
- * Coffee Partner Service
- * Handles operations for coffee partners to manage their cafes and products
+ * Serviciu Coffee Partner
+ * Gestionez operațiunile pentru partenerii de cafea să își administreze cafenelele și produsele
  */
 class CoffeePartnerService {
   /**
-   * Get all cafes owned by the current user
+   * Obțin toate cafenelele deținute de utilizatorul curent
    */
   async getMyCafes(): Promise<CafeDetails[]> {
     const user = auth.currentUser;

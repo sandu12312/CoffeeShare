@@ -26,7 +26,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { ErrorModal, Toast } from "../../components/ErrorComponents";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 
-// Placeholder for a chart library
+// Placeholder pentru biblioteci de grafice
 // import { LineChart } from 'react-native-chart-kit';
 
 const { width } = Dimensions.get("window");
@@ -81,14 +81,14 @@ export default function ReportsScreen() {
 
       setPartnerId(user.uid);
 
-      // Initialize partner analytics profile
+      // Inițializez profilul de analiză pentru partener
       await partnerAnalyticsService.initializePartnerProfile(
         user.uid,
         user.email || "",
         user.displayName || "Partner"
       );
 
-      // Get reports data for the selected date range
+      // Obțin datele de raportare pentru intervalul de date selectat
       const reportsData = await partnerAnalyticsService.getPartnerReportsData(
         user.uid,
         selectedDateRange
@@ -104,7 +104,7 @@ export default function ReportsScreen() {
     }
   }, [user?.uid, selectedDateRange, showError]);
 
-  // Add useFocusEffect to refresh reports when screen comes into focus
+  // Adaug useFocusEffect pentru a reîmprospăta rapoartele când ecranul intră în focus
   useFocusEffect(
     useCallback(() => {
       if (user?.uid) {
@@ -124,7 +124,7 @@ export default function ReportsScreen() {
     loadReportData();
   }, [loadReportData]);
 
-  // Prepare chart data from the analytics with different granularities
+  // Pregătesc datele pentru grafic din analize cu granularități diferite
   const prepareChartData = () => {
     if (!reportData?.dailyReports || reportData.dailyReports.length === 0) {
       return {
@@ -133,13 +133,13 @@ export default function ReportsScreen() {
       };
     }
 
-    // Sort data by date
+    // Sortez datele după dată
     const sortedData = [...reportData.dailyReports].sort((a, b) => {
       return a.date.localeCompare(b.date);
     });
 
     if (selectedDateRange === 1) {
-      // 1 DAY: Show scans per hour (every 3 hours for better readability)
+      // 1 ZI: Afișez scanările pe oră (la fiecare 3 ore pentru lizibilitate mai bună)
       const latestDay = sortedData[sortedData.length - 1];
       if (!latestDay?.hourlyDistribution) {
         return {
@@ -148,7 +148,7 @@ export default function ReportsScreen() {
         };
       }
 
-      // Group hours into 3-hour intervals for better readability
+      // Grupez orele în intervale de 3 ore pentru lizibilitate mai bună
       const hourIntervals = [
         { label: "6AM", hours: [6, 7, 8] },
         { label: "9AM", hours: [9, 10, 11] },
@@ -172,7 +172,7 @@ export default function ReportsScreen() {
         datasets: [{ data: intervalData }],
       };
     } else if (selectedDateRange === 7) {
-      // 7 DAYS: Show scans per day (week days)
+      // 7 ZILE: Afișez scanările pe zi (zilele săptămânii)
       const last7Days = sortedData.slice(-7);
 
       return {
@@ -183,11 +183,11 @@ export default function ReportsScreen() {
         datasets: [{ data: last7Days.map((item) => item.scansCount || 0) }],
       };
     } else if (selectedDateRange === 28) {
-      // 1 MONTH: Show scans per week (4 weeks)
+      // 1 LUNĂ: Afișez scanările pe săptămână (4 săptămâni)
       const weeklyData = [];
       const weeklyLabels = [];
 
-      // Group data by weeks
+      // Grupez datele pe săptămâni
       for (let weekIndex = 0; weekIndex < 4; weekIndex++) {
         const weekStart = weekIndex * 7;
         const weekEnd = Math.min(weekStart + 7, sortedData.length);
@@ -209,7 +209,7 @@ export default function ReportsScreen() {
         datasets: [{ data: weeklyData }],
       };
     } else {
-      // ALL TIME: Show scans per month
+      // TOT TIMPUL: Afișez scanările pe lună
       const monthlyData: { [key: string]: number } = {};
 
       sortedData.forEach((item) => {
@@ -222,7 +222,7 @@ export default function ReportsScreen() {
       });
 
       const sortedMonths = Object.keys(monthlyData).sort();
-      const last12Months = sortedMonths.slice(-12); // Show last 12 months max for readability
+      const last12Months = sortedMonths.slice(-12); // Afișez ultimele 12 luni max pentru lizibilitate
 
       return {
         labels: last12Months.map((monthKey) => {

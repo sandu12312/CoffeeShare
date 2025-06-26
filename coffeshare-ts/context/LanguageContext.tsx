@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState } from "react";
 
 type Language = "ro" | "en";
 
-// Define și EXPORTĂ all possible translation keys
+// Definesc și exportez toate cheile de traducere posibile
 export type TranslationKey =
   | "welcome"
   | "subtitle"

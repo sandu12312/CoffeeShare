@@ -38,43 +38,43 @@ import * as Google from "expo-auth-session/providers/google";
 import { getFunctions, httpsCallable } from "firebase/functions";
 
 /**
- * Type for Google Sign-In resolver function
+ * Tip pentru funcția resolver Google Sign-In
  */
 type GoogleSignInResolver = (value: { role: string }) => void;
 
 /**
- * Interface defining all methods available in Firebase Context
+ * Interfață care definește toate metodele disponibile în Firebase Context
  */
 interface FirebaseContextType {
   /**
-   * Current authenticated Firebase user
+   * Utilizatorul Firebase autentificat curent
    */
   user: User | null;
 
   /**
-   * Extended user profile with additional information
+   * Profilul utilizatorului extins cu informații adiționale
    */
   userProfile: UserProfile | null;
 
   /**
-   * Loading state for auth operations
+   * Starea de încărcare pentru operațiunile de autentificare
    */
   loading: boolean;
 
   /**
-   * Log in user with email and password
-   * @param email User email
-   * @param password User password
-   * @returns Promise with user role
+   * Autentifiez utilizatorul cu email și parolă
+   * @param email Email-ul utilizatorului
+   * @param password Parola utilizatorului
+   * @returns Promise cu rolul utilizatorului
    */
   login: (email: string, password: string) => Promise<{ role: string }>;
 
   /**
-   * Register new user
-   * @param email User email
-   * @param password User password
-   * @param name User display name
-   * @returns Promise with success status and verification email status
+   * Înregistrez utilizator nou
+   * @param email Email-ul utilizatorului
+   * @param password Parola utilizatorului
+   * @param name Numele afișat al utilizatorului
+   * @returns Promise cu statusul de succes și statusul email-ului de verificare
    */
   register: (
     email: string,
@@ -83,43 +83,43 @@ interface FirebaseContextType {
   ) => Promise<{ success: boolean; verificationSent: boolean }>;
 
   /**
-   * Log out the current user
+   * Deloghez utilizatorul curent
    */
   logout: () => Promise<void>;
 
   /**
-   * Send password reset email
-   * @param email User email
+   * Trimit email de resetare parolă
+   * @param email Email-ul utilizatorului
    */
   resetPassword: (email: string) => Promise<void>;
 
   /**
-   * Send email verification to current user
+   * Trimit email de verificare către utilizatorul curent
    */
   sendVerificationEmail: () => Promise<void>;
 
   /**
-   * Sign in with Google account
-   * @returns Promise with user role
+   * Autentifiez cu contul Google
+   * @returns Promise cu rolul utilizatorului
    */
   signInWithGoogle: () => Promise<{ role: string }>;
 
   /**
-   * Update user profile
-   * @param data Partial user profile data to update
+   * Actualizez profilul utilizatorului
+   * @param data Date parțiale ale profilului utilizatorului de actualizat
    */
   updateUserProfile: (data: Partial<UserProfile>) => Promise<UserProfile>;
 
   /**
-   * Update subscription information
-   * @param data Subscription data
+   * Actualizez informațiile abonamentului
+   * @param data Datele abonamentului
    */
   updateSubscription: (data: any) => Promise<UserProfile>;
 
   /**
-   * Get user activity logs
-   * @param limit Optional limit of records to return
-   * @param type Optional activity type filter
+   * Obțin jurnalele de activitate ale utilizatorului
+   * @param limit Limita opțională a înregistrărilor de returnat
+   * @param type Filtrul opțional pentru tipul de activitate
    */
   getActivityLogs: (
     limit?: number,
@@ -127,43 +127,43 @@ interface FirebaseContextType {
   ) => Promise<ActivityLog[]>;
 
   /**
-   * Get user notifications
-   * @param limit Optional limit of records to return
+   * Obțin notificările utilizatorului
+   * @param limit Limita opțională a înregistrărilor de returnat
    */
   getNotifications: (limit?: number) => Promise<UserNotification[]>;
 
   /**
-   * Mark notification as read
-   * @param notificationId ID of notification to mark
+   * Marchez notificarea ca citită
+   * @param notificationId ID-ul notificării de marcat
    */
   markNotificationAsRead: (notificationId: string) => Promise<void>;
 
   /**
-   * Check if user can redeem a coffee
+   * Verific dacă utilizatorul poate răscumpăra o cafea
    */
   canRedeemCoffee: () => Promise<{ canRedeem: boolean; reason?: string }>;
 
   /**
-   * Generate QR code for coffee redemption
-   * @param cafeId ID of cafe
-   * @param productId Optional product ID
+   * Generez cod QR pentru răscumpărarea cafelei
+   * @param cafeId ID-ul cafenelei
+   * @param productId ID-ul opțional al produsului
    */
   generateQRCode: (cafeId: string, productId?: string) => Promise<QRCodeData>;
 
   /**
-   * Verify and redeem a QR code
-   * @param qrCodeData QR code data to verify
+   * Verific și răscumpăr un cod QR
+   * @param qrCodeData Datele codului QR de verificat
    */
   verifyAndRedeemQRCode: (
     qrCodeData: any
   ) => Promise<{ success: boolean; message: string }>;
 
   /**
-   * Redeem a coffee
-   * @param cafeId ID of cafe
-   * @param cafeName Name of cafe
-   * @param productId Optional product ID
-   * @param productName Optional product name
+   * Răscumpăr o cafea
+   * @param cafeId ID-ul cafenelei
+   * @param cafeName Numele cafenelei
+   * @param productId ID-ul opțional al produsului
+   * @param productName Numele opțional al produsului
    */
   redeemCoffee: (
     cafeId: string,
@@ -173,8 +173,8 @@ interface FirebaseContextType {
   ) => Promise<void>;
 
   /**
-   * Submit partnership request
-   * @param data Partnership request data
+   * Trimit cerere de parteneriat
+   * @param data Datele cererii de parteneriat
    */
   submitPartnershipRequest: (data: {
     businessName: string;
@@ -189,20 +189,20 @@ interface FirebaseContextType {
   }>;
 
   /**
-   * Get current user profile
+   * Obțin profilul utilizatorului curent
    */
   getCurrentUserProfile: () => Promise<UserProfile | null>;
 }
 
 /**
- * Firebase context instance
+ * Instanța contextului Firebase
  */
 const FirebaseContext = createContext<FirebaseContextType | undefined>(
   undefined
 );
 
 /**
- * Firebase provider component
+ * Componenta provider Firebase
  */
 export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -211,10 +211,10 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Ref to store Google Sign-In resolver
+  // Ref pentru a stoca resolver-ul Google Sign-In
   const googleSignInResolverRef = useRef<GoogleSignInResolver | null>(null);
 
-  // Configure Google Auth
+  // Configurez Google Auth
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: "YOUR_ANDROID_CLIENT_ID_HERE",
     iosClientId: "YOUR_IOS_CLIENT_ID_HERE",
@@ -247,7 +247,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
             result.user.email
           );
 
-          // Get the actual user role using role management service
+          // Obțin rolul real al utilizatorului folosind serviciul de management de roluri
           try {
             const userSearchResult = await roleManagementService.getUserByUid(
               result.user.uid
@@ -275,7 +275,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
             error
           );
           if (googleSignInResolverRef.current) {
-            googleSignInResolverRef.current({ role: "user" }); // Resolve with default role even on error
+            googleSignInResolverRef.current({ role: "user" }); // Rezolv cu rolul implicit chiar și la eroare
             googleSignInResolverRef.current = null;
           }
         });
@@ -286,13 +286,13 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
     ) {
       console.warn("Google Auth Response was not successful:", response);
       if (googleSignInResolverRef.current) {
-        googleSignInResolverRef.current({ role: "user" }); // Resolve with default role
+        googleSignInResolverRef.current({ role: "user" }); // Rezolv cu rolul implicit
         googleSignInResolverRef.current = null;
       }
     }
   }, [response]);
 
-  // Fetch user profile when auth state changes
+  // Obțin profilul utilizatorului când starea de autentificare se schimbă
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setLoading(true);
@@ -300,7 +300,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
       if (currentUser) {
         console.log("Auth state changed, user detected:", currentUser.uid);
         try {
-          // First try to get user from role management service (checks all collections)
+          // Mai întâi încerc să obțin utilizatorul din serviciul de management de roluri (verifică toate colecțiile)
           const userSearchResult = await roleManagementService.getUserByUid(
             currentUser.uid
           );
@@ -312,14 +312,14 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
               "with role:",
               userSearchResult.role
             );
-            // Convert the search result to UserProfile format
+            // Convert rezultatul căutării în formatul UserProfile
             const profile: UserProfile = {
               ...userSearchResult.userData,
               role: userSearchResult.role,
             } as UserProfile;
             setUserProfile(profile);
           } else {
-            // If not found in any collection, try legacy method
+            // Dacă nu este găsit în nicio colecție, încerc metoda legacy
             let profile = await userProfileService.getCurrentUserProfile();
             console.log("Existing profile check:", profile);
             if (!profile) {
@@ -358,7 +358,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   /**
-   * Login with email and password
+   * Autentifiez cu email și parolă
    */
   const login = async (
     email: string,
@@ -371,7 +371,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
         password
       );
 
-      // Use the role management service to get user data from any collection
+      // Folosesc serviciul de management de roluri pentru a obține datele utilizatorului din orice colecție
       const userSearchResult = await roleManagementService.getUserByUid(
         userCredential.user.uid
       );
@@ -386,7 +386,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
         return { role: userSearchResult.role };
       }
 
-      // Fallback to legacy method
+      // Fallback la metoda legacy
       const profile = await userProfileService.getCurrentUserProfile();
       return { role: profile?.role || "user" };
     } catch (error) {
@@ -396,7 +396,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   /**
-   * Register new user
+   * Înregistrez utilizator nou
    */
   const register = async (
     email: string,
@@ -404,8 +404,8 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
     name: string
   ): Promise<{ success: boolean; verificationSent: boolean }> => {
     try {
-      // Explicitly import and use the typed 'auth' from the firebase config
-      // (Assuming 'auth' is imported from '../config/firebase')
+      // Import și folosesc explicit 'auth' tipat din configurația firebase
+      // (Presupun că 'auth' este importat din '../config/firebase')
       const userCredential = await createUserWithEmailAndPassword(
         auth as import("firebase/auth").Auth,
         email,
@@ -426,7 +426,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   /**
-   * Logout current user
+   * Deloghez utilizatorul curent
    */
   const logout = async (): Promise<void> => {
     try {
@@ -438,7 +438,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   /**
-   * Send password reset email
+   * Trimit email de resetare parolă
    */
   const resetPassword = async (email: string): Promise<void> => {
     try {
@@ -450,7 +450,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   /**
-   * Send verification email to current user
+   * Trimit email de verificare către utilizatorul curent
    */
   const sendVerificationEmail = async (): Promise<void> => {
     if (!auth.currentUser) throw new Error("No authenticated user");
@@ -463,7 +463,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   /**
-   * Sign in with Google
+   * Autentifiez cu contul Google
    */
   const signInWithGoogle = async (): Promise<{ role: string }> => {
     try {

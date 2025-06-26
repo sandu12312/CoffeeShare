@@ -14,7 +14,7 @@ export interface ExportOptions {
 
 class ReportExportService {
   /**
-   * Generate HTML content for the PDF report
+   * Generez conținutul HTML pentru raportul PDF
    */
   private generateReportHTML(options: ExportOptions): string {
     const {
@@ -26,7 +26,7 @@ class ReportExportService {
     } = options;
     const currentDate = new Date().toLocaleDateString();
 
-    // Determine report type and period
+    // Determin tipul și perioada raportului
     const reportType =
       selectedDateRange === 1
         ? "Daily Hourly Analysis"
@@ -45,7 +45,7 @@ class ReportExportService {
         ? "weekly summary"
         : "monthly trends";
 
-    // Generate chart data for display
+    // Generez datele pentru afișarea graficelor
     const chartData = this.prepareChartDataForPDF(
       reportData,
       selectedDateRange
@@ -348,7 +348,7 @@ class ReportExportService {
   }
 
   /**
-   * Prepare chart data for PDF display
+   * Prepar datele graficului pentru afișarea în PDF
    */
   private prepareChartDataForPDF(
     reportData: ReportsData,
@@ -362,7 +362,7 @@ class ReportExportService {
     }> = [];
 
     if (selectedDateRange === 1) {
-      // Hourly data - show top performing time slots
+      // Date orare - afișez intervalele de timp cu cele mai bune performanțe
       const hourIntervals = [
         { label: "6AM-9AM", hours: [6, 7, 8] },
         { label: "9AM-12PM", hours: [9, 10, 11] },
@@ -401,7 +401,7 @@ class ReportExportService {
         });
       }
     } else {
-      // For other periods, show recent days/weeks/months
+      // Pentru alte perioade, afișez zilele/săptămânile/lunile recente
       const recentData = reportData.dailyReports.slice(-7);
       const total = reportData.totalScans;
 
@@ -434,7 +434,7 @@ class ReportExportService {
   }
 
   /**
-   * Generate and export PDF report
+   * Generez și export raportul PDF
    */
   async generatePDFReport(options: ExportOptions): Promise<void> {
     try {
@@ -451,14 +451,14 @@ class ReportExportService {
         "_"
       )}_${new Date().toISOString().split("T")[0]}.pdf`;
 
-      // Move file to a permanent location
+      // Mut fișierul într-o locație permanentă
       const finalUri = `${FileSystem.documentDirectory}${fileName}`;
       await FileSystem.moveAsync({
         from: uri,
         to: finalUri,
       });
 
-      // Share the PDF
+      // Partajez PDF-ul
       await Sharing.shareAsync(finalUri, {
         dialogTitle: "CoffeeShare Analytics Report",
         mimeType: "application/pdf",
@@ -480,7 +480,7 @@ class ReportExportService {
   }
 
   /**
-   * Generate CSV data for export
+   * Generez datele CSV pentru export
    */
   generateCSVReport(options: ExportOptions): string {
     const { reportData, partnerName, selectedDateRange } = options;
@@ -488,7 +488,7 @@ class ReportExportService {
 
     let csvContent = "";
 
-    // Header
+    // Antet
     csvContent += `CoffeeShare Analytics Report\n`;
     csvContent += `Partner: ${partnerName}\n`;
     csvContent += `Generated: ${currentDate}\n`;
@@ -496,14 +496,14 @@ class ReportExportService {
       selectedDateRange === -1 ? "All Time" : `Last ${selectedDateRange} days`
     }\n\n`;
 
-    // Summary
+    // Sumar
     csvContent += `Summary\n`;
     csvContent += `Total Scans,${reportData.totalScans}\n`;
     csvContent += `Total Earnings,${reportData.totalEarnings.toFixed(2)} RON\n`;
     csvContent += `Unique Customers,${reportData.uniqueCustomers}\n`;
     csvContent += `Peak Hour,${reportData.peakHour}\n\n`;
 
-    // Daily breakdown
+    // Detaliere zilnică
     csvContent += `Daily Breakdown\n`;
     csvContent += `Date,Scans,Beans Used,Earnings (RON),Unique Customers\n`;
 
@@ -517,7 +517,7 @@ class ReportExportService {
   }
 
   /**
-   * Export CSV report
+   * Export raportul CSV
    */
   async exportCSVReport(options: ExportOptions): Promise<void> {
     try {

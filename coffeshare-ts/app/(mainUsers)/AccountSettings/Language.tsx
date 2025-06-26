@@ -33,7 +33,7 @@ export default function LanguageScreen() {
       />
 
       <View style={styles.content}>
-        {/* Custom Back Button */}
+        {/* Buton custom pentru înapoi */}
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.push("/(mainUsers)/profile")}

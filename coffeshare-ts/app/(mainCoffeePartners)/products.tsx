@@ -48,7 +48,7 @@ export default function ManageProductsScreen() {
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
-  // Form state
+  // Starea formularului
   const [productName, setProductName] = useState("");
   const [priceLei, setPriceLei] = useState("");
   const [image, setImage] = useState<string | null>(null);
@@ -57,7 +57,7 @@ export default function ManageProductsScreen() {
     "Coffee" | "Tea" | "Pastries" | "Snacks"
   >("Coffee");
 
-  // Edit state
+  // Starea editării
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -71,15 +71,15 @@ export default function ManageProductsScreen() {
     try {
       setLoading(true);
 
-      // Load user's cafes
+      // Încarc cafenelele utilizatorului
       const myCafes = await coffeePartnerService.getMyCafes();
       setCafes(myCafes);
 
-      // Set first active cafe as selected by default
+      // Setez prima cafenea activă ca fiind selectată implicit
       const activeCafe = myCafes.find((cafe) => cafe.status === "active");
       if (activeCafe) {
         setSelectedCafe(activeCafe.id);
-        // Load products for the selected cafe
+        // Încarc produsele pentru cafeneaua selectată
         await loadProductsForCafe(activeCafe.id);
       }
     } catch (error) {
@@ -117,7 +117,7 @@ export default function ManageProductsScreen() {
 
   const calculateBeans = (price: number): number => {
     const beans = price / 2.5;
-    return Math.ceil(beans * 10) / 10; // Round up to 1 decimal
+    return Math.ceil(beans * 10) / 10; // Rotunjesc în sus la 1 zecimală
   };
 
   const pickImage = async () => {
@@ -174,7 +174,7 @@ export default function ManageProductsScreen() {
         text2: "Product deleted successfully",
       });
 
-      // Refresh products list for selected cafe
+      // Reîmprospătez lista de produse pentru cafeneaua selectată
       await loadProductsForCafe(selectedCafe);
     } catch (error) {
       console.error("Error deleting product:", error);
@@ -209,7 +209,7 @@ export default function ManageProductsScreen() {
     try {
       let imageUrl = image;
 
-      // Only upload new image if it's different from the current one
+      // Upload imaginea nouă doar dacă diferă de cea curentă
       if (image !== editingProduct.imageUrl) {
         imageUrl = await uploadImage(image);
       }
@@ -231,10 +231,10 @@ export default function ManageProductsScreen() {
         text2: "Product updated successfully",
       });
 
-      // Reset form and edit state
+      // Resetez formularul și starea de editare
       handleCancelEdit();
 
-      // Refresh products list for selected cafe
+      // Reîmprospătez lista de produse pentru cafeneaua selectată
       await loadProductsForCafe(selectedCafe);
     } catch (error) {
       console.error("Error updating product:", error);
@@ -288,7 +288,7 @@ export default function ManageProductsScreen() {
         text2: "Product added successfully",
       });
 
-      // Reset form
+      // Resetez formularul
       setProductName("");
       setPriceLei("");
       setImage(null);
@@ -297,7 +297,7 @@ export default function ManageProductsScreen() {
       setIsEditing(false);
       setEditingProduct(null);
 
-      // Refresh products list for selected cafe
+      // Reîmprospătez lista de produse pentru cafeneaua selectată
       await loadProductsForCafe(selectedCafe);
     } catch (error) {
       console.error("Error adding product:", error);
@@ -968,7 +968,7 @@ const styles = StyleSheet.create({
   addButtonDisabled: {
     opacity: 0.6,
   },
-  // Category Selection Styles
+  // Stiluri pentru selecția categoriei
   formGroup: {
     marginBottom: 20,
   },
@@ -1005,7 +1005,7 @@ const styles = StyleSheet.create({
   categoryChipTextSelected: {
     color: "#FFFFFF",
   },
-  // Action buttons styles
+  // Stiluri pentru butoanele de acțiune
   actionButtons: {
     flexDirection: "column",
     gap: 8,

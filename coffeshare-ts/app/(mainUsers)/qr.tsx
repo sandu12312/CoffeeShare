@@ -49,13 +49,13 @@ export default function QRScreen() {
   const hasRedirectedRef = useRef<boolean>(false);
   const previousCreditsRef = useRef<number | null>(null);
 
-  // Animation values
+  // Valorile pentru animații
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
-  // Check if we're in checkout mode
+  // Verific dacă sunt în modul checkout pentru plată
   const isCheckoutMode = params.checkoutMode === "true";
   const checkoutCafeId = params.cafeId as string;
   const checkoutCafeName = params.cafeName as string;
@@ -63,7 +63,7 @@ export default function QRScreen() {
     ? parseInt(params.totalBeans as string)
     : 0;
 
-  // Calculate time left for current token
+  // Calculez timpul rămas pentru token-ul QR actual
   const calculateTimeLeft = useCallback((token: QRToken | null) => {
     if (!token) return 0;
 
@@ -74,7 +74,7 @@ export default function QRScreen() {
     return Math.max(0, Math.floor(timeLeftMs / 1000));
   }, []);
 
-  // Check if user can generate QR code
+  // Verific dacă utilizatorul poate genera cod QR
   const checkCanGenerate = useCallback(async () => {
     if (!user?.uid) {
       setCanGenerate(false);
@@ -97,7 +97,7 @@ export default function QRScreen() {
     }
   }, [user?.uid]);
 
-  // Generate new QR token
+  // Generez un nou token QR pentru utilizator
   const generateNewToken = useCallback(async () => {
     if (!user?.uid) return;
 
@@ -117,13 +117,13 @@ export default function QRScreen() {
       let newToken: QRToken | null = null;
 
       if (isCheckoutMode) {
-        // Generate checkout token
+        // Generez token pentru checkout/plată
         newToken = await QRService.generateCheckoutQRToken(
           user.uid,
           checkoutCafeId
         );
       } else {
-        // Generate regular token
+        // Generez token normal pentru consum
         newToken = await QRService.generateQRToken(user.uid);
       }
 
@@ -147,7 +147,7 @@ export default function QRScreen() {
     checkoutCafeId,
   ]);
 
-  // Setup QR token monitoring
+  // Configurez monitorizarea token-urilor QR în real-time
   const setupTokenMonitoring = useCallback(() => {
     if (!user?.uid) {
       setIsLoading(false);
@@ -156,7 +156,7 @@ export default function QRScreen() {
 
     setIsLoading(true);
 
-    // Subscribe to user's QR tokens
+    // Mă abonez la actualizările token-urilor QR
     const unsubscribeToken = QRService.subscribeToUserQRToken(
       user.uid,
       (token) => {
@@ -166,22 +166,22 @@ export default function QRScreen() {
         setCurrentToken(token);
         if (token) {
           setTimeLeft(calculateTimeLeft(token));
-          // Reset redirect flag when we get a new token
+          // Resetez flag-ul pentru redirect când primesc token nou
           hasRedirectedRef.current = false;
         }
         setIsLoading(false);
       }
     );
 
-    // Subscribe to user's subscription
+    // Mă abonez la schimbările abonamentului
     const unsubscribeSubscription =
       SubscriptionService.subscribeToUserSubscription(user.uid, (sub) => {
         const previousCredits = previousCreditsRef.current;
 
-        // Monitor credits for successful redemption detection (before setting state)
+        // Monitorizez creditele pentru detectarea folosirii QR-ului
         if (sub && sub.creditsLeft !== null && sub.creditsLeft !== undefined) {
           if (previousCredits !== null && previousCredits > sub.creditsLeft) {
-            // Credits decreased - successful redemption happened!
+            // Creditele au scăzut - QR-ul a fost folosit cu succes!
             if (isCheckoutMode && !hasRedirectedRef.current) {
               hasRedirectedRef.current = true;
               console.log(
@@ -199,11 +199,11 @@ export default function QRScreen() {
               }, 1500);
             }
           }
-          // Update the reference for next comparison
+          // Actualizez referința pentru următoarea comparație
           previousCreditsRef.current = sub.creditsLeft;
         }
 
-        // Set the subscription state after processing
+        // Setez starea abonamentului după procesare
         setSubscription(sub);
       });
 
@@ -213,15 +213,15 @@ export default function QRScreen() {
     };
   }, [user?.uid, calculateTimeLeft, isCheckoutMode, router]);
 
-  // Timer for countdown
+  // Timer pentru countdown
   useEffect(() => {
     if (currentToken && timeLeft > 0) {
       intervalRef.current = setInterval(() => {
         const newTimeLeft = calculateTimeLeft(currentToken);
         setTimeLeft(newTimeLeft);
 
-        // Don't manually set token to null when expired - let Firebase handle it
-        // This prevents false redirects due to local timer expiry
+        // Nu setez manual token-ul la null când expiră - las Firebase să se ocupe
+        // Asta previne redirect-urile false din cauza expirării timer-ului local
       }, 1000);
     } else {
       if (intervalRef.current) {
@@ -237,7 +237,7 @@ export default function QRScreen() {
     };
   }, [currentToken, timeLeft, calculateTimeLeft]);
 
-  // Load cart total beans (only in checkout mode)
+  // Încarc totalul de beans din coș (doar în modul checkout)
   useEffect(() => {
     const loadCartTotal = async () => {
       if (!user?.uid || !isCheckoutMode) return;
@@ -259,14 +259,14 @@ export default function QRScreen() {
     loadCartTotal();
   }, [user?.uid, isCheckoutMode]);
 
-  // Initialize credits tracking when subscription changes
+  // Inițializez urmărirea creditelor când se schimbă abonamentul
   useEffect(() => {
     if (subscription && subscription.creditsLeft !== null) {
       previousCreditsRef.current = subscription.creditsLeft;
     }
   }, [subscription]);
 
-  // Add useFocusEffect to refresh QR state when screen comes into focus
+  // Adaug useFocusEffect pentru a refresh starea QR când ecranul intră în focus
   useFocusEffect(
     useCallback(() => {
       if (user?.uid) {

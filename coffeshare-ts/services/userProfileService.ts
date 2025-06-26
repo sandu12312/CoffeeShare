@@ -44,7 +44,7 @@ const auth = getAuth(app);
  */
 class UserProfileService {
   /**
-   * Get current user profile
+   * Obțin profilul utilizatorului curent
    */
   async getCurrentUserProfile(): Promise<UserProfile | null> {
     const user = auth.currentUser;

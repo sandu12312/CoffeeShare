@@ -30,9 +30,9 @@ export default function SubscriptionCard({
 
   const progress = beansTotal > 0 ? (beansLeft / beansTotal) * 100 : 0;
 
-  // Render bean icons based on the ratio of beans left to total beans
+  // Randez ikonițele de boabe pe baza raportului dintre boabele rămase și totalul de boabe
   const renderBeanIcons = () => {
-    const totalIcons = 5; // Maximum number of icons to display
+    const totalIcons = 5; // Numărul maxim de ikoniţe de afişat
     const filledIcons = Math.min(
       totalIcons,
       Math.floor((beansLeft / beansTotal) * totalIcons) || 0

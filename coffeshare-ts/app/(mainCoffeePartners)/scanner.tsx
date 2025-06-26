@@ -33,7 +33,7 @@ const SCAN_AREA_SIZE = SCREEN_WIDTH * 0.7;
 const QrScannerScreen = () => {
   const { t } = useLanguage();
   const router = useRouter();
-  const { user } = useFirebase(); // This should be the coffee partner user
+  const { user } = useFirebase(); // Acesta ar trebui să fie utilizatorul partener de cafea
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [manualCode, setManualCode] = useState("");
@@ -127,7 +127,7 @@ const QrScannerScreen = () => {
     setScanError(null);
 
     try {
-      // The QR data should be the token hash
+      // Datele QR ar trebui să fie hash-ul token-ului
       const token = data.trim();
 
       if (!token) {
@@ -140,7 +140,7 @@ const QrScannerScreen = () => {
         return;
       }
 
-      // Get partner and cafe information
+      // Obțin informațiile partenerului și cafenelei
       if (!user?.uid) {
         setScanError("Partner not authenticated");
         setProcessing(false);
@@ -151,12 +151,12 @@ const QrScannerScreen = () => {
         return;
       }
 
-      // Get partner's cafe information
-      let cafeId = user.uid; // Use partner's UID as default cafe ID
+      // Obțin informațiile cafenelei partenerului
+      let cafeId = user.uid; // Folosesc UID-ul partenerului ca ID implicit pentru cafenea
       let cafeName = "Partner Cafe";
 
       try {
-        // Try to get cafe from user's profile or associated cafes
+        // Încerc să obțin cafeneaua din profilul utilizatorului sau cafenelele asociate
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
@@ -165,7 +165,7 @@ const QrScannerScreen = () => {
             JSON.stringify(userData, null, 2)
           );
 
-          // First, try to get cafe name from user's own business data
+          // Primul pas, încerc să obțin numele cafenelei din datele business proprii ale utilizatorului
           if (userData.businessName) {
             cafeName = userData.businessName;
             cafeId = user.uid;
@@ -182,14 +182,14 @@ const QrScannerScreen = () => {
             );
           }
 
-          // Check if there's an associated cafe ID and try to get more specific data
+          // Verific dacă există un ID de cafenea asociat și încerc să obțin date mai specifice
           if (userData.associatedCafeId) {
             const associatedCafeId = userData.associatedCafeId;
             console.log(
               `🔍 SCANNER: Found associatedCafeId: ${associatedCafeId}`
             );
 
-            // Try to get cafe details from cafes collection
+            // Încerc să obțin detaliile cafenelei din colecția cafes
             try {
               const cafeDoc = await getDoc(doc(db, "cafes", associatedCafeId));
               if (cafeDoc.exists()) {
@@ -239,7 +239,7 @@ const QrScannerScreen = () => {
 
       console.log("🔍 Processing QR token with partner analytics...");
 
-      // Use the new method with partner analytics
+      // Folosesc metoda nouă cu analize pentru parteneri
       const result = await QRService.validateAndRedeemQRTokenWithPartner(
         token,
         user.uid,

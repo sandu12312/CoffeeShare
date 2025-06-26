@@ -71,22 +71,22 @@ export default function CafeSettingsScreen() {
     try {
       setLoading(true);
 
-      // Load cafes owned by current user
+      // Încarc cafenelele deținute de utilizatorul curent
       const userCafes = await coffeePartnerService.getMyCafes();
       setCafes(userCafes);
       console.log("Loaded cafes:", userCafes);
 
-      // Load subscription plans
+      // Încarc planurile de abonament
       const unsubscribe = SubscriptionService.subscribeToActivePlans(
         (plans) => {
           console.log("Loaded subscription plans:", plans);
           setSubscriptionPlans(plans);
 
-          // Load cafe settings after plans are loaded
+          // Încarc setările cafenelei după ce planurile sunt încărcate
           if (userCafes.length > 0 && !selectedCafe) {
             const firstCafe = userCafes[0];
             setSelectedCafe(firstCafe.id);
-            // Small delay to ensure state updates
+            // Mică întârziere pentru a asigura actualizările stării
             setTimeout(() => {
               loadCafeSettings(firstCafe.id);
             }, 100);
@@ -113,7 +113,7 @@ export default function CafeSettingsScreen() {
       if (cafe) {
         console.log("Loaded cafe data:", cafe);
 
-        // Build accepted subscriptions object from subscription plans
+        // Construiesc obiectul abonamentelor acceptate din planurile de abonament
         const acceptedSubscriptions: { [key: string]: boolean } = {};
         subscriptionPlans.forEach((plan) => {
           const planId = plan.id || plan.name;
@@ -144,11 +144,11 @@ export default function CafeSettingsScreen() {
 
   const handleCafeChange = (cafeId: string) => {
     setSelectedCafe(cafeId);
-    // Small delay to ensure state updates, then load settings
+    // Mică întârziere pentru a asigura actualizările stării, apoi încarc setările
     setTimeout(() => {
       loadCafeSettings(cafeId);
     }, 100);
-    setHasChanges(false); // Reset changes when switching cafes
+    setHasChanges(false); // Resetez modificările când schimb cafenelele
   };
 
   const handleSave = async () => {
@@ -164,7 +164,7 @@ export default function CafeSettingsScreen() {
 
     setSaving(true);
     try {
-      // Prepare subscription updates
+      // Pregătesc actualizările abonamentelor
       const subscriptionUpdates: { [key: string]: boolean } = {};
       Object.entries(settings.acceptedSubscriptions).forEach(
         ([planId, accepted]) => {
@@ -183,7 +183,7 @@ export default function CafeSettingsScreen() {
 
       console.log("Subscription updates:", subscriptionUpdates);
 
-      // Prepare complete update object
+      // Pregătesc obiectul complet de actualizare
       const updateData = {
         businessName: settings.cafeName.trim(),
         address: settings.address.trim(),
@@ -195,7 +195,7 @@ export default function CafeSettingsScreen() {
 
       console.log("Complete update data:", updateData);
 
-      // Update cafe using the service
+      // Actualizez cafeneaua folosind serviciul
       await coffeePartnerService.updateCafe(selectedCafe, updateData);
 
       Toast.show({
@@ -206,7 +206,7 @@ export default function CafeSettingsScreen() {
 
       setHasChanges(false);
 
-      // Reload the settings to confirm they were saved
+      // Reîncarc setările pentru a confirma că au fost salvate
       setTimeout(() => {
         loadCafeSettings(selectedCafe);
       }, 1000);
@@ -225,13 +225,13 @@ export default function CafeSettingsScreen() {
     }
   };
 
-  // Helper function to update settings state
+  // Funcție helper pentru actualizarea stării setărilor
   const updateSetting = (key: keyof CafeSettings, value: string | boolean) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
     setHasChanges(true);
   };
 
-  // Helper function to update subscription acceptance
+  // Funcție helper pentru actualizarea acceptării abonamentelor
   const updateSubscriptionSetting = (planId: string, value: boolean) => {
     setSettings((prev) => ({
       ...prev,
@@ -306,7 +306,7 @@ export default function CafeSettingsScreen() {
                 <TouchableOpacity
                   style={styles.cafeDropdown}
                   onPress={() => {
-                    // Simple dropdown - could be enhanced with a modal
+                    // Dropdown simplu - ar putea fi îmbunătățit cu un modal
                     Alert.alert(
                       "Selectează Cafeneaua",
                       "Alege cafeneaua pe care vrei să o editezi:",
@@ -465,7 +465,7 @@ export default function CafeSettingsScreen() {
               const isAccepted =
                 settings.acceptedSubscriptions[planId] || false;
 
-              // Get icon based on plan name
+              // Obțin iconița pe baza numelui planului
               const getIcon = (name: string) => {
                 if (name.toLowerCase().includes("student"))
                   return "school-outline";

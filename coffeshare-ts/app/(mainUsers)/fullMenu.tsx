@@ -70,13 +70,13 @@ export default function FullMenu() {
 
   const loadCafeCategories = async () => {
     try {
-      // For now, keep the default categories since we need cafe service to fetch menuCategories
-      // This could be enhanced later to fetch from cafe data
+      // Pentru moment, păstrez categoriile implicite deoarece am nevoie de serviciul cafenelei pentru a obține menuCategories
+      // Aceasta ar putea fi îmbunătățită mai târziu pentru a obține din datele cafenelei
       const categories = ["Coffee", "Tea", "Pastries", "Snacks"];
       setCafeCategories(categories);
     } catch (error) {
       console.error("Error loading cafe categories:", error);
-      // Keep default categories on error
+      // Păstrez categoriile implicite la eroare
     }
   };
 
@@ -173,7 +173,7 @@ export default function FullMenu() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#FFA500" />
 
-      {/* Header */}
+      {/* Header-ul */}
       <View style={[styles.header, { paddingTop: insets.top }]}>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -211,7 +211,7 @@ export default function FullMenu() {
         </TouchableOpacity>
       </View>
 
-      {/* Categories */}
+      {/* Categoriile */}
       <View style={styles.categoriesContainer}>
         <ScrollView
           horizontal
@@ -240,7 +240,7 @@ export default function FullMenu() {
         </ScrollView>
       </View>
 
-      {/* Products List */}
+      {/* Lista de produse */}
       {loading ? (
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>{t("common.loading")}</Text>

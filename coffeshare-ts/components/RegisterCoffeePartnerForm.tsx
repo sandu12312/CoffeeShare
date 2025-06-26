@@ -53,7 +53,7 @@ const RegisterCoffeePartnerForm: React.FC<RegisterCoffeePartnerFormProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Reset form when modal closes
+  // Resetez formularul când se închide modalul
   const handleClose = () => {
     setFormData({
       name: "",
@@ -65,7 +65,7 @@ const RegisterCoffeePartnerForm: React.FC<RegisterCoffeePartnerFormProps> = ({
     onClose();
   };
 
-  // Generate strong password
+  // Generez o parolă puternică
   const generateStrongPassword = () => {
     const lowercase = "abcdefghijklmnopqrstuvwxyz";
     const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -74,19 +74,19 @@ const RegisterCoffeePartnerForm: React.FC<RegisterCoffeePartnerFormProps> = ({
 
     let password = "";
 
-    // Ensure at least one character from each category
+    // Mă asigur că am cel puțin un caracter din fiecare categorie
     password += lowercase[Math.floor(Math.random() * lowercase.length)];
     password += uppercase[Math.floor(Math.random() * uppercase.length)];
     password += numbers[Math.floor(Math.random() * numbers.length)];
     password += symbols[Math.floor(Math.random() * symbols.length)];
 
-    // Fill the rest with random characters from all categories
+    // Completez restul cu caractere aleatorii din toate categoriile
     const allChars = lowercase + uppercase + numbers + symbols;
     for (let i = 4; i < 16; i++) {
       password += allChars[Math.floor(Math.random() * allChars.length)];
     }
 
-    // Shuffle the password
+    // Amestec parola
     password = password
       .split("")
       .sort(() => 0.5 - Math.random())
@@ -95,12 +95,12 @@ const RegisterCoffeePartnerForm: React.FC<RegisterCoffeePartnerFormProps> = ({
     setFormData((prev) => ({ ...prev, password, confirmPassword: password }));
   };
 
-  // Generate confirmation token
+  // Generez token de confirmare
   const generateConfirmationToken = (): string => {
     return Math.random().toString(36).substring(2) + Date.now().toString(36);
   };
 
-  // Get password strength
+  // Obțin puterea parolei
   const getPasswordStrength = (password: string) => {
     if (password.length === 0) return { strength: 0, label: "", color: "#DDD" };
 
@@ -117,30 +117,30 @@ const RegisterCoffeePartnerForm: React.FC<RegisterCoffeePartnerFormProps> = ({
     return { strength: 3, label: "Strong", color: "#4CAF50" };
   };
 
-  // Validate form
+  // Validez formularul
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    // Name validation
+    // Validare nume
     if (!formData.name.trim()) {
       newErrors.name = "Name is required";
     }
 
-    // Email validation
+    // Validare email
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Invalid email format";
     }
 
-    // Password validation
+    // Validare parolă
     if (!formData.password.trim()) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters long";
     }
 
-    // Confirm password validation
+    // Validare confirmare parolă
     if (!formData.confirmPassword.trim()) {
       newErrors.confirmPassword = "Please confirm your password";
     } else if (formData.password !== formData.confirmPassword) {
@@ -151,15 +151,15 @@ const RegisterCoffeePartnerForm: React.FC<RegisterCoffeePartnerFormProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  // Send confirmation email
+  // Trimit email de confirmare
   const sendConfirmationEmail = async (
     email: string,
     name: string,
     confirmationToken: string
   ) => {
     try {
-      // In a real implementation, this would call a Firebase Function or EmailJS
-      // For now, we'll just log the email content
+      // Într-o implementare reală, aceasta ar apela o Firebase Function sau EmailJS
+      // Deocamdată, voi loga doar conținutul email-ului
       const confirmationLink = `https://yourdomain.com/confirm-partner-registration?token=${confirmationToken}`;
 
       console.log("Confirmation email would be sent to:", email);
@@ -207,7 +207,7 @@ const RegisterCoffeePartnerForm: React.FC<RegisterCoffeePartnerFormProps> = ({
     }
   };
 
-  // Handle form submission
+  // Gestionez trimiterea formularului
   const handleSubmit = async () => {
     if (!validateForm()) {
       return;
@@ -216,32 +216,32 @@ const RegisterCoffeePartnerForm: React.FC<RegisterCoffeePartnerFormProps> = ({
     setLoading(true);
 
     try {
-      // Generate confirmation token
+      // Generez token de confirmare
       const confirmationToken = generateConfirmationToken();
 
-      // Store pending registration in Firestore
+      // Stochez înregistrarea în așteptare în Firestore
       const pendingRegistrationRef = doc(
         collection(db, "pendingPartnerRegistrations")
       );
       await setDoc(pendingRegistrationRef, {
         name: formData.name,
         email: formData.email,
-        password: formData.password, // In production, this should be hashed
+        password: formData.password, // În producție, aceasta ar trebui să fie criptată
         confirmationToken: confirmationToken,
         status: "pending",
         createdAt: serverTimestamp(),
-        expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000), // 48 hours from now
-        createdBy: "admin", // Could be dynamic based on current admin user
+        expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000), // 48 de ore de acum
+        createdBy: "admin", // Ar putea fi dinamic pe baza utilizatorului admin curent
       });
 
-      // Send confirmation email
+      // Trimit email de confirmare
       await sendConfirmationEmail(
         formData.email,
         formData.name,
         confirmationToken
       );
 
-      // Show success message
+      // Afișez mesajul de succes
       Toast.show({
         type: "success",
         text1: "Registration Request Sent",

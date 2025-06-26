@@ -58,7 +58,7 @@ const AddEditSubscriptionModal: React.FC<AddEditSubscriptionModalProps> = ({
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
 
-  // Initialize form with edit data
+  // Inițializez formularul cu datele pentru editare
   useEffect(() => {
     if (editPlan) {
       setFormData({
@@ -70,7 +70,7 @@ const AddEditSubscriptionModal: React.FC<AddEditSubscriptionModalProps> = ({
         tag: editPlan.tag || "",
       });
     } else {
-      // Reset form for new plan
+      // Resetez formularul pentru plan nou
       setFormData({
         name: "",
         credits: "",
@@ -99,14 +99,14 @@ const AddEditSubscriptionModal: React.FC<AddEditSubscriptionModalProps> = ({
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    // Name validation
+    // Validare nume
     if (!formData.name.trim()) {
       newErrors.name = "Name is required";
     } else if (formData.name.length < 3) {
       newErrors.name = "Name must be at least 3 characters";
     }
 
-    // Credits validation
+    // Validare credite
     if (!formData.credits.trim()) {
       newErrors.credits = "Number of beans is required";
     } else {
@@ -118,7 +118,7 @@ const AddEditSubscriptionModal: React.FC<AddEditSubscriptionModalProps> = ({
       }
     }
 
-    // Price validation
+    // Validare preț
     if (!formData.price.trim()) {
       newErrors.price = "Price is required";
     } else {
@@ -152,7 +152,7 @@ const AddEditSubscriptionModal: React.FC<AddEditSubscriptionModalProps> = ({
       };
 
       if (editPlan?.id) {
-        // Update existing plan
+        // Actualizez planul existent
         await SubscriptionService.updateSubscriptionPlan(editPlan.id, planData);
         Toast.show({
           type: "success",
@@ -160,7 +160,7 @@ const AddEditSubscriptionModal: React.FC<AddEditSubscriptionModalProps> = ({
           text2: `${planData.name} has been updated successfully`,
         });
       } else {
-        // Create new plan
+        // Creez un plan nou
         await SubscriptionService.createSubscriptionPlan(planData);
         Toast.show({
           type: "success",
@@ -210,7 +210,7 @@ const AddEditSubscriptionModal: React.FC<AddEditSubscriptionModalProps> = ({
             style={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* Name Input */}
+            {/* Câmp nume */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>
                 Plan Name <Text style={styles.required}>*</Text>
@@ -229,7 +229,7 @@ const AddEditSubscriptionModal: React.FC<AddEditSubscriptionModalProps> = ({
               )}
             </View>
 
-            {/* Credits Input */}
+            {/* Câmp credite */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>
                 Number of Beans <Text style={styles.required}>*</Text>
@@ -249,7 +249,7 @@ const AddEditSubscriptionModal: React.FC<AddEditSubscriptionModalProps> = ({
               )}
             </View>
 
-            {/* Price Input */}
+            {/* Câmp preț */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>
                 Price (RON) <Text style={styles.required}>*</Text>
@@ -276,7 +276,7 @@ const AddEditSubscriptionModal: React.FC<AddEditSubscriptionModalProps> = ({
               )}
             </View>
 
-            {/* Description Input */}
+            {/* Câmp descriere */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Description (Optional)</Text>
               <TextInput
@@ -293,7 +293,7 @@ const AddEditSubscriptionModal: React.FC<AddEditSubscriptionModalProps> = ({
               />
             </View>
 
-            {/* Popular Toggle */}
+            {/* Comutator Popular */}
             <View style={styles.switchGroup}>
               <View style={styles.switchLabelContainer}>
                 <Text style={styles.label}>Mark as Popular</Text>
@@ -312,7 +312,7 @@ const AddEditSubscriptionModal: React.FC<AddEditSubscriptionModalProps> = ({
               />
             </View>
 
-            {/* Tag Selection */}
+            {/* Selectare tag */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Tag (Optional)</Text>
               <View style={styles.tagContainer}>
@@ -353,7 +353,7 @@ const AddEditSubscriptionModal: React.FC<AddEditSubscriptionModalProps> = ({
             </View>
           </ScrollView>
 
-          {/* Action Buttons */}
+          {/* Butoane de acțiune */}
           <View style={styles.footer}>
             <TouchableOpacity
               style={styles.cancelButton}

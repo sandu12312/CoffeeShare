@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 const { width, height } = Dimensions.get("window");
 
-// Toast Message Component
+// Componenta Toast Message
 export interface ToastProps {
   visible: boolean;
   message: string;
@@ -39,7 +39,7 @@ export const Toast: React.FC<ToastProps> = ({
 
   useEffect(() => {
     if (visible) {
-      // Show toast
+      // Afișez toast-ul
       Animated.spring(translateY, {
         toValue: 0,
         useNativeDriver: true,
@@ -47,7 +47,7 @@ export const Toast: React.FC<ToastProps> = ({
         friction: 8,
       }).start();
 
-      // Auto hide after duration
+      // Ascund automat după durata specificată
       const timer = setTimeout(() => {
         hideToast();
       }, duration);
@@ -121,7 +121,7 @@ export const Toast: React.FC<ToastProps> = ({
   );
 };
 
-// Error Modal Component
+// Componenta Modal Eroare
 export interface ErrorModalProps {
   visible: boolean;
   title: string;
@@ -238,7 +238,7 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({
   );
 };
 
-// Snackbar Component
+// Componenta Snackbar
 export interface SnackbarProps {
   visible: boolean;
   message: string;
@@ -308,7 +308,7 @@ export const Snackbar: React.FC<SnackbarProps> = ({
   );
 };
 
-// Error Banner Component
+// Componenta Banner Eroare
 export interface ErrorBannerProps {
   visible: boolean;
   message: string;
@@ -398,7 +398,7 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({
 };
 
 const styles = StyleSheet.create({
-  // Toast Styles
+  // Stiluri Toast
   toastContainer: {
     position: "absolute",
     top: Platform.OS === "ios" ? 50 : StatusBar.currentHeight || 30,
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  // Modal Styles
+  // Stiluri Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  // Snackbar Styles
+  // Stiluri Snackbar
   snackbarContainer: {
     position: "absolute",
     bottom: 20,
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // Banner Styles
+  // Stiluri Banner
   bannerContainer: {
     position: "absolute",
     top: Platform.OS === "ios" ? 44 : StatusBar.currentHeight || 24,

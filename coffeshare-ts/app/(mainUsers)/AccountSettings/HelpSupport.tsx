@@ -172,7 +172,7 @@ Additional details:
       />
 
       <ScrollView style={styles.scrollView}>
-        {/* Custom Back Button */}
+        {/* Buton custom pentru înapoi */}
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.push("/(mainUsers)/profile")}
@@ -181,7 +181,7 @@ Additional details:
           <Text style={styles.backButtonText}>Înapoi la Profil</Text>
         </TouchableOpacity>
 
-        {/* Quick Help Section */}
+        {/* Secțiunea de ajutor rapid */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Help</Text>
 
@@ -235,7 +235,7 @@ Additional details:
           </TouchableOpacity>
         </View>
 
-        {/* FAQ Section */}
+        {/* Secțiunea FAQ */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
 
@@ -262,7 +262,7 @@ Additional details:
           ))}
         </View>
 
-        {/* Contact Support Section */}
+        {/* Secțiunea Contact Support */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Contact Support</Text>
           <Text style={styles.sectionSubtitle}>
@@ -286,7 +286,7 @@ Additional details:
           ))}
         </View>
 
-        {/* Support Hours */}
+        {/* Orele de support */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Support Hours</Text>
 
@@ -313,7 +313,7 @@ Additional details:
           </View>
         </View>
 
-        {/* Additional Resources */}
+        {/* Resurse adiționale */}
         <View style={[styles.section, styles.lastSection]}>
           <Text style={styles.sectionTitle}>Additional Resources</Text>
 

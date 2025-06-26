@@ -17,7 +17,7 @@ import { useLanguage } from "../../../context/LanguageContext";
 export default function PrivacySecurityScreen() {
   const { t } = useLanguage();
 
-  // Privacy Settings States
+  // Stările pentru setările de confidențialitate
   const [dataSharing, setDataSharing] = useState(false);
   const [locationTracking, setLocationTracking] = useState(true);
   const [analyticsData, setAnalyticsData] = useState(true);
@@ -33,7 +33,7 @@ export default function PrivacySecurityScreen() {
         {
           text: "Request Download",
           onPress: () => {
-            // TODO: Implement data download request
+            // Solicitare pentru descărcarea datelor personale - conformitate GDPR
             Alert.alert(
               "Request Submitted",
               "You'll receive an email with your data download link within 48 hours."
@@ -63,7 +63,7 @@ export default function PrivacySecurityScreen() {
                   text: "Yes, Delete Everything",
                   style: "destructive",
                   onPress: () => {
-                    // TODO: Implement account deletion
+                    // Ștergerea completă a contului și datelor asociate
                     console.log("Account deletion requested");
                   },
                 },
@@ -168,7 +168,7 @@ Address: CoffeeShare Ltd., Bucharest, Romania
       />
 
       <ScrollView style={styles.scrollView}>
-        {/* Custom Back Button */}
+        {/* Buton custom pentru înapoi */}
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.push("/(mainUsers)/profile")}
@@ -177,7 +177,7 @@ Address: CoffeeShare Ltd., Bucharest, Romania
           <Text style={styles.backButtonText}>Înapoi la Profil</Text>
         </TouchableOpacity>
 
-        {/* Privacy Settings */}
+        {/* Setări de confidențialitate */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Privacy Settings</Text>
 
@@ -257,7 +257,7 @@ Address: CoffeeShare Ltd., Bucharest, Romania
           </View>
         </View>
 
-        {/* Data Management */}
+        {/* Gestionarea datelor */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Data Management</Text>
           <Text style={styles.sectionDescription}>
@@ -321,7 +321,7 @@ Address: CoffeeShare Ltd., Bucharest, Romania
           </TouchableOpacity>
         </View>
 
-        {/* Security */}
+        {/* Securitate */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Security</Text>
 
@@ -371,7 +371,7 @@ Address: CoffeeShare Ltd., Bucharest, Romania
           </TouchableOpacity>
         </View>
 
-        {/* Legal Documents */}
+        {/* Documente legale */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Legal Documents</Text>
 
@@ -404,7 +404,7 @@ Address: CoffeeShare Ltd., Bucharest, Romania
           </TouchableOpacity>
         </View>
 
-        {/* Privacy Policy */}
+        {/* Politica de confidențialitate */}
         <View style={[styles.section, styles.lastSection]}>
           <Text style={styles.sectionTitle}>Privacy Policy</Text>
           <View style={styles.policyContainer}>

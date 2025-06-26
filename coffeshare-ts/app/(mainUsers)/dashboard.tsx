@@ -44,14 +44,14 @@ import { useErrorHandler } from "../../hooks/useErrorHandler";
 
 const HEADER_HEIGHT = 80;
 
-// Helper function to format activity data with checkout transaction details
+// Formatez activitățile pentru afișare în dashboard - am adăugat suport pentru diferite tipuri de tranzacții
 const formatActivityForDisplay = (activity: any, t: Function) => {
   const beansUsed = activity.metadata?.beansUsed || activity.beansUsed || 1;
   const tokenType =
     activity.metadata?.tokenType || activity.tokenType || "instant";
   const qrTokenId = activity.metadata?.qrTokenId || activity.qrTokenId;
 
-  // Determine transaction type and description
+  // Determin tipul de tranzacție și descrierea corespunzătoare
   let transactionDescription = "";
   let transactionIcon = "cafe-outline";
 
@@ -97,7 +97,7 @@ export default function Dashboard() {
   const [favoriteCafes, setFavoriteCafes] = useState<WishlistItem[]>([]);
   const [showTransactionHistory, setShowTransactionHistory] = useState(false);
 
-  // Use the new subscription status hook
+  // Hook-ul meu custom pentru gestionarea stării abonamentului - îmi simplifica mult logica
   const subscriptionStatus = useSubscriptionStatus(user?.uid);
 
   const headerTranslateY = scrollOffsetY.interpolate({
@@ -125,7 +125,7 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Add useFocusEffect to refresh data when screen comes into focus
+  // Refresh automat când utilizatorul revine pe dashboard
   useFocusEffect(
     useCallback(() => {
       if (user?.uid) {
@@ -141,7 +141,7 @@ export default function Dashboard() {
   }, [user?.uid, fetchData]);
 
   useEffect(() => {
-    // Initialize notifications when subscription status changes
+    // Inițializez notificările când se schimbă starea abonamentului
     if (user?.uid && subscriptionStatus.subscription) {
       initializeNotifications();
     }
@@ -158,7 +158,7 @@ export default function Dashboard() {
       setRecentTransactions(transactions);
     } catch (error: any) {
       __DEV__ && console.error("Error fetching user transactions:", error);
-      // Check if error is due to index building
+      // Tratez erorile de indexare Firebase - se întâmplă când adaug noi funcții
       if (
         error.message &&
         error.message.includes("index is currently building")
@@ -229,7 +229,7 @@ export default function Dashboard() {
     }
   }, [logout, router, showError, t]);
 
-  // Get subscription data for display
+  // Obțin datele abonamentului pentru afișare
   const getSubscriptionData = () => {
     const beansLeft = subscriptionStatus.beansLeft || 0;
     const beansTotal = subscriptionStatus.beansTotal || 0;
@@ -251,7 +251,7 @@ export default function Dashboard() {
     };
   };
 
-  // Get recent activity from user transactions
+  // Obțin activitatea recentă din tranzacțiile utilizatorului
   const getRecentActivity = () => {
     if (recentTransactions.length === 0) {
       return [
@@ -271,14 +271,14 @@ export default function Dashboard() {
       );
   };
 
-  // Handler functions
+  // Funcții pentru gestionarea acțiunilor
   const handleRenewSubscription = () => {
     router.push("/(mainUsers)/subscriptions");
   };
 
   const handleCafePress = (cafe: any) => {
     console.log("Cafe pressed:", cafe);
-    // Navigate to cafe details
+    // Navighez la detaliile cafenelei
   };
 
   const handleViewFullHistory = () => {
@@ -287,7 +287,7 @@ export default function Dashboard() {
 
   const handleActivityPress = (transaction: any) => {
     console.log("Transaction pressed:", transaction);
-    // Could navigate to transaction details or cafe details
+    // Aș putea naviga la detaliile tranzacției sau ale cafenelei
     if (transaction.cafeId) {
       router.push(`/(mainUsers)/cafeDetails?cafeId=${transaction.cafeId}`);
     }
@@ -355,7 +355,7 @@ export default function Dashboard() {
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ headerShown: false }} />
 
-        {/* Animated Floating Header Elements */}
+        {/* Elementele header-ului plutitor animat */}
         <Animated.View
           style={[
             styles.floatingHeaderContainer,
@@ -364,7 +364,7 @@ export default function Dashboard() {
         >
           <Text style={styles.floatingHeaderTitle}>{t("common.appName")}</Text>
           <View style={styles.floatingHeaderIcons}>
-            {/* Icon Buttons */}
+            {/* Butoanele de iconițe */}
             <TouchableOpacity
               style={styles.iconButton}
               onPress={handleNotificationsPress}
@@ -399,7 +399,7 @@ export default function Dashboard() {
           </View>
         </Animated.View>
 
-        {/* Main Scrollable Content */}
+        {/* Conținutul principal cu scroll */}
         <Animated.ScrollView
           contentContainerStyle={styles.scrollContent}
           onScroll={handleScroll}
@@ -414,7 +414,7 @@ export default function Dashboard() {
             />
           }
         >
-          {/* User Welcome Section */}
+          {/* Secțiunea de bun venit pentru utilizator */}
           <View style={styles.welcomeContainer}>
             <Text style={styles.welcomeText}>
               {t("dashboard.welcomeMessage", { name: displayName })}
@@ -429,7 +429,7 @@ export default function Dashboard() {
             </TouchableOpacity>
           </View>
 
-          {/* Subscription Card - Using Bean-based Subscription Data */}
+          {/* Card-ul abonamentului - folosesc datele abonamentului bazat pe beans */}
           <SubscriptionCard
             type={subscriptionData.type}
             expires={subscriptionData.expires}
@@ -439,7 +439,7 @@ export default function Dashboard() {
             isLoading={loading}
           />
 
-          {/* Cart/QR Code Button - Show only if the user has an active subscription with beans */}
+          {/* Butonul pentru coș/cod QR - afișez doar dacă utilizatorul are abonament activ cu beans */}
           {subscriptionData.hasActiveSubscription &&
             subscriptionData.beansLeft > 0 && (
               <TouchableOpacity
@@ -451,14 +451,14 @@ export default function Dashboard() {
               </TouchableOpacity>
             )}
 
-          {/* Favorite Cafes Card - Beautiful UI for favorite cafes */}
+          {/* Card-ul cafenelelor favorite - UI frumos pentru cafenelele favorite */}
           <FavoriteCafesCard
             favoriteCafes={favoriteCafes}
             onViewAll={handleViewAllFavorites}
             onCafePress={handleFavoriteCafePress}
           />
 
-          {/* Recent Activity Card - Using Real User Data */}
+          {/* Card-ul activității recente - folosesc datele reale ale utilizatorului */}
           <RecentActivityCard
             activities={recentActivity.map((activity) => ({
               ...activity,
@@ -469,10 +469,10 @@ export default function Dashboard() {
           />
         </Animated.ScrollView>
 
-        {/* Bottom Navigation Bar */}
+        {/* Bara de navigare de jos */}
         <BottomTabBar />
 
-        {/* Error Components */}
+        {/* Componentele pentru erori */}
         <Toast
           visible={errorState.toast.visible}
           message={errorState.toast.message}
@@ -491,7 +491,7 @@ export default function Dashboard() {
           secondaryAction={errorState.modal.secondaryAction}
         />
 
-        {/* Transaction History Modal */}
+        {/* Modal-ul pentru istoricul tranzacțiilor */}
         <TransactionHistoryModal
           visible={showTransactionHistory}
           onClose={() => setShowTransactionHistory(false)}

@@ -40,7 +40,7 @@ export default function SubscriptionBox({
 }: SubscriptionBoxProps) {
   const { t } = useLanguage();
 
-  // Choose icon based on beans/credits
+  // Aleg ikoniţa pe baza boabelor/creditelor
   const getIcon = (): keyof typeof Ionicons.glyphMap => {
     if (icon) return icon;
     if (credits <= 50) return "cafe-outline";
@@ -48,7 +48,7 @@ export default function SubscriptionBox({
     return "flame";
   };
 
-  // Choose color based on selection or popularity
+  // Aleg culoarea pe baza selecţiei sau popularităţii
   const getCardColor = () => {
     if (isSelected) return color;
     if (isPopular) return "#FF9800";

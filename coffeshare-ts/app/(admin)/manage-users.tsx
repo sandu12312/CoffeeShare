@@ -9,7 +9,7 @@ export default function ManageUsersScreen() {
   const { refreshUser } = useAuth();
 
   const handleUserUpdated = () => {
-    // Refresh auth user in case permissions changed
+    // Reîmprospătez utilizatorul auth în caz că permisiunile s-au schimbat
     refreshUser();
   };
 

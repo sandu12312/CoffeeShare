@@ -6,11 +6,11 @@
     "runtimeVersion": "1.0.0",
     "orientation": "portrait",
     "main": "expo-router/entry",
-    "icon": "./assets/images/icon.png",
+    "icon": "./coffeshare-ts/assets/images/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash.png",
+      "image": "./coffeshare-ts/assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -35,7 +35,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./coffeshare-ts/assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "config": {
@@ -47,7 +47,7 @@
       "permissions": ["CAMERA"]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./coffeshare-ts/assets/images/favicon.png"
     },
     "plugins": [
       "expo-router",

@@ -41,7 +41,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { ErrorModal, Toast, Snackbar } from "../../components/ErrorComponents";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 
-// Type definition for partnership requests
+// Definiție tipuri pentru cererile de parteneriat
 interface PartnershipRequest {
   id: string;
   businessName: string;
@@ -55,13 +55,13 @@ interface PartnershipRequest {
   updatedAt?: Timestamp;
 }
 
-// Constants for collection names
+// Constante pentru numele colecțiilor
 const PARTNERSHIP_REQUESTS_COLLECTION = "partnership_requests";
 const LEGACY_REQUESTS_COLLECTION = "cafesPending";
 const CAFES_COLLECTION = "cafes";
 const USERS_COLLECTION = "users";
 
-// Cafe Partner Management Screen
+// Ecran pentru administrarea parteneriatelor de cafenele
 export default function ManageCafesScreen() {
   const { t } = useLanguage();
   const router = useRouter();
@@ -83,10 +83,10 @@ export default function ManageCafesScreen() {
     null
   );
 
-  // #1: ABSTRACTED FUNCTIONS FOR CAFE MANAGEMENT
+  // #1: FUNCȚII ABSTRACTE PENTRU ADMINISTRAREA CAFENELELOR
 
   /**
-   * Generate a secure random password with mixed characters
+   * Generez o parolă securizată aleatoare cu caractere mixte
    */
   const generateSecurePassword = (): string => {
     const lowercase = "abcdefghijklmnopqrstuvwxyz";
@@ -94,22 +94,22 @@ export default function ManageCafesScreen() {
     const numbers = "0123456789";
     const symbols = "!@#$%^&*()_+~`|}{[]:;?><,./-=";
 
-    // Create an array of character sets to ensure at least one from each
+    // Creez un array de seturi de caractere pentru a asigura cel puțin unul din fiecare
     const charSets = [lowercase, uppercase, numbers, symbols];
 
-    // Initialize password with one char from each set
+    // Inițializez parola cu un caracter din fiecare set
     let password = "";
     charSets.forEach((set) => {
       password += set.charAt(Math.floor(Math.random() * set.length));
     });
 
-    // Fill remainder with random chars from all sets
+    // Completez restul cu caractere aleatorii din toate seturile
     const allChars = charSets.join("");
     while (password.length < 16) {
       password += allChars.charAt(Math.floor(Math.random() * allChars.length));
     }
 
-    // Shuffle the password to avoid predictable pattern
+    // Amestec parola pentru a evita un pattern predictibil
     return password
       .split("")
       .sort(() => 0.5 - Math.random())
@@ -228,8 +228,8 @@ export default function ManageCafesScreen() {
     try {
       console.log(`[ManageCafes] Sending credentials email to ${email}`);
 
-      // In a production app, you would call a Cloud Function here
-      // For now, we'll use sendPasswordResetEmail as a workaround
+      // În aplicația de producție, aici aș apela o Cloud Function
+      // Pentru moment, folosesc sendPasswordResetEmail ca workaround
       await sendPasswordResetEmail(auth, email);
 
       console.log(
@@ -242,10 +242,10 @@ export default function ManageCafesScreen() {
     }
   };
 
-  // #2: DATA LOADING & MANAGEMENT
+  // #2: ÎNCĂRCAREA ȘI ADMINISTRAREA DATELOR
 
   /**
-   * Load partnership requests from cafesPending collection
+   * Încarc cererile de parteneriat din colecția cafesPending
    */
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -254,7 +254,7 @@ export default function ManageCafesScreen() {
         "[ManageCafes] Fetching partnership requests from cafesPending..."
       );
 
-      // Get pending partnerships from cafesPending collection
+      // Obțin parteneriatele în așteptare din colecția cafesPending
       const requestsQuery = query(
         collection(db, LEGACY_REQUESTS_COLLECTION),
         where("status", "==", "pending"),
@@ -294,12 +294,12 @@ export default function ManageCafesScreen() {
     }
   }, []);
 
-  // Load data on component mount
+  // Încarc datele la mount-ul componentei
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // #3: HANDLE APPROVE/REJECT ACTIONS
+  // #3: GESTIONAREA ACȚIUNILOR DE APROBARE/RESPINGERE
 
   /**
    * Handle approving a partnership request
@@ -312,7 +312,7 @@ export default function ManageCafesScreen() {
       `Are you sure you want to approve the partnership request from ${request.businessName}?`,
       async () => {
         try {
-          // Simply update the request status to approved
+          // Actualizez simplu statusul cererii la aprobat
           const requestRef = doc(db, LEGACY_REQUESTS_COLLECTION, request.id);
           await updateDoc(requestRef, {
             status: "approved",
@@ -328,7 +328,7 @@ export default function ManageCafesScreen() {
             `The partnership request from ${request.businessName} has been approved.`
           );
 
-          // Refresh the data
+          // Reîmprospătez datele
           loadData();
         } catch (error: any) {
           console.error(
@@ -355,22 +355,22 @@ export default function ManageCafesScreen() {
       `Are you sure you want to reject the partnership request from ${request.businessName}?`,
       async () => {
         try {
-          // Simply delete the partnership request from cafesPending
+          // Șterg simplu cererea de parteneriat din cafesPending
           await deleteDoc(doc(db, LEGACY_REQUESTS_COLLECTION, request.id));
           console.log(
             `[ManageCafes] Rejected and deleted partnership request from ${request.businessName}`
           );
 
-          // Show success message with undo option
+          // Afișez mesajul de succes cu opțiunea undo
           showUndoSnackbar(
             `Partnership request from ${request.businessName} has been rejected.`,
             () => {
-              // TODO: Implement undo functionality if needed
+              // Funcționalitate undo - de implementat în viitor dacă e necesar
               console.log("Undo rejection requested");
             }
           );
 
-          // Refresh the data
+          // Reîmprospătez datele
           loadData();
         } catch (error: any) {
           console.error(
@@ -385,9 +385,9 @@ export default function ManageCafesScreen() {
     );
   };
 
-  // #4: UI RENDERING
+  // #4: RANDAREA INTERFEȚEI
 
-  // Filter requests based on search query
+  // Filtrez cererile pe baza query-ului de căutare
   const filteredRequests = searchQuery
     ? requests.filter(
         (request) =>
@@ -405,7 +405,7 @@ export default function ManageCafesScreen() {
       )
     : requests;
 
-  // Render each partnership request item
+  // Randez fiecare element din cererile de parteneriat
   const renderItem = ({
     item,
     index,

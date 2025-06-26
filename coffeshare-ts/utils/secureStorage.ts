@@ -1,7 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
-// Security configuration for different platforms
+// Configurația de securitate pentru platforme diferite
 const SECURITY_OPTIONS = {
   android: {
     requireAuthentication: false,
@@ -17,7 +17,7 @@ const SECURITY_OPTIONS = {
 
 export class SecureStorage {
   /**
-   * Store sensitive data securely
+   * Stochez date sensibile în siguranță
    */
   static async setItem(key: string, value: string): Promise<void> {
     try {
@@ -31,7 +31,7 @@ export class SecureStorage {
   }
 
   /**
-   * Retrieve sensitive data securely
+   * Recuperez date sensibile în siguranță
    */
   static async getItem(key: string): Promise<string | null> {
     try {
@@ -45,7 +45,7 @@ export class SecureStorage {
   }
 
   /**
-   * Remove sensitive data
+   * Elimin datele sensibile
    */
   static async removeItem(key: string): Promise<void> {
     try {
@@ -57,7 +57,7 @@ export class SecureStorage {
   }
 
   /**
-   * Check if key exists
+   * Verific dacă cheia există
    */
   static async hasItem(key: string): Promise<boolean> {
     try {
@@ -69,28 +69,28 @@ export class SecureStorage {
   }
 
   /**
-   * Store authentication token
+   * Stochez token-ul de autentificare
    */
   static async setAuthToken(token: string): Promise<void> {
     await this.setItem("auth_token", token);
   }
 
   /**
-   * Get authentication token
+   * Obțin token-ul de autentificare
    */
   static async getAuthToken(): Promise<string | null> {
     return await this.getItem("auth_token");
   }
 
   /**
-   * Remove authentication token
+   * Elimin token-ul de autentificare
    */
   static async removeAuthToken(): Promise<void> {
     await this.removeItem("auth_token");
   }
 
   /**
-   * Store user credentials (encrypted)
+   * Stochez credențialele utilizatorului (criptate)
    */
   static async setUserCredentials(
     userId: string,
@@ -100,28 +100,28 @@ export class SecureStorage {
   }
 
   /**
-   * Get user credentials
+   * Obțin credențialele utilizatorului
    */
   static async getUserCredentials(userId: string): Promise<string | null> {
     return await this.getItem(`user_creds_${userId}`);
   }
 
   /**
-   * Store Firebase refresh token
+   * Stochez token-ul de refresh Firebase
    */
   static async setRefreshToken(token: string): Promise<void> {
     await this.setItem("firebase_refresh_token", token);
   }
 
   /**
-   * Get Firebase refresh token
+   * Obțin token-ul de refresh Firebase
    */
   static async getRefreshToken(): Promise<string | null> {
     return await this.getItem("firebase_refresh_token");
   }
 
   /**
-   * Clear all stored data (for logout)
+   * Șterg toate datele stocate (pentru logout)
    */
   static async clearAll(): Promise<void> {
     try {
@@ -133,14 +133,14 @@ export class SecureStorage {
   }
 
   /**
-   * Store encrypted session data
+   * Stochez datele de sesiune criptate
    */
   static async setSessionData(sessionId: string, data: string): Promise<void> {
     await this.setItem(`session_${sessionId}`, data);
   }
 
   /**
-   * Get session data
+   * Obțin datele de sesiune
    */
   static async getSessionData(sessionId: string): Promise<string | null> {
     return await this.getItem(`session_${sessionId}`);

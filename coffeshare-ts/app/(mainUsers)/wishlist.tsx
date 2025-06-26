@@ -54,7 +54,7 @@ export default function WishlistScreen() {
     [user?.uid, showError]
   );
 
-  // Reload wishlist when screen comes into focus
+  // Refresh-ez lista când ecranul intră în focus
   useFocusEffect(
     useCallback(() => {
       if (user?.uid) {
@@ -252,7 +252,7 @@ export default function WishlistScreen() {
 
       <BottomTabBar />
 
-      {/* Toast for feedback */}
+      {/* Toast pentru feedback */}
       <Toast
         visible={errorState.toast.visible}
         message={errorState.toast.message}

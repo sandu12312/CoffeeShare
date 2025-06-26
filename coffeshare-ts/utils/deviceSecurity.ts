@@ -21,16 +21,16 @@ export interface SecurityReport {
 }
 
 export class DeviceSecurity {
-  private static readonly APP_HASH = "coffeshare_security_hash_2024"; // Change this to your app hash
+  private static readonly APP_HASH = "coffeshare_security_hash_2024"; // Schimb asta cu hash-ul aplicației tale
   private static securityReport: SecurityReport | null = null;
 
   /**
-   * Comprehensive security check
+   * Verificare de securitate comprehensivă
    */
   static async performSecurityCheck(): Promise<SecurityReport> {
     const threats: SecurityThreat[] = [];
 
-    // Check for emulator
+    // Verific pentru emulator
     const isEmulator = await this.isEmulatorDetected();
     if (isEmulator) {
       threats.push({
@@ -41,7 +41,7 @@ export class DeviceSecurity {
       });
     }
 
-    // Check for root/jailbreak
+    // Verific pentru root/jailbreak
     const isRooted = await this.isDeviceCompromised();
     if (isRooted) {
       threats.push({
@@ -52,7 +52,7 @@ export class DeviceSecurity {
       });
     }
 
-    // Check for debugging
+    // Verific pentru debugging
     const isDebugging = await this.isDebuggingDetected();
     if (isDebugging) {
       threats.push({
@@ -63,7 +63,7 @@ export class DeviceSecurity {
       });
     }
 
-    // Additional checks for Android
+    // Verificări adiționale pentru Android
     let hasGenymotion = false;
     let hasXposed = false;
 
@@ -96,7 +96,7 @@ export class DeviceSecurity {
   }
 
   /**
-   * Check if running on emulator
+   * Verific dacă rulează pe emulator
    */
   private static async isEmulatorDetected(): Promise<boolean> {
     try {
@@ -108,7 +108,7 @@ export class DeviceSecurity {
   }
 
   /**
-   * Check if device is rooted/jailbroken
+   * Verific dacă dispozitivul este compromis (rooted/jailbroken)
    */
   private static async isDeviceCompromised(): Promise<boolean> {
     try {
@@ -124,19 +124,19 @@ export class DeviceSecurity {
   }
 
   /**
-   * Check for debugging tools
+   * Verific pentru instrumente de debugging
    */
   private static async isDebuggingDetected(): Promise<boolean> {
     return __DEV__;
   }
 
   /**
-   * Check for Genymotion emulator (Android)
+   * Verific pentru emulatorul Genymotion (Android)
    */
   private static async hasGenymotionDetected(): Promise<boolean> {
     try {
       const DeviceInfo = getDeviceInfo();
-      // Use getModel since getManufacturer doesn't exist in our fallback
+      // Folosesc getModel pentru că getManufacturer nu există în fallback-ul nostru
       const model = await DeviceInfo.getModel();
       return model.toLowerCase().includes("genymotion");
     } catch (error) {
@@ -145,18 +145,18 @@ export class DeviceSecurity {
   }
 
   /**
-   * Get current security report
+   * Obțin raportul de securitate curent
    */
   static getSecurityReport(): SecurityReport | null {
     return this.securityReport;
   }
 
   /**
-   * Check if critical features should be disabled
+   * Verific dacă funcționalitățile critice ar trebui dezactivate
    */
   static shouldDisableCriticalFeatures(): boolean {
     if (!this.securityReport) {
-      return true; // Disable if no security check performed
+      return true; // Dezactivez dacă nu s-a efectuat verificarea de securitate
     }
 
     const criticalThreats = this.securityReport.threats.filter(
@@ -167,7 +167,7 @@ export class DeviceSecurity {
   }
 
   /**
-   * Check if QR scanning should be allowed
+   * Verific dacă scanarea QR ar trebui permisă
    */
   static shouldAllowQRScanning(): boolean {
     if (!this.securityReport) {
@@ -183,7 +183,7 @@ export class DeviceSecurity {
   }
 
   /**
-   * Get security warning message
+   * Obțin mesajul de avertizare pentru securitate
    */
   static getSecurityWarning(): string | null {
     if (!this.securityReport || this.securityReport.isSecure) {

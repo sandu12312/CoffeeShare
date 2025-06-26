@@ -39,7 +39,7 @@ const PendingRegistrationsModal: React.FC<PendingRegistrationsModalProps> = ({
     total: 0,
   });
 
-  // Load pending registrations
+  // Încarc înregistrările în așteptare
   const loadPendingRegistrations = async () => {
     try {
       setLoading(true);
@@ -62,21 +62,21 @@ const PendingRegistrationsModal: React.FC<PendingRegistrationsModalProps> = ({
     }
   };
 
-  // Refresh data
+  // Refresh-ez datele
   const onRefresh = async () => {
     setRefreshing(true);
     await loadPendingRegistrations();
     setRefreshing(false);
   };
 
-  // Load data when modal opens
+  // Încarc datele când se deschide modalul
   useEffect(() => {
     if (visible) {
       loadPendingRegistrations();
     }
   }, [visible]);
 
-  // Handle resend confirmation email
+  // Gestionez retrimiterea email-ului de confirmare
   const handleResendEmail = async (registrationId: string, email: string) => {
     try {
       const result = await PartnerRegistrationService.resendConfirmationEmail(
@@ -105,7 +105,7 @@ const PendingRegistrationsModal: React.FC<PendingRegistrationsModalProps> = ({
     }
   };
 
-  // Handle reject registration
+  // Gestionez respingerea înregistrării
   const handleRejectRegistration = (
     registrationId: string,
     partnerName: string
@@ -132,7 +132,7 @@ const PendingRegistrationsModal: React.FC<PendingRegistrationsModalProps> = ({
                   text1: "Registration Rejected",
                   text2: `${partnerName}'s registration has been rejected`,
                 });
-                loadPendingRegistrations(); // Refresh list
+                loadPendingRegistrations(); // Refresh-ez lista
               } else {
                 Toast.show({
                   type: "error",
@@ -153,7 +153,7 @@ const PendingRegistrationsModal: React.FC<PendingRegistrationsModalProps> = ({
     );
   };
 
-  // Handle cleanup expired registrations
+  // Gestionez curățarea înregistrărilor expirate
   const handleCleanupExpired = async () => {
     try {
       await PartnerRegistrationService.cleanupExpiredRegistrations();
@@ -162,7 +162,7 @@ const PendingRegistrationsModal: React.FC<PendingRegistrationsModalProps> = ({
         text1: "Cleanup Complete",
         text2: "Expired registrations have been cleaned up",
       });
-      loadPendingRegistrations(); // Refresh list
+      loadPendingRegistrations(); // Refresh-ez lista
     } catch (error) {
       Toast.show({
         type: "error",
@@ -172,14 +172,14 @@ const PendingRegistrationsModal: React.FC<PendingRegistrationsModalProps> = ({
     }
   };
 
-  // Format date
+  // Formatez data
   const formatDate = (date: any) => {
     if (!date) return "N/A";
     const d = date.toDate ? date.toDate() : new Date(date);
     return d.toLocaleDateString() + " " + d.toLocaleTimeString();
   };
 
-  // Check if registration is expired
+  // Verific dacă înregistrarea a expirat
   const isExpired = (expiresAt: any) => {
     const expDate = expiresAt instanceof Date ? expiresAt : expiresAt?.toDate();
     return expDate && new Date() > expDate;
@@ -253,7 +253,7 @@ const PendingRegistrationsModal: React.FC<PendingRegistrationsModalProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* Statistics */}
+        {/* Statistici */}
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>{stats.pending}</Text>

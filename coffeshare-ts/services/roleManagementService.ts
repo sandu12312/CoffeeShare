@@ -73,9 +73,9 @@ export interface UserSearchResult {
 }
 
 /**
- * Hybrid Role Management Service
- * Works with both old single collection and new role-based collections
- * Automatically migrates users when they are accessed/modified
+ * Serviciu de Management de Roluri Hibrid
+ * Funcționează atât cu colecția unică veche, cât și cu colecțiile noi bazate pe roluri
+ * Migrează automat utilizatorii când sunt accesați/modificați
  */
 class RoleManagementService {
   private readonly newCollections = {
@@ -87,11 +87,11 @@ class RoleManagementService {
   private readonly legacyCollection = "users";
 
   /**
-   * Get user data and role from any collection (hybrid approach)
+   * Obțin datele utilizatorului și rolul din orice colecție (abordare hibridă)
    */
   async getUserByUid(uid: string): Promise<UserSearchResult | null> {
     try {
-      // Check collections in priority order: admins first, then partners, then users
+      // Verific colecțiile în ordinea priorității: mai întâi admini, apoi parteneri, apoi utilizatori
       const collections = [
         { name: "admins", role: "admin" as UserRole },
         { name: "coffeePartners", role: "partner" as UserRole },
@@ -113,7 +113,7 @@ class RoleManagementService {
             };
           }
         } catch (error) {
-          // Continue if collection doesn't exist yet
+          // Continui dacă colecția nu există încă
           console.warn(
             `Collection ${collectionInfo.name} not accessible:`,
             error
@@ -121,7 +121,7 @@ class RoleManagementService {
         }
       }
 
-      // Fallback to legacy collection (users collection with role field)
+      // Fallback la colecția legacy (colecția users cu câmpul role)
       try {
         const userDoc = await getDoc(doc(db, this.legacyCollection, uid));
         if (userDoc.exists()) {
@@ -150,7 +150,7 @@ class RoleManagementService {
   }
 
   /**
-   * Search users across all collections (hybrid approach)
+   * Caut utilizatori în toate colecțiile (abordare hibridă)
    */
   async searchUsers(
     searchQuery: string,
@@ -160,7 +160,7 @@ class RoleManagementService {
       const results: UserSearchResult[] = [];
       const lowerQuery = searchQuery.toLowerCase();
 
-      // Search in new collections first
+      // Caut mai întâi în colecțiile noi
       for (const [collectionName, roleName] of Object.entries(
         this.newCollections
       )) {
@@ -200,7 +200,7 @@ class RoleManagementService {
         }
       }
 
-      // If no results from new collections, search legacy collection
+      // Dacă nu am rezultate din colecțiile noi, caut în colecția legacy
       if (results.length === 0) {
         try {
           const collectionQuery = query(
@@ -216,7 +216,7 @@ class RoleManagementService {
             const email = userData.email || "";
             const userRole = userData.role || "user";
 
-            // Apply role filter if specified
+            // Aplic filtrul de rol dacă este specificat
             if (roleFilter && userRole !== roleFilter) {
               return;
             }
@@ -245,7 +245,7 @@ class RoleManagementService {
   }
 
   /**
-   * Get all users from a specific role (hybrid approach)
+   * Obțin toți utilizatorii dintr-un rol specific (abordare hibridă)
    */
   async getUsersByRole(
     role: UserRole,
@@ -260,7 +260,7 @@ class RoleManagementService {
       let users: UserSearchResult[] = [];
       let lastVisibleDoc: QueryDocumentSnapshot<any> | null = null;
 
-      // Try new collection first
+      // Încerc mai întâi colecția nouă
       try {
         let usersQuery;
         if (lastVisible) {
@@ -296,9 +296,9 @@ class RoleManagementService {
           error
         );
 
-        // Fallback to legacy collection with simplified query
+        // Fallback la colecția legacy cu query simplificat
         try {
-          // Simple query without complex index requirements
+          // Query simplu fără cerințe complexe de index
           let usersQuery;
           if (lastVisible) {
             usersQuery = query(
@@ -330,14 +330,14 @@ class RoleManagementService {
         } catch (legacyError) {
           console.error("Error querying legacy collection:", legacyError);
 
-          // If role filtering fails, get all users and filter client-side
+          // Dacă filtrarea pe rol eșuează, obțin toți utilizatorii și filtrez pe partea clientului
           try {
             console.warn(
               "Attempting client-side filtering for legacy collection"
             );
             const allUsersQuery = query(
               collection(db, this.legacyCollection),
-              limit(pageSize * 3) // Get more to account for filtering
+              limit(pageSize * 3) // Obțin mai mulți pentru a compensa filtrarea
             );
 
             const snapshot = await getDocs(allUsersQuery);
@@ -353,9 +353,9 @@ class RoleManagementService {
               }
             });
 
-            // Limit to requested page size
+            // Limitez la dimensiunea paginii cerute
             users = users.slice(0, pageSize);
-            lastVisibleDoc = null; // Disable pagination for client-side filtering
+            lastVisibleDoc = null; // Dezactivez paginarea pentru filtrarea pe partea clientului
           } catch (finalError) {
             console.error("All legacy query attempts failed:", finalError);
           }
@@ -370,7 +370,7 @@ class RoleManagementService {
   }
 
   /**
-   * Change user role (automatically migrates to new collections)
+   * Schimb rolul utilizatorului (migrează automat la colecțiile noi)
    */
   async changeUserRole(
     uid: string,
@@ -378,13 +378,13 @@ class RoleManagementService {
     additionalData?: any
   ): Promise<void> {
     try {
-      // Get current user data
+      // Obțin datele utilizatorului curent
       const currentUser = await this.getUserByUid(uid);
       if (!currentUser) {
         throw new Error("User not found");
       }
 
-      // If role is the same, no need to move
+      // Dacă rolul este același, nu trebuie să mut
       if (currentUser.role === newRole) {
         return;
       }
@@ -392,7 +392,7 @@ class RoleManagementService {
       const batch = writeBatch(db);
       const newCollectionName = this.getCollectionByRole(newRole);
 
-      // Prepare new document data based on role
+      // Prepar datele noului document bazat pe rol
       let newDocumentData: any;
       switch (newRole) {
         case "admin":
@@ -438,15 +438,15 @@ class RoleManagementService {
           break;
       }
 
-      // Create new document in target collection
+      // Creez documentul nou în colecția țintă
       const newDocRef = doc(db, newCollectionName, uid);
       batch.set(newDocRef, newDocumentData);
 
-      // ALWAYS delete from old collection - whether it's legacy or new collection
+      // ÎNTOTDEAUNA șterg din colecția veche - fie că este legacy sau colecție nouă
       const oldDocRef = doc(db, currentUser.collection, uid);
       batch.delete(oldDocRef);
 
-      // If moving from legacy collection, we need to be more careful
+      // Dacă mut din colecția legacy, trebuie să fiu mai atent
       if (currentUser.collection === this.legacyCollection) {
         console.log(
           `Migrating user ${uid} from legacy collection to ${newCollectionName}`
@@ -469,7 +469,7 @@ class RoleManagementService {
   }
 
   /**
-   * Create new user with specific role (uses new collections)
+   * Creez utilizator nou cu rol specific (folosește colecțiile noi)
    */
   async createUserWithRole(
     userData: Partial<BaseUserData>,
@@ -532,7 +532,7 @@ class RoleManagementService {
   }
 
   /**
-   * Update user data in their current collection
+   * Actualizez datele utilizatorului în colecția lor curentă
    */
   async updateUser(
     uid: string,
@@ -556,7 +556,7 @@ class RoleManagementService {
   }
 
   /**
-   * Delete user from their current collection
+   * Șterg utilizatorul din colecția lor curentă
    */
   async deleteUser(uid: string): Promise<void> {
     try {
@@ -574,7 +574,7 @@ class RoleManagementService {
   }
 
   /**
-   * Get statistics across all collections (hybrid approach)
+   * Obțin statistici prin toate colecțiile (abordare hibridă)
    */
   async getAllRoleStatistics(): Promise<{
     totalUsers: number;
@@ -590,7 +590,7 @@ class RoleManagementService {
         activeUsers = 0,
         pendingPartners = 0;
 
-      // Try new collections first
+      // Încerc mai întâi colecțiile noi
       try {
         const [usersSnapshot, adminsSnapshot, partnersSnapshot] =
           await Promise.all([
@@ -603,7 +603,7 @@ class RoleManagementService {
         totalAdmins = adminsSnapshot.size;
         totalPartners = partnersSnapshot.size;
 
-        // Count active users from new users collection
+        // Număr utilizatorii activi din colecția nouă de utilizatori
         usersSnapshot.forEach((doc) => {
           const userData = doc.data();
           if (userData.status === "active") {
@@ -611,7 +611,7 @@ class RoleManagementService {
           }
         });
 
-        // Count pending partners from new partners collection
+        // Număr partenerii în așteptare din colecția nouă de parteneri
         partnersSnapshot.forEach((doc) => {
           const userData = doc.data();
           if (userData.verificationStatus === "pending") {
@@ -621,25 +621,25 @@ class RoleManagementService {
       } catch (error) {
         console.warn("New collections not accessible, using legacy:", error);
 
-        // Fallback to legacy collection with simplified counting
+        // Fallback la colecția legacy cu numărare simplificată
         try {
           const allUsersSnapshot = await getDocs(
             collection(db, this.legacyCollection)
           );
 
-          // Count by iterating through all documents (client-side filtering)
+          // Număr iterând prin toate documentele (filtrare pe partea clientului)
           allUsersSnapshot.forEach((doc) => {
             const userData = doc.data();
             const userRole = userData.role || "user";
 
-            // Count by role
+            // Număr pe rol
             switch (userRole) {
               case "admin":
                 totalAdmins++;
                 break;
               case "partner":
                 totalPartners++;
-                // Check pending status for partners
+                // Verific status-ul în așteptare pentru parteneri
                 if (
                   !userData.verificationStatus ||
                   userData.verificationStatus === "pending"
@@ -653,7 +653,7 @@ class RoleManagementService {
                 break;
             }
 
-            // Count active users
+            // Număr utilizatorii activi
             if (userData.status === "active" || !userData.status) {
               activeUsers++;
             }
@@ -679,7 +679,7 @@ class RoleManagementService {
     }
   }
 
-  // Helper methods
+  // Metode de ajutor
   private getCollectionByRole(role: UserRole): string {
     switch (role) {
       case "admin":

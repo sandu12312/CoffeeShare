@@ -33,20 +33,20 @@ class CartService {
   private lastLoggedCartState: Map<string, string> = new Map(); // Track last logged state per user
 
   /**
-   * Get user's cart
+   * Obțin coșul utilizatorului
    */
   async getUserCart(userId: string): Promise<Cart | null> {
     try {
       const cartDoc = await getDoc(doc(db, this.COLLECTION_NAME, userId));
 
       if (!cartDoc.exists()) {
-        // Silently return null for non-existent carts (this is normal)
+        // Returnez null în liniște pentru coșuri inexistente (e normal)
         return null;
       }
 
       const cart = cartDoc.data() as Cart;
 
-      // Only log when cart state actually changes to reduce spam
+      // Loghez doar când starea coșului se schimbă efectiv pentru a reduce spam-ul
       const currentCartState = `${cart.totalBeans}_${cart.items.length}`;
       const lastState = this.lastLoggedCartState.get(userId);
 
@@ -65,7 +65,7 @@ class CartService {
   }
 
   /**
-   * Add item to cart
+   * Adaug produs în coș
    */
   async addToCart(
     userId: string,
@@ -77,7 +77,7 @@ class CartService {
     try {
       const cart = await this.getUserCart(userId);
 
-      // Check if cart exists and is for a different cafe
+      // Verific dacă coșul există și e pentru o cafenea diferită
       if (cart && cart.cafeId && cart.cafeId !== cafeId) {
         return {
           success: false,
@@ -90,7 +90,7 @@ class CartService {
       const now = new Date();
 
       if (!cart) {
-        // Create new cart
+        // Creez coș nou
         const newCart: Cart = {
           userId,
           items: [
@@ -110,10 +110,10 @@ class CartService {
 
         await setDoc(cartRef, newCart);
         console.log(`✅ Added ${product.name} to new cart for user ${userId}`);
-        // Clear cached state since cart changed
+        // Șterg starea din cache căci coșul s-a schimbat
         this.lastLoggedCartState.delete(userId);
       } else {
-        // Update existing cart
+        // Actualizez coșul existent
         const existingItemIndex = cart.items.findIndex(
           (item) => item.product.id === product.id
         );
@@ -122,11 +122,11 @@ class CartService {
         let newTotalBeans = cart.totalBeans;
 
         if (existingItemIndex > -1) {
-          // Update quantity of existing item
+          // Actualizez cantitatea produsului existent
           updatedItems[existingItemIndex].quantity += quantity;
           newTotalBeans += product.beansValue * quantity;
         } else {
-          // Add new item
+          // Adaug produs nou
           updatedItems.push({
             product,
             quantity,
@@ -154,7 +154,7 @@ class CartService {
             `✅ Added ${product.name} to existing cart for user ${userId}`
           );
         }
-        // Clear cached state since cart changed
+        // Șterg starea din cache căci coșul s-a schimbat
         this.lastLoggedCartState.delete(userId);
       }
 
@@ -172,7 +172,7 @@ class CartService {
   }
 
   /**
-   * Remove item from cart
+   * Șterg produs din coș
    */
   async removeFromCart(
     userId: string,
@@ -198,7 +198,7 @@ class CartService {
       );
 
       if (updatedItems.length === 0) {
-        // Delete cart if empty
+        // Șterg coșul dacă e gol
         await deleteDoc(doc(db, this.COLLECTION_NAME, userId));
         console.log(`🗑️ Cart emptied and deleted for user ${userId}`);
       } else {
@@ -210,7 +210,7 @@ class CartService {
         console.log(`🗑️ Item removed from cart for user ${userId}`);
       }
 
-      // Clear cached state since cart changed
+      // Șterg starea din cache căci coșul s-a schimbat
       this.lastLoggedCartState.delete(userId);
 
       return {
@@ -227,7 +227,7 @@ class CartService {
   }
 
   /**
-   * Update item quantity
+   * Actualizez cantitatea produsului
    */
   async updateQuantity(
     userId: string,
@@ -277,7 +277,7 @@ class CartService {
       console.log(
         `🔄 Updated quantity for user ${userId}: ${oldQuantity} → ${newQuantity}`
       );
-      // Clear cached state since cart changed
+      // Șterg starea din cache căci coșul s-a schimbat
       this.lastLoggedCartState.delete(userId);
 
       return {
@@ -294,7 +294,7 @@ class CartService {
   }
 
   /**
-   * Clear cart
+   * Golesc coșul
    */
   async clearCart(
     userId: string
@@ -303,7 +303,7 @@ class CartService {
       await deleteDoc(doc(db, this.COLLECTION_NAME, userId));
 
       console.log(`🧹 Cart manually cleared for user ${userId}`);
-      // Clear cached state since cart is now empty
+      // Șterg starea din cache căci coșul e acum gol
       this.lastLoggedCartState.delete(userId);
 
       return {
@@ -312,8 +312,8 @@ class CartService {
       };
     } catch (error) {
       console.error("Error clearing cart:", error);
-      // Check if this is a permissions error - if so, just log it and return success
-      // This prevents permissions errors when QR redemption tries to clear cart
+      // Verific dacă e o eroare de permisiuni - dacă da, o loghez și returnez success
+      // Aceasta previne erorile de permisiuni când răscumpărarea QR încearcă să golească coșul
       if (
         (error as any)?.code === "permission-denied" ||
         (error as any)?.message?.includes("permissions")
@@ -336,7 +336,7 @@ class CartService {
   }
 
   /**
-   * Get cart item count
+   * Obțin numărul de produse din coș
    */
   async getCartItemCount(userId: string): Promise<number> {
     try {
@@ -354,14 +354,14 @@ class CartService {
   }
 
   /**
-   * Check if cart belongs to specific cafe
+   * Verific dacă coșul aparține unei cafenele specifice
    */
   async isCartForCafe(userId: string, cafeId: string): Promise<boolean> {
     try {
       const cart = await this.getUserCart(userId);
 
       if (!cart || !cart.cafeId) {
-        return true; // Empty cart can be used for any cafe
+        return true; // Coșul gol poate fi folosit pentru orice cafenea
       }
 
       return cart.cafeId === cafeId;
@@ -372,7 +372,7 @@ class CartService {
   }
 
   /**
-   * Get cart total beans value
+   * Obțin totalul de boabe din coș
    */
   async getCartTotalBeans(userId: string): Promise<number> {
     try {
@@ -385,7 +385,7 @@ class CartService {
   }
 
   /**
-   * Process cart redemption (subtract beans and clear cart)
+   * Procesez răscumpărarea coșului (scad boabele și golesc coșul)
    */
   async processCartRedemption(
     userId: string
@@ -403,7 +403,7 @@ class CartService {
 
       const beansUsed = cart.totalBeans;
 
-      // Clear the cart after getting the total
+      // Golesc coșul după ce obțin totalul
       await this.clearCart(userId);
 
       return {
@@ -422,7 +422,7 @@ class CartService {
   }
 
   /**
-   * Clear cart after successful QR redemption
+   * Golesc coșul după răscumpărarea QR cu succes
    */
   async clearCartAfterRedemption(userId: string): Promise<void> {
     try {
@@ -433,7 +433,7 @@ class CartService {
           `✅ CART CLEARED: Successfully cleared cart for user ${userId} after QR redemption`
         );
 
-        // Clear cached state to ensure fresh data on next load
+        // Șterg starea din cache pentru a asigura date proaspete la următoarea încărcare
         this.lastLoggedCartState.delete(userId);
       } else {
         console.log(
@@ -445,7 +445,7 @@ class CartService {
         "❌ CART CLEAR ERROR: Error clearing cart after redemption:",
         error
       );
-      // Don't throw error - this is not critical
+      // Nu arunc eroare - aceasta nu e critică
     }
   }
 }

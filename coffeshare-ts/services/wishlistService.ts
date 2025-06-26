@@ -47,7 +47,7 @@ class WishlistService {
   private wishlistCollection = "wishlist";
 
   /**
-   * Add a cafe to user's wishlist
+   * Adaug o cafenea la lista de dorințe a utilizatorului
    */
   async addToWishlist(userId: string, cafeId: string): Promise<void> {
     try {

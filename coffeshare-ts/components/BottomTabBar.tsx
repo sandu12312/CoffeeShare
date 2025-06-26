@@ -29,30 +29,33 @@ export default function BottomTabBar() {
   const [quickProducts, setQuickProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
 
-  // Helper function to determine if a tab is active
+  // Verific care tab este activ în navigația de jos
   const isActive = (path: string) => {
-    // More specific check to avoid partial matches (e.g., /map vs /map-details)
+    // Verific exact ruta pentru a evita potriviri parțiale
     const currentBaseRoute = pathname.split("/").pop();
     return currentBaseRoute === path;
   };
 
-  // Refresh cart count when this component comes into focus
+  // Actualizez numărul de produse din coș când tab bar-ul devine activ
   useFocusEffect(
     React.useCallback(() => {
       if (user?.uid) {
-        __DEV__ && console.log("BottomTabBar: Refreshing cart count on focus");
+        __DEV__ &&
+          console.log("BottomTabBar: Refresh-ez numărul din coș la focus");
         refreshCartCount();
       }
     }, [user, refreshCartCount])
   );
 
-  // Additional refresh when app becomes active
+  // Refresh suplimentar când aplicația devine activă
   useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === "active" && user?.uid) {
         __DEV__ &&
-          console.log("BottomTabBar: Refreshing cart count on app active");
-        setTimeout(() => refreshCartCount(), 500); // Small delay to ensure data is fresh
+          console.log(
+            "BottomTabBar: Refresh-ez numărul din coș când app devine activ"
+          );
+        setTimeout(() => refreshCartCount(), 500); // Mică întârziere pentru date fresh
       }
     };
 
@@ -63,16 +66,16 @@ export default function BottomTabBar() {
     return () => subscription?.remove();
   }, [user, refreshCartCount]);
 
-  // Load recent products for quick order
+  // Încarc produsele pentru comandă rapidă
   const loadQuickProducts = async () => {
     if (!user?.uid) return;
 
     try {
       setLoadingProducts(true);
-      // Get user's recent cafe or default cafe (you can adjust this logic)
-      const cafeId = "vD9S0L4vdd9EBBSmDI7C"; // Example cafe ID, you can make this dynamic
+      // Momentan folosesc o cafenea default, în viitor pot face dinamic
+      const cafeId = "vD9S0L4vdd9EBBSmDI7C"; // ID cafenea exemplu
       const products = await coffeePartnerService.getProductsForCafe(cafeId);
-      setQuickProducts(products.slice(0, 6)); // Show max 6 products
+      setQuickProducts(products.slice(0, 6)); // Afișez maxim 6 produse
     } catch (error) {
       console.error("Error loading quick products:", error);
     } finally {
@@ -80,7 +83,7 @@ export default function BottomTabBar() {
     }
   };
 
-  // Handle quick add to cart
+  // Adaug rapid produsul în coș
   const handleQuickAddToCart = async (product: Product) => {
     if (!user?.uid) {
       Toast.show({
@@ -106,7 +109,7 @@ export default function BottomTabBar() {
         text2: `${product.name} added to cart`,
       });
 
-      // Refresh cart count to reflect the new item
+      // Refresh-ez numărul din coș pentru a reflecta noul produs
       refreshCartCount();
     } else {
       Toast.show({
@@ -168,7 +171,7 @@ export default function BottomTabBar() {
         </Text>
       </TouchableOpacity>
 
-      {/* Cart Button */}
+      {/* Buton Coș */}
       <TouchableOpacity
         style={styles.qrButton}
         onPress={() => {
@@ -300,26 +303,26 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 75, // Slightly increased height
+    height: 75, // Înălțime ușor crescută
     flexDirection: "row",
     justifyContent: "space-around",
-    alignItems: "flex-start", // Align items to the top for better icon spacing
-    backgroundColor: "#FFFFFF", // Solid white background
+    alignItems: "flex-start", // Aliniez elementele sus pentru spațiere mai bună a icoanelor
+    backgroundColor: "#FFFFFF", // Fundal alb solid
     borderTopWidth: 1,
-    borderTopColor: "#E0D6C7", // Lighter border color
-    paddingTop: 8, // Add padding top
-    paddingBottom: 5, // Keep bottom padding for safe area
-    shadowColor: "#000", // Add subtle shadow
+    borderTopColor: "#E0D6C7", // Culoare mai deschisă pentru margine
+    paddingTop: 8, // Adaug padding sus
+    paddingBottom: 5, // Păstrez padding jos pentru safe area
+    shadowColor: "#000", // Adaug umbră subtilă
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 5,
-    zIndex: 1000, // Ensure it appears above other content
+    zIndex: 1000, // Mă asigur că apare deasupra altor elemente
   },
   navButton: {
     alignItems: "center",
     flex: 1,
-    paddingTop: 2, // Add slight padding within the button
+    paddingTop: 2,
   },
   iconContainer: {
     width: 40,
@@ -330,16 +333,16 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   activeIconContainer: {
-    backgroundColor: "#8B4513", // Brown background for active icon
+    backgroundColor: "#8B4513", // Fundal maro pentru iconița activă
   },
   navText: {
-    fontSize: 11, // Slightly larger text
-    color: "#8B4513", // Default text color
+    fontSize: 11, // Text puțin mai mare
+    color: "#8B4513", // Culoarea textului default
     fontWeight: "500",
   },
   activeNavText: {
-    color: "#321E0E", // Darker text for active
-    fontWeight: "600", // Bold text for active
+    color: "#321E0E", // Text mai întunecat pentru activ
+    fontWeight: "600", // Text bold pentru activ
   },
   qrButton: {
     width: 60,
@@ -348,15 +351,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#8B4513",
     justifyContent: "center",
     alignItems: "center",
-    bottom: 25, // Raise the button more
+    bottom: 25, // Ridic butonul mai mult
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 5,
     elevation: 8,
     borderWidth: 2,
-    borderColor: "#FFFFFF", // Add white border for definition
-    zIndex: 1001, // Ensure it appears above the bottom nav
+    borderColor: "#FFFFFF", // Adaug margine albă pentru definiție
+    zIndex: 1001, // Mă asigur că apare deasupra navigației de jos
   },
   cartBadge: {
     position: "absolute",
@@ -377,7 +380,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     paddingHorizontal: 4,
   },
-  // Quick Order Modal styles
+  // Stiluri pentru modalul comenzii rapide
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",

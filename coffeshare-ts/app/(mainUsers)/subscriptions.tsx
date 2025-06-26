@@ -9,6 +9,7 @@ import {
   Modal,
   Dimensions,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,6 +27,9 @@ import Toast from "react-native-toast-message";
 import { Toast as ErrorToast } from "../../components/ErrorComponents";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 import PaymentModalSimple from "../../components/PaymentModalSimple";
+import { useFirebase } from "../../context/FirebaseContext";
+import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 const { height: screenHeight } = Dimensions.get("screen");
@@ -33,6 +37,9 @@ const { height: screenHeight } = Dimensions.get("screen");
 export default function SubscriptionsScreen() {
   const { t } = useLanguage();
   const { errorState, showError, hideToast } = useErrorHandler();
+  const { user } = useFirebase();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [howItWorksVisible, setHowItWorksVisible] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -51,6 +58,9 @@ export default function SubscriptionsScreen() {
     currency: string;
     userId: string;
   } | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState(-1);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
   // Animation values for card scaling
   const animatedScales = useRef<Animated.Value[]>([]).current;
@@ -114,69 +124,40 @@ export default function SubscriptionsScreen() {
     });
 
     setActiveIndex(index);
+    setSelectedPlan(index);
   };
 
   // Subscribe to a plan - now opens payment modal
   const subscribeToPlan = async () => {
-    if (!currentUser) {
-      showError(t("subscriptions.loginRequired"));
+    if (selectedPlan === -1) {
+      Alert.alert(t("common.error"), "Please select a plan");
       return;
     }
 
-    if (
-      subscriptionPlans.length === 0 ||
-      activeIndex >= subscriptionPlans.length
-    ) {
-      return;
+    setProcessing(true);
+
+    try {
+      // Simulez procesarea plății
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Afișez modal-ul pentru succes
+      setShowPaymentModal(true);
+      setProcessing(false);
+    } catch (error) {
+      console.error("Error processing subscription:", error);
+      Alert.alert(t("common.error"), t("subscriptions.subscriptionError"));
+      setProcessing(false);
     }
-
-    const selectedPlan = subscriptionPlans[activeIndex];
-
-    // Set up payment data and show payment modal
-    setSelectedPlanForPayment({
-      planId: selectedPlan.id!,
-      planName: selectedPlan.name,
-      price: selectedPlan.price,
-      currency: "RON", // Romanian Lei currency
-      userId: currentUser.uid,
-    });
-    setPaymentModalVisible(true);
   };
 
   // Handle successful payment
   const handlePaymentSuccess = async () => {
-    if (!currentUser || !selectedPlanForPayment) return;
+    setShowPaymentModal(false);
 
-    setLoading(true);
-    try {
-      // Create user subscription after successful payment
-      await SubscriptionService.createUserSubscription(
-        currentUser.uid,
-        selectedPlanForPayment.planId
-      );
-
-      // Show success message
-      Toast.show({
-        type: "success",
-        text1: t("subscriptions.subscriptionActivated"),
-        text2: t("subscriptions.receivedBeans", {
-          credits:
-            subscriptionPlans.find(
-              (p) => p.id === selectedPlanForPayment.planId
-            )?.credits || 0,
-        }),
-      });
-    } catch (error) {
-      console.error("Error creating subscription:", error);
-      Toast.show({
-        type: "error",
-        text1: t("common.error"),
-        text2: t("subscriptions.failedToActivate"),
-      });
-    } finally {
-      setLoading(false);
-      setSelectedPlanForPayment(null);
-    }
+    // Navighez înapoi la dashboard cu un mic delay
+    setTimeout(() => {
+      router.push("/(mainUsers)/dashboard");
+    }, 500);
   };
 
   if (loadingPlans) {
@@ -294,9 +275,9 @@ export default function SubscriptionsScreen() {
             <TouchableOpacity
               style={styles.subscribeButton}
               onPress={subscribeToPlan}
-              disabled={loading}
+              disabled={processing}
             >
-              {loading ? (
+              {processing ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
                 <Text style={styles.subscribeButtonText}>
@@ -412,9 +393,9 @@ export default function SubscriptionsScreen() {
 
         {/* Payment Modal */}
         <PaymentModalSimple
-          visible={paymentModalVisible}
+          visible={showPaymentModal}
           onClose={() => {
-            setPaymentModalVisible(false);
+            setShowPaymentModal(false);
             setSelectedPlanForPayment(null);
           }}
           onSuccess={handlePaymentSuccess}

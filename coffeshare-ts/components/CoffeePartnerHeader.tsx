@@ -16,7 +16,7 @@ interface CoffeePartnerHeaderProps {
   rightAction?: React.ReactNode;
 }
 
-const HEADER_TEXT_COLOR = "#4E342E"; // Darker, richer brown
+const HEADER_TEXT_COLOR = "#4E342E"; // Maro mai întunecat și mai bogat
 
 const CoffeePartnerHeader: React.FC<CoffeePartnerHeaderProps> = ({
   title,
@@ -62,7 +62,7 @@ const CoffeePartnerHeader: React.FC<CoffeePartnerHeaderProps> = ({
           </Text>
         </View>
         <View style={styles.rightContainer}>
-          {/* Wrap rightAction in TouchableOpacity if it's just text */}
+          {/* Înfășor rightAction în TouchableOpacity dacă este doar text */}
           {typeof rightAction === "string" ? (
             <TouchableOpacity style={styles.buttonStyle}>
               <Text style={styles.actionText}>{rightAction}</Text>
@@ -78,36 +78,36 @@ const CoffeePartnerHeader: React.FC<CoffeePartnerHeaderProps> = ({
 
 const styles = StyleSheet.create({
   headerContainer: {
-    backgroundColor: "#FFFFFF", // Plain white background
+    backgroundColor: "#FFFFFF", // Fundal alb simplu
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
-    // paddingTop is set dynamically
+    // paddingTop se setează dinamic
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 15,
-    height: 60, // Fixed height for consistency
+    height: 60, // Înălțime fixă pentru consistență
   },
   leftContainer: {
-    width: 50, // Fixed width for the left button area
+    width: 50, // Lățime fixă pentru zona butonului din stânga
     alignItems: "flex-start",
     justifyContent: "center",
   },
   titleContainer: {
-    flex: 1, // Title takes remaining space
+    flex: 1, // Titlul ocupă spațiul rămas
     justifyContent: "center",
     alignItems: "center",
-    marginHorizontal: 5, // Add small margin to prevent overlap with buttons if title is long
+    marginHorizontal: 5, // Adaug margine mică pentru a preveni suprapunerea cu butoanele dacă titlul e lung
   },
   rightContainer: {
-    width: 70, // Fixed width for the right action area, adjust as needed
+    width: 70, // Lățime fixă pentru zona acțiunii din dreapta, ajustez după necesitate
     alignItems: "flex-end",
     justifyContent: "center",
   },
   buttonStyle: {
-    padding: 8, // Consistent padding for tap area
+    padding: 8, // Padding consistent pentru zona de tap
   },
   headerTitle: {
     fontSize: 18,
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     color: HEADER_TEXT_COLOR,
   },
   actionText: {
-    // Style for string actions passed to rightAction
+    // Stil pentru acțiunile de tip string transmise la rightAction
     fontSize: 16,
     fontWeight: "600",
     color: HEADER_TEXT_COLOR,

@@ -14,9 +14,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.coffeshare.app",
@@ -26,20 +24,13 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Allow CoffeShare to use your location to show nearby cafes.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow CoffeShare to use your location to show nearby cafes.",
-        "UIBackgroundModes": [
-          "location",
-          "location"
-        ],
+        "UIBackgroundModes": ["location", "location"],
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": [
-              "com.coffeshare.app"
-            ]
+            "CFBundleURLSchemes": ["com.coffeshare.app"]
           },
           {
-            "CFBundleURLSchemes": [
-              "com.coffeshare.app"
-            ]
+            "CFBundleURLSchemes": ["com.coffeshare.app"]
           }
         ],
         "NSCameraUsageDescription": "Allow CoffeShare to use your camera to scan QR codes."
@@ -66,10 +57,7 @@
               "host": "oauth2redirect"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         },
         {
           "action": "VIEW",
@@ -80,10 +68,7 @@
               "host": "oauth2redirect"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ],
       "permissions": [

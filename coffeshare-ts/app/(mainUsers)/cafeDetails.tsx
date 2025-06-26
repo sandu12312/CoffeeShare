@@ -22,10 +22,10 @@ import wishlistService from "../../services/wishlistService";
 import { Toast } from "../../components/ErrorComponents";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 
-// Screen width to calculate image dimensions
+// Lățimea ecranului pentru calcularea dimensiunilor imaginilor
 const { width } = Dimensions.get("window");
 
-// Types
+// Tipurile de date
 interface CafeDetails {
   id: string;
   businessName: string;
@@ -55,7 +55,7 @@ interface CafeDetails {
   };
 }
 
-// Default opening hours format if not specified
+// Programul implicit de lucru dacă nu este specificat
 const DEFAULT_OPENING_HOURS = {
   monday: { open: "08:00", close: "20:00" },
   tuesday: { open: "08:00", close: "20:00" },
@@ -66,7 +66,7 @@ const DEFAULT_OPENING_HOURS = {
   sunday: { open: "09:00", close: "18:00" },
 };
 
-// Mock data for development in case the cafe doesn't exist in Firestore
+// Date mock pentru dezvoltare în cazul în care cafeneaua nu există în Firestore
 const MOCK_CAFE_DETAILS: Record<string, CafeDetails> = {
   "5togo-savoya": {
     id: "5togo-savoya",
@@ -106,7 +106,7 @@ const MOCK_CAFE_DETAILS: Record<string, CafeDetails> = {
       longitude: 21.228,
     },
   },
-  // Add more mock cafes as needed
+  // Adaug mai multe cafenele mock după nevoie
 };
 
 export default function CafeDetailsScreen() {
@@ -129,7 +129,7 @@ export default function CafeDetailsScreen() {
       }
 
       try {
-        // Try to fetch from Firestore first
+        // Încerc să obțin datele din Firestore mai întâi
         const cafeRef = doc(db, "cafes", cafeId as string);
         const cafeSnapshot = await getDoc(cafeRef);
 
@@ -156,12 +156,12 @@ export default function CafeDetailsScreen() {
           };
           setCafe(cafeDetails);
 
-          // Check if cafe is in wishlist
+          // Verific dacă cafeneaua este în lista de favorite
           if (user?.uid) {
             checkWishlistStatus();
           }
         } else {
-          // If not in Firestore, try to use mock data
+          // Dacă nu e în Firestore, încerc să folosesc datele mock
           const mockCafe = MOCK_CAFE_DETAILS[cafeId as string];
           if (mockCafe) {
             setCafe(mockCafe);
@@ -317,7 +317,7 @@ export default function CafeDetailsScreen() {
     });
   };
 
-  // Group products by category
+  // Grupez produsele pe categorii
   const groupedProducts = () => {
     if (!cafe?.products || cafe.products.length === 0) return {};
 
@@ -372,14 +372,14 @@ export default function CafeDetailsScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Cover Image */}
+          {/* Imaginea de copertă */}
           <Image
             source={{ uri: cafe.mainImageUrl }}
             style={styles.coverImage}
             resizeMode="cover"
           />
 
-          {/* Open/Closed Status Banner */}
+          {/* Banner-ul de stare deschis/închis */}
           <View
             style={[
               styles.statusBanner,
@@ -396,7 +396,7 @@ export default function CafeDetailsScreen() {
             )}
           </View>
 
-          {/* Cafe Name and Address */}
+          {/* Numele și adresa cafenelei */}
           <View style={styles.headerContainer}>
             <Text style={styles.title}>{cafe.businessName}</Text>
             <View style={styles.addressContainer}>
@@ -405,7 +405,7 @@ export default function CafeDetailsScreen() {
             </View>
           </View>
 
-          {/* Action Buttons */}
+          {/* Butoanele de acțiune */}
           <View style={styles.actionButtonsContainer}>
             <TouchableOpacity style={styles.actionButton} onPress={openMaps}>
               <Ionicons name="navigate-outline" size={22} color="#8B4513" />
@@ -460,13 +460,13 @@ export default function CafeDetailsScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Description */}
+          {/* Descrierea */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>About</Text>
             <Text style={styles.description}>{cafe.description}</Text>
           </View>
 
-          {/* Gallery */}
+          {/* Galeria */}
           {cafe.galleryImages.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Gallery</Text>
@@ -487,7 +487,7 @@ export default function CafeDetailsScreen() {
             </View>
           )}
 
-          {/* Menu/Products */}
+          {/* Meniul/Produsele */}
           {cafe.products.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Menu</Text>
@@ -514,7 +514,7 @@ export default function CafeDetailsScreen() {
             </View>
           )}
 
-          {/* Opening Hours */}
+          {/* Programul de lucru */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Opening Hours</Text>
             <View style={styles.scheduleContainer}>{renderDayHours()}</View>
@@ -524,7 +524,7 @@ export default function CafeDetailsScreen() {
         <BottomTabBar />
       </View>
 
-      {/* Toast for feedback */}
+      {/* Toast pentru feedback */}
       <Toast
         visible={errorState.toast.visible}
         message={errorState.toast.message}

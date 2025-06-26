@@ -30,38 +30,38 @@ export default function QuickStatsCard({
         {t("favoriteCafe")}:{" "}
         <Text style={styles.statsValue}>{favoriteCafe}</Text>
       </Text>
-      {/* Add simple chart later */}
+      {/* Adaug un grafic simplu mai târziu */}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "rgba(255, 255, 255, 0.92)", // Slightly more opaque white
+    backgroundColor: "rgba(255, 255, 255, 0.92)", // Alb puțin mai opac
     borderRadius: 15,
-    padding: 18, // Increased padding
+    padding: 18, // Padding crescut
     marginBottom: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 }, // Slightly larger shadow
+    shadowOffset: { width: 0, height: 2 }, // Umbră puțin mai mare
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 3,
-    borderWidth: 1, // Add subtle border
+    borderWidth: 1, // Adaug margine subtilă
     borderColor: "rgba(139, 69, 19, 0.1)",
   },
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 15, // Increased spacing
+    marginBottom: 15, // Spațiere crescută
     borderBottomWidth: 1,
     borderBottomColor: "rgba(139, 69, 19, 0.1)",
     paddingBottom: 10,
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: "600", // Slightly bolder
+    fontWeight: "600", // Puțin mai bold
     color: "#321E0E",
-    marginLeft: 8, // Add space after icon
+    marginLeft: 8, // Adaug spațiu după iconă
   },
   statsText: {
     fontSize: 15,
@@ -69,6 +69,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   statsValue: {
-    fontWeight: "bold", // Make stats values stand out
+    fontWeight: "bold", // Fac valorile statisticilor să iasă în evidență
   },
 });

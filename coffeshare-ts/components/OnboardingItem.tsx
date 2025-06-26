@@ -22,6 +22,7 @@ const OnboardingItem = ({ item }: OnboardingItemProps) => {
 
   return (
     <View style={[styles.container, { width }]}>
+      {/* Container pentru imagine */}
       <View style={styles.imageContainer}>
         <Image
           source={item.image}
@@ -29,6 +30,7 @@ const OnboardingItem = ({ item }: OnboardingItemProps) => {
           resizeMode="cover"
         />
       </View>
+      {/* Container pentru conținut text */}
       <View style={styles.content}>
         <Text style={styles.title}>{item.title}</Text>
         <Text style={styles.description}>{item.description}</Text>

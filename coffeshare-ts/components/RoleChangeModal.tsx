@@ -35,13 +35,13 @@ const RoleChangeModal: React.FC<RoleChangeModalProps> = ({
   const [selectedRole, setSelectedRole] = useState<UserRole>("user");
   const [loading, setLoading] = useState(false);
 
-  // Admin specific fields
+  // Câmpuri specifice pentru admin
   const [permissions, setPermissions] = useState<string[]>(["read"]);
   const [accessLevel, setAccessLevel] = useState<"super" | "standard">(
     "standard"
   );
 
-  // Partner specific fields
+  // Câmpuri specifice pentru partner
   const [businessName, setBusinessName] = useState("");
   const [businessAddress, setBusinessAddress] = useState("");
   const [businessPhone, setBusinessPhone] = useState("");
@@ -53,8 +53,8 @@ const RoleChangeModal: React.FC<RoleChangeModalProps> = ({
     if (user) {
       setSelectedRole(user.role);
 
-      // Type-safe access to role-specific properties
-      const userData = user.userData as any; // Using any for now since userData can have different shapes
+      // Acces type-safe la proprietățile specifice rolului
+      const userData = user.userData as any; // Folosesc any deocamdată căci userData poate avea forme diferite
 
       setBusinessName(userData.businessName || "");
       setBusinessAddress(userData.businessAddress || "");
@@ -105,7 +105,7 @@ const RoleChangeModal: React.FC<RoleChangeModalProps> = ({
   const handleSubmit = async () => {
     if (!user) return;
 
-    // Validation
+    // Validare
     if (selectedRole === "partner" && !businessName.trim()) {
       Alert.alert("Error", "Business name is required for partners");
       return;
@@ -139,7 +139,7 @@ const RoleChangeModal: React.FC<RoleChangeModalProps> = ({
           };
           break;
         case "user":
-          // Keep existing user data like preferences, stats, subscription
+          // Păstrez datele existente ale utilizatorului precum preferințe, statistici, abonament
           additionalData = {
             preferences: (user.userData as any).preferences || {},
             stats: (user.userData as any).stats || {},

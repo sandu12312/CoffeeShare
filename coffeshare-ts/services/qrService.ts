@@ -29,9 +29,9 @@ export interface QRToken {
   isActive: boolean;
   usageCount: number;
   maxUsage: number;
-  cafeId?: string; // Add cafe-specific token
-  type?: "instant" | "checkout"; // Type of QR code
-  cartTotalBeans?: number; // Store cart total in token to avoid permissions issues
+  cafeId?: string; // Adaug token specific cafenelei
+  type?: "instant" | "checkout"; // Tipul codului QR
+  cartTotalBeans?: number; // Stochez totalul coșului în token pentru a evita problemele de permisiuni
 }
 
 export interface QRValidationResult {
@@ -50,11 +50,11 @@ export class QRService {
   private static readonly MAX_USAGE_COUNT = 1;
 
   /**
-   * Generate a unique QR token for a user
+   * Generez un token QR unic pentru un utilizator
    */
   static async generateQRToken(userId: string): Promise<QRToken | null> {
     try {
-      // First verify user has active subscription
+      // Mai întâi verific dacă utilizatorul are abonament activ
       const subscription = await SubscriptionService.getUserActiveSubscription(
         userId
       );
@@ -69,10 +69,10 @@ export class QRService {
         );
       }
 
-      // Invalidate any existing active tokens for this user
+      // Invalidez orice token-uri active existente pentru acest utilizator
       await this.invalidateUserTokens(userId);
 
-      // Get cart total to include in token (avoid permissions issues during scanning)
+      // Obțin totalul coșului pentru a-l include în token (evit problemele de permisiuni în timpul scanării)
       let cartTotalBeans = 0;
       try {
         const cart = await cartService.getUserCart(userId);
@@ -93,7 +93,7 @@ export class QRService {
         );
       }
 
-      // Generate unique token
+      // Generez token unic
       const timestamp = Date.now().toString();
       const random = Math.random().toString(36).substring(2);
       const tokenString = `${userId}_${timestamp}_${random}`;
@@ -116,7 +116,7 @@ export class QRService {
         cartTotalBeans,
       };
 
-      // Save to Firestore
+      // Salvez în Firestore
       const docRef = await addDoc(
         collection(db, this.COLLECTION_NAME),
         qrToken
@@ -131,7 +131,7 @@ export class QRService {
   }
 
   /**
-   * Get active QR token for a user
+   * Obțin token-ul QR activ pentru un utilizator
    */
   static async getActiveQRToken(userId: string): Promise<QRToken | null> {
     try {
@@ -162,7 +162,7 @@ export class QRService {
   }
 
   /**
-   * Subscribe to active QR token changes for a user
+   * Mă abonez la modificările token-ului QR activ pentru un utilizator
    */
   static subscribeToUserQRToken(
     userId: string,
@@ -199,7 +199,7 @@ export class QRService {
   }
 
   /**
-   * Validate and redeem a QR token with partner analytics
+   * Validez și răscumpăr un token QR cu analiză de partener
    */
   static async validateAndRedeemQRTokenWithPartner(
     token: string,
@@ -210,7 +210,7 @@ export class QRService {
     cafeName: string
   ): Promise<QRValidationResult> {
     try {
-      // First, find the token outside of transaction
+      // Mai întâi, găsesc token-ul în afara tranzacției
       const q = query(
         collection(db, this.COLLECTION_NAME),
         where("token", "==", token),
@@ -231,7 +231,7 @@ export class QRService {
       const tokenDoc = snapshot.docs[0];
       const qrToken = tokenDoc.data() as QRToken;
 
-      // Check if token has reached max usage
+      // Verific dacă token-ul a atins utilizarea maximă
       if (qrToken.usageCount >= qrToken.maxUsage) {
         return {
           success: false,
@@ -239,8 +239,8 @@ export class QRService {
         };
       }
 
-      // Use cart total stored in token (avoids permissions issues)
-      let beansToSubtract = 1; // Default for instant redemption
+      // Folosesc totalul coșului stocat în token (evit problemele de permisiuni)
+      let beansToSubtract = 1; // Implicit pentru răscumpărarea instantanee
 
       console.log(
         `🔍 QR Token Data:`,
@@ -270,7 +270,7 @@ export class QRService {
         `🎯 FINAL DECISION: Will subtract ${beansToSubtract} beans from user's subscription`
       );
 
-      // Verify user still has active subscription
+      // Verific dacă utilizatorul are încă abonament activ
       const subscription = await SubscriptionService.getUserActiveSubscription(
         qrToken.userId
       );
@@ -287,7 +287,7 @@ export class QRService {
         };
       }
 
-      // Check if user has enough beans for the cart total
+      // Verific dacă utilizatorul are suficiente boabe pentru totalul coșului
       if (subscription.creditsLeft < beansToSubtract) {
         return {
           success: false,
@@ -295,9 +295,9 @@ export class QRService {
         };
       }
 
-      // Now perform the transaction for the actual redemption
+      // Acum execut tranzacția pentru răscumpărarea efectivă
       const result = await runTransaction(db, async (transaction) => {
-        // Re-check token status within transaction
+        // Re-verific status-ul token-ului în cadrul tranzacției
         const tokenRef = doc(db, this.COLLECTION_NAME, tokenDoc.id);
         const currentTokenDoc = await transaction.get(tokenRef);
 
@@ -307,7 +307,7 @@ export class QRService {
 
         const currentToken = currentTokenDoc.data() as QRToken;
 
-        // Double-check the token is still valid
+        // Dublu-verific că token-ul este încă valid
         if (
           !currentToken.isActive ||
           currentToken.usageCount >= currentToken.maxUsage
@@ -315,14 +315,14 @@ export class QRService {
           throw new Error("Token is no longer valid");
         }
 
-        // Update token usage
+        // Actualizez utilizarea token-ului
         transaction.update(tokenRef, {
           usageCount: currentToken.usageCount + 1,
           isActive:
             currentToken.usageCount + 1 >= currentToken.maxUsage ? false : true,
         });
 
-        // Update user credits directly in transaction
+        // Actualizez creditele utilizatorului direct în tranzacție
         const subRef = doc(db, "userSubscriptions", subscription.id!);
         const newCreditsLeft = subscription.creditsLeft - beansToSubtract;
 
@@ -363,7 +363,7 @@ export class QRService {
         };
       });
 
-      // Clear cart if this was a checkout token with cart total
+      // Șterg coșul dacă acesta a fost un token de checkout cu total coș
       if (qrToken.cartTotalBeans && qrToken.cartTotalBeans > 0) {
         try {
           await cartService.clearCartAfterRedemption(qrToken.userId);
@@ -372,7 +372,7 @@ export class QRService {
           );
         } catch (cartError) {
           console.error("❌ Error clearing cart after redemption:", cartError);
-          // Don't fail the operation if cart clearing fails
+          // Nu eșuez operația dacă ștergerea coșului eșuează
         }
       }
 
@@ -380,7 +380,7 @@ export class QRService {
         `🎉 Successfully redeemed ${beansToSubtract} beans for user ${qrToken.userId}`
       );
 
-      // Log successful redemption and partner analytics after transaction completes
+      // Loghez răscumpărarea reușită și analiza partenerului după ce tranzacția se finalizează
       try {
         await SubscriptionService.logUserActivity(
           qrToken.userId,
@@ -394,7 +394,7 @@ export class QRService {
           }
         );
 
-        // Log partner analytics
+        // Loghez analiza partenerului
         await partnerAnalyticsService.logPartnerScan(
           partnerId,
           partnerEmail,
@@ -408,14 +408,14 @@ export class QRService {
         );
       } catch (logError) {
         console.error("Error logging successful redemption:", logError);
-        // Don't fail the operation if logging fails
+        // Nu eșuez operația dacă logarea eșuează
       }
 
       return result;
     } catch (error) {
       console.error("Error validating QR token:", error);
 
-      // Log the activity even if there was an error (for audit purposes)
+      // Loghez activitatea chiar dacă a fost o eroare (pentru scopuri de audit)
       try {
         const q = query(
           collection(db, this.COLLECTION_NAME),

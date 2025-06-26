@@ -34,7 +34,7 @@ export default function NotificationsScreen() {
   useEffect(() => {
     if (user?.uid) {
       loadNotifications();
-      // Initialize notifications (check expiry and send daily updates)
+      // Inițializez notificările (verific expirarea și trimit actualizări zilnice)
       initializeNotifications();
     }
   }, [user?.uid, subscriptionStatus]);
@@ -66,7 +66,7 @@ export default function NotificationsScreen() {
         user.uid,
         subscriptionStatus.subscription
       );
-      // Reload notifications after initialization
+      // Reîncarc notificările după inițializare
       setTimeout(() => loadNotifications(), 1000);
     } catch (error) {
       console.error("Error initializing notifications:", error);
@@ -85,17 +85,17 @@ export default function NotificationsScreen() {
     try {
       if (!notification.read) {
         await notificationService.markAsRead(user.uid, notification.id);
-        await loadNotifications(); // Refresh to show updated read status
+        await loadNotifications(); // Refresh pentru a afișa starea actualizată de citire
       }
 
-      // Handle different notification types
+      // Gestionez diferite tipuri de notificări
       if (notification.type === "subscription_expiry") {
         showConfirmModal(
           notification.title,
           notification.message +
             "\n\nWould you like to renew your subscription?",
           () => {
-            // Navigate to subscriptions screen
+            // Navighez la ecranul de abonamente
             // router.push("/(mainUsers)/subscriptions");
           }
         );
@@ -104,7 +104,7 @@ export default function NotificationsScreen() {
           notification.title,
           notification.message + "\n\nWould you like to view available plans?",
           () => {
-            // Navigate to subscriptions screen
+            // Navighez la ecranul de abonamente
             // router.push("/(mainUsers)/subscriptions");
           }
         );
@@ -166,20 +166,20 @@ export default function NotificationsScreen() {
   };
 
   const getNotificationColor = (type: string, priority: string) => {
-    // Special colors for certain types
+    // Culori speciale pentru anumite tipuri
     switch (type) {
       case "achievement":
-        return "#FFD700"; // Gold
+        return "#FFD700"; // Auriu
       case "coffee_tip":
-        return "#8B4513"; // Coffee brown
+        return "#8B4513"; // Maro cafea
       case "special_offer":
-        return "#FF6B35"; // Orange-red
+        return "#FF6B35"; // Portocaliu-roșu
       case "welcome":
-        return "#4CAF50"; // Green
+        return "#4CAF50"; // Verde
       case "recommendation":
-        return "#2196F3"; // Blue
+        return "#2196F3"; // Albastru
       default:
-        // Fallback to priority colors
+        // Fallback la culorile priorității
         switch (priority) {
           case "high":
             return "#E74C3C";
@@ -246,7 +246,7 @@ export default function NotificationsScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          {/* Header Actions */}
+          {/* Acțiuni din header */}
           {notifications.length > 0 && (
             <View style={styles.actionsContainer}>
               <Text style={styles.notificationCount}>
@@ -264,7 +264,7 @@ export default function NotificationsScreen() {
             </View>
           )}
 
-          {/* Notifications List */}
+          {/* Lista de notificări */}
           {notifications.length > 0 ? (
             <View style={styles.notificationsContainer}>
               {notifications.map((notification) => (
@@ -345,7 +345,7 @@ export default function NotificationsScreen() {
                 new offers will appear here.
               </Text>
 
-              {/* Manual refresh option */}
+              {/* Opțiune de refresh manual */}
               <TouchableOpacity
                 style={styles.refreshButton}
                 onPress={onRefresh}
@@ -358,7 +358,7 @@ export default function NotificationsScreen() {
         </ScrollView>
       )}
 
-      {/* Error Components */}
+      {/* Componentele pentru erori */}
       <ErrorModal
         visible={errorState.modal.visible}
         title={errorState.modal.title}

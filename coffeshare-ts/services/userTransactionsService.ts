@@ -35,7 +35,7 @@ export interface UserTransaction {
 
 class UserTransactionsService {
   /**
-   * Get user transactions (recent activity for dashboard)
+   * Obțin tranzacțiile utilizatorului (activitatea recentă pentru dashboard)
    */
   async getUserTransactions(
     userId: string,
@@ -69,7 +69,7 @@ class UserTransactionsService {
   }
 
   /**
-   * Get all user transactions (for full history modal)
+   * Obțin toate tranzacțiile utilizatorului (pentru modal-ul istoric complet)
    */
   async getAllUserTransactions(userId: string): Promise<UserTransaction[]> {
     try {
@@ -99,13 +99,13 @@ class UserTransactionsService {
   }
 
   /**
-   * Format transaction for display
+   * Formatez tranzacția pentru afișare
    */
   formatTransactionForDisplay(transaction: UserTransaction, t: Function) {
     const beansUsed = transaction.beansUsed;
     const tokenType = transaction.tokenType;
 
-    // Determine transaction type and description
+    // Determin tipul și descrierea tranzacției
     let transactionDescription = "";
     let transactionIcon = "cafe-outline";
 
@@ -142,7 +142,7 @@ class UserTransactionsService {
   }
 
   /**
-   * Format date for display
+   * Formatez data pentru afișare
    */
   private formatDate(date: Date, includeTime: boolean = false): string {
     const now = new Date();
