@@ -125,6 +125,19 @@ export default function SubscriptionsScreen() {
 
     setActiveIndex(index);
     setSelectedPlan(index);
+
+    // Set the selected plan for payment
+    const plan = subscriptionPlans[index];
+    if (plan && currentUser) {
+      setSelectedPlanForPayment({
+        planId: plan.id || "",
+        planName: plan.name,
+        price: plan.price,
+        currency: "RON", // Default to RON since it's the app's default currency
+        userId: currentUser.uid,
+      });
+      setShowPaymentModal(true);
+    }
   };
 
   // Subscribe to a plan - now opens payment modal

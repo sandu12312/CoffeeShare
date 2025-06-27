@@ -7,13 +7,20 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  Alert,
   KeyboardAvoidingView,
   Platform,
-  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import {
+  CardField,
+  useStripe,
+  useConfirmPayment,
+} from "@stripe/stripe-react-native";
 import { useLanguage } from "../context/LanguageContext";
-import stripeService from "../services/stripeService";
+import stripeService, {
+  SubscriptionPaymentData,
+} from "../services/stripeService";
 import Toast from "react-native-toast-message";
 
 interface PaymentModalProps {
@@ -29,27 +36,22 @@ interface PaymentModalProps {
   } | null;
 }
 
-export default function PaymentModalSimple({
+export default function PaymentModal({
   visible,
   onClose,
   onSuccess,
   subscriptionData,
 }: PaymentModalProps) {
   const { t } = useLanguage();
+  const { confirmPayment } = useConfirmPayment();
   const [loading, setLoading] = useState(false);
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
-  const [cvc, setCvc] = useState("");
+  const [cardComplete, setCardComplete] = useState(false);
   const [showTestCards, setShowTestCards] = useState(false);
 
   // Initialize Stripe when modal opens
   useEffect(() => {
     if (visible) {
       initializeStripe();
-      // Pre-fill with test card for easier testing
-      setCardNumber("4242 4242 4242 4242");
-      setExpiryDate("12/25");
-      setCvc("123");
     }
   }, [visible]);
 
@@ -66,45 +68,8 @@ export default function PaymentModalSimple({
     }
   };
 
-  const formatCardNumber = (text: string) => {
-    // Remove all non-digits
-    const cleaned = text.replace(/\D/g, "");
-    // Add spaces every 4 digits
-    const formatted = cleaned.replace(/(.{4})/g, "$1 ").trim();
-    // Limit to 19 characters (16 digits + 3 spaces)
-    return formatted.substring(0, 19);
-  };
-
-  const formatExpiryDate = (text: string) => {
-    // Remove all non-digits
-    const cleaned = text.replace(/\D/g, "");
-    // Add slash after 2 digits
-    if (cleaned.length >= 2) {
-      return cleaned.substring(0, 2) + "/" + cleaned.substring(2, 4);
-    }
-    return cleaned;
-  };
-
-  const isCardValid = () => {
-    const cleanCardNumber = cardNumber.replace(/\s/g, "");
-    return (
-      cleanCardNumber.length === 16 &&
-      expiryDate.length === 5 &&
-      cvc.length === 3
-    );
-  };
-
   const handlePayment = async () => {
-    if (!subscriptionData) {
-      Toast.show({
-        type: "error",
-        text1: "Invalid Payment",
-        text2: "No subscription data found",
-      });
-      return;
-    }
-
-    if (!isCardValid()) {
+    if (!subscriptionData || !cardComplete) {
       Toast.show({
         type: "error",
         text1: "Invalid Payment",
@@ -115,73 +80,21 @@ export default function PaymentModalSimple({
 
     setLoading(true);
     try {
-      // Check if server is running (fallback to test payment if not)
-      const healthCheck = await fetch("http://localhost:3001/health").catch(
-        () => null
+      // For testing purposes, we'll use the test payment method
+      const success = await stripeService.processTestPayment(
+        subscriptionData.price * 100, // Convert to cents
+        subscriptionData.currency
       );
 
-      if (!healthCheck) {
-        // Fallback to test payment if server is not running
-        console.log("⚠️ Server not running, using test payment");
-
-        // Validate if it's a test card
-        const isTestCard = stripeService.validateTestCard(cardNumber);
-
-        if (!isTestCard) {
-          Toast.show({
-            type: "error",
-            text1: "Invalid Card",
-            text2: "Please use a test card for this demo",
-          });
-          setLoading(false);
-          return;
-        }
-
-        // Process test payment
-        const success = await stripeService.processTestPayment(
-          subscriptionData.price * 100,
-          subscriptionData.currency
-        );
-
-        if (success) {
-          Toast.show({
-            type: "success",
-            text1: "Payment Successful! (Test Mode)",
-            text2: `Subscription to ${subscriptionData.planName} activated`,
-          });
-          onSuccess();
-          onClose();
-        }
-        return;
+      if (success) {
+        Toast.show({
+          type: "success",
+          text1: "Payment Successful!",
+          text2: `Subscription to ${subscriptionData.planName} activated`,
+        });
+        onSuccess();
+        onClose();
       }
-
-      // Real Stripe payment flow
-      console.log("🔄 Creating real payment intent...");
-
-      const paymentIntentData = await stripeService.createPaymentIntent({
-        subscriptionId: subscriptionData.planId,
-        planId: subscriptionData.planId,
-        userId: subscriptionData.userId,
-        amount: subscriptionData.price, // Amount in RON (conversion handled in service)
-        currency: subscriptionData.currency,
-      });
-
-      console.log("✅ Payment intent created, confirming payment...");
-
-      // Confirm the payment with the entered card details
-      const confirmedPayment = await stripeService.confirmPayment(
-        paymentIntentData.paymentIntentId,
-        cardNumber
-      );
-
-      Toast.show({
-        type: "success",
-        text1: "Payment Completed!",
-        text2: `Payment ${confirmedPayment.id} confirmed with status: ${confirmedPayment.status}`,
-      });
-
-      onSuccess();
-      onClose();
     } catch (error) {
       console.error("Payment failed:", error);
       Toast.show({
@@ -196,14 +109,11 @@ export default function PaymentModalSimple({
   };
 
   const handleTestCardSelect = (cardNumber: string) => {
-    setCardNumber(cardNumber);
-    setExpiryDate("12/25");
-    setCvc("123");
     setShowTestCards(false);
     Toast.show({
       type: "info",
       text1: "Test Card Selected",
-      text2: `Card ${cardNumber} selected`,
+      text2: `Use ${cardNumber} for testing`,
     });
   };
 
@@ -293,51 +203,22 @@ export default function PaymentModalSimple({
               </View>
             )}
 
-            {/* Card Input Fields */}
+            {/* Card Input */}
             <View style={styles.cardContainer}>
               <Text style={styles.cardLabel}>Card Information</Text>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Card Number</Text>
-                <TextInput
-                  style={styles.cardInput}
-                  value={cardNumber}
-                  onChangeText={(text) => setCardNumber(formatCardNumber(text))}
-                  placeholder="4242 4242 4242 4242"
-                  keyboardType="numeric"
-                  maxLength={19}
-                />
-              </View>
-
-              <View style={styles.inputRow}>
-                <View style={[styles.inputGroup, styles.inputHalf]}>
-                  <Text style={styles.inputLabel}>Expiry Date</Text>
-                  <TextInput
-                    style={styles.cardInput}
-                    value={expiryDate}
-                    onChangeText={(text) =>
-                      setExpiryDate(formatExpiryDate(text))
-                    }
-                    placeholder="MM/YY"
-                    keyboardType="numeric"
-                    maxLength={5}
-                  />
-                </View>
-
-                <View style={[styles.inputGroup, styles.inputHalf]}>
-                  <Text style={styles.inputLabel}>CVC</Text>
-                  <TextInput
-                    style={styles.cardInput}
-                    value={cvc}
-                    onChangeText={(text) =>
-                      setCvc(text.replace(/\D/g, "").substring(0, 3))
-                    }
-                    placeholder="123"
-                    keyboardType="numeric"
-                    maxLength={3}
-                  />
-                </View>
-              </View>
+              <CardField
+                postalCodeEnabled={false}
+                placeholders={{
+                  number: "4242 4242 4242 4242",
+                  expiration: "MM/YY",
+                  cvc: "CVC",
+                }}
+                cardStyle={styles.cardField}
+                style={styles.cardFieldContainer}
+                onCardChange={(cardDetails) => {
+                  setCardComplete(cardDetails.complete);
+                }}
+              />
             </View>
 
             {/* Payment Summary */}
@@ -345,15 +226,10 @@ export default function PaymentModalSimple({
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Subscription</Text>
                 <Text style={styles.summaryValue}>
-                  {subscriptionData.price.toFixed(0)} RON
-                </Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabelSmall}>
-                  Stripe charges (USD)
-                </Text>
-                <Text style={styles.summaryValueSmall}>
-                  ≈ ${(subscriptionData.price * 0.22).toFixed(2)} USD
+                  {formatPrice(
+                    subscriptionData.price,
+                    subscriptionData.currency
+                  )}
                 </Text>
               </View>
               <View style={styles.summaryRow}>
@@ -377,10 +253,10 @@ export default function PaymentModalSimple({
             <TouchableOpacity
               style={[
                 styles.payButton,
-                (!isCardValid() || loading) && styles.payButtonDisabled,
+                (!cardComplete || loading) && styles.payButtonDisabled,
               ]}
               onPress={handlePayment}
-              disabled={!isCardValid() || loading}
+              disabled={!cardComplete || loading}
             >
               {loading ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
@@ -523,33 +399,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#333",
-    marginBottom: 16,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#333",
     marginBottom: 8,
   },
-  cardInput: {
+  cardFieldContainer: {
+    height: 50,
+  },
+  cardField: {
+    backgroundColor: "#F8F9FA",
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: "#DDD",
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
     fontSize: 16,
-    color: "#333",
-    backgroundColor: "#F8F9FA",
-  },
-  inputRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  inputHalf: {
-    width: "48%",
   },
   paymentSummary: {
     backgroundColor: "#F8F9FA",
@@ -571,15 +431,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#333",
     fontWeight: "500",
-  },
-  summaryLabelSmall: {
-    fontSize: 12,
-    color: "#666",
-  },
-  summaryValueSmall: {
-    fontSize: 12,
-    color: "#666",
-    fontStyle: "italic",
   },
   totalRow: {
     borderTopWidth: 1,
